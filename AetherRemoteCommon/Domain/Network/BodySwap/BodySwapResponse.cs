@@ -9,4 +9,4 @@ public record BodySwapResponse(
     Dictionary<string, ActionResultEc> Results,
     [property: Key(2)] string? CharacterName,
     [property: Key(3)] string? CharacterWorld
-) : ActionResponse (Result, Results);
+) : ActionResponse(Result, Results);

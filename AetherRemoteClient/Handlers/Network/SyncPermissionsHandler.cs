@@ -14,7 +14,7 @@ public class SyncPermissionsHandler : IDisposable
 {
     // Injected
     private readonly FriendsListService _friends;
-    
+
     // Instantiated
     private readonly IDisposable _handler;
 
@@ -24,10 +24,10 @@ public class SyncPermissionsHandler : IDisposable
     public SyncPermissionsHandler(FriendsListService friends, NetworkService network)
     {
         _friends = friends;
-        
+
         _handler = network.Connection.On<SyncPermissionsCommand>(HubMethod.SyncPermissions, Handle);
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="SyncPermissionsHandler"/>
     /// </summary>

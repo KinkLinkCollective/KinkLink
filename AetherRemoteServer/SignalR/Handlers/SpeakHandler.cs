@@ -26,11 +26,11 @@ public class SpeakHandler(IPresenceService presenceService, IForwardedRequestMan
             logger.LogWarning("{Sender} sent invalid speak request {Error}", senderFriendCode, error);
             return new ActionResponse(error, []);
         }
-        
+
         var speak = request.ChatChannel.ToSpeakPermissions(request.Extra);
         if (speak is SpeakPermissions2.None)
             logger.LogWarning("{Sender} tried to request with empty permissions {Request}", senderFriendCode, request);
-        
+
         var permissions = new UserPermissions(PrimaryPermissions2.None, speak, ElevatedPermissions.None);
         var command = new SpeakCommand(senderFriendCode, request.Message, request.ChatChannel, request.Extra);
         return await forwardedRequestManager.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, HubMethod.Speak, permissions, command, clients);
@@ -40,16 +40,16 @@ public class SpeakHandler(IPresenceService presenceService, IForwardedRequestMan
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.UnexpectedState;
-        
+
         if (request.TargetFriendCodes.Count > Constraints.MaximumTargetsForInGameOperations)
             return ActionResponseEc.TooManyTargets;
-        
+
         if (VerificationUtilities.ValidListOfFriendCodes(request.TargetFriendCodes) is false)
             return ActionResponseEc.BadTargets;
-        
+
         if (VerificationUtilities.ValidMessageLengths(request.Message, request.Extra) is false)
             return ActionResponseEc.BadDataInRequest;
-        
+
         return null;
     }
 }

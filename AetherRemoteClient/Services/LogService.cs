@@ -21,7 +21,7 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = $"Rejected {operation} action from {sender} because you are in safe mode"
         };
-        
+
         Logs.Add(log);
     }
 
@@ -35,7 +35,7 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = $"Rejected {operation} action from {sender} because you are not friends"
         };
-        
+
         Logs.Add(log);
     }
 
@@ -49,7 +49,7 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = $"Rejected {operation} action from {sender} because you are overriding it locally"
         };
-        
+
         Logs.Add(log);
     }
 
@@ -63,7 +63,7 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = $"Rejected {operation} action from {sender} because they are lacking permissions"
         };
-        
+
         Logs.Add(log);
     }
 
@@ -77,10 +77,10 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = $"Rejected {operation} action from {sender} because they send invalid data"
         };
-        
+
         Logs.Add(log);
     }
-    
+
     /// <summary>
     ///     Logs a command rejection due to invalid data
     /// </summary>
@@ -91,7 +91,7 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = $"Unable to process {operation} action from {sender} because you lack a local body"
         };
-        
+
         Logs.Add(log);
     }
 
@@ -102,10 +102,10 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = $"Rejected {operation} action from {sender} because you have them paused"
         };
-        
+
         Logs.Add(log);
     }
-    
+
     public void FeaturePaused(string operation, string sender)
     {
         var log = new InternalLog
@@ -113,7 +113,7 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = $"Rejected {operation} action from {sender} because you have that feature paused"
         };
-        
+
         Logs.Add(log);
     }
 
@@ -127,7 +127,7 @@ public class LogService
             TimeStamp = DateTime.Now,
             Message = message
         };
-        
+
         Logs.Add(log);
     }
 }

@@ -14,7 +14,7 @@ namespace AetherRemoteClient.UI.Views.Pause;
 
 public class PauseViewUi(
     PauseViewUiController controller,
-    FriendsListService friendsListService, 
+    FriendsListService friendsListService,
     PauseService pauseService) : IDrawable
 {
     public void Draw()
@@ -29,15 +29,15 @@ public class PauseViewUi(
             {
                 ImGui.TextUnformatted("Pausing a feature disables all incoming requests of that feature");
             });
-            
+
             SharedUserInterfaces.ContentBox("PauseSpeakPermissions", AetherRemoteStyle.PanelBackground, true, () =>
             {
                 ImGui.TextUnformatted("Speak Permissions");
                 if (ImGui.BeginTable("GeneralSpeakPermissions", 4) is false)
                     return;
-                
+
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.None);
-                
+
                 ImGui.TableNextColumn();
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Say);
                 ImGui.TableNextColumn();
@@ -58,16 +58,16 @@ public class PauseViewUi(
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Echo);
                 ImGui.TableNextColumn();
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Roleplay);
-                    
+
                 ImGui.EndTable();
             });
-            
+
             SharedUserInterfaces.ContentBox("PauseLinkshellPermissions", AetherRemoteStyle.PanelBackground, true, () =>
             {
                 ImGui.TextUnformatted("Linkshell Permissions");
                 if (ImGui.BeginTable("LinkshellSpeakPermissions", 4) is false)
                     return;
-                
+
                 ImGui.TableNextColumn();
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls1);
                 ImGui.TableNextColumn();
@@ -84,16 +84,16 @@ public class PauseViewUi(
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls7);
                 ImGui.TableNextColumn();
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls8);
-                
+
                 ImGui.EndTable();
             });
-            
+
             SharedUserInterfaces.ContentBox("PauseCrossWorldPermissions", AetherRemoteStyle.PanelBackground, true, () =>
             {
                 ImGui.TextUnformatted("Cross-world Linkshell Permissions");
                 if (ImGui.BeginTable("Cross-worldLinkshellPermissions", 4) is false)
                     return;
-                
+
                 ImGui.TableNextColumn();
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl1);
                 ImGui.TableNextColumn();
@@ -110,21 +110,21 @@ public class PauseViewUi(
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl7);
                 ImGui.TableNextColumn();
                 BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl8);
-                    
+
                 ImGui.EndTable();
             });
-            
+
             SharedUserInterfaces.ContentBox("PauseGeneralPermissions", AetherRemoteStyle.PanelBackground, true, () =>
             {
                 ImGui.TextUnformatted("General Permissions");
                 if (ImGui.BeginTable("GeneralPermissions", 2) is false)
                     return;
-                
+
                 ImGui.TableNextColumn();
                 BuildPauseButtonForPrimaryFeature(PrimaryPermissions2.Emote);
                 ImGui.TableNextColumn();
                 BuildPauseButtonForPrimaryFeature(PrimaryPermissions2.Hypnosis);
-                    
+
                 ImGui.EndTable();
             });
 
@@ -150,11 +150,11 @@ public class PauseViewUi(
                     BuildPauseButtonForPrimaryFeature(PrimaryPermissions2.CustomizePlus);
                     ImGui.TableNextColumn();
                     BuildPauseButtonForPrimaryFeature(PrimaryPermissions2.Honorific);
-                    
+
                     ImGui.EndTable();
                 }
             });
-            
+
             /*
             SharedUserInterfaces.ContentBox("TransformationElevatedPermissions", AetherRemoteStyle.ElevatedBackground, false, () =>
             {
@@ -168,10 +168,10 @@ public class PauseViewUi(
                 ImGui.EndTable();
             });
             */
-            
+
             ImGui.EndChild();
         }
-        
+
         ImGui.SameLine();
 
         if (ImGui.BeginChild("PauseFriendHeader", Vector2.Zero, false, AetherRemoteStyle.ContentFlags))
@@ -179,7 +179,7 @@ public class PauseViewUi(
             SharedUserInterfaces.ContentBox("PauseFriendList", AetherRemoteStyle.PanelBackground, true, () =>
             {
                 ImGui.TextUnformatted("Pause Friend");
-                
+
                 ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - ImGui.GetCursorPos().X - ImGui.GetStyle().WindowPadding.X);
                 ImGui.InputTextWithHint("##SearchFriendInputText", "Search", ref controller.SearchString, 1000);
             });
@@ -189,13 +189,13 @@ public class PauseViewUi(
                 var sorted = friendsListService.Friends.OrderBy(f => f.NoteOrFriendCode).ToList();
                 for (var i = 0; i < sorted.Count; i++)
                     BuildPauseButtonForFriend(sorted[i]);
-                
+
                 ImGui.EndChild();
             }
 
             ImGui.EndChild();
         }
-        
+
         ImGui.PopStyleVar();
         ImGui.EndChild();
     }
@@ -218,7 +218,7 @@ public class PauseViewUi(
         ImGui.SameLine();
         ImGui.TextUnformatted(friend.NoteOrFriendCode);
     }
-    
+
     private void BuildPauseButtonForSpeakFeature(SpeakPermissions2 permissions)
     {
         if (pauseService.IsFeaturePaused(permissions))
@@ -256,7 +256,7 @@ public class PauseViewUi(
         ImGui.SameLine();
         ImGui.TextUnformatted(permissions.ToString());
     }
-    
+
     // TODO: Re-Enable when a new Mare solution is made
     /*
     private void BuildPauseButtonForElevatedFeature(ElevatedPermissions permissions)

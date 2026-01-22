@@ -1,0 +1,84 @@
+version: "3"
+services:
+  # Traefik reverse proxy for development
+  traefik:
+    image: traefik:v3
+    container_name: kl-traefik
+    command:
+      - "--configFile=/etc/traefik/traefik.yaml"
+    ports:
+      - "8080:5006" # HTTP + HTTP/3
+    volumes:
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./traefik/dynamic.yaml:/etc/traefik/dynamic.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - kinklink-network
+    depends_on:
+      - kinklink
+
+  # This is the kinklink main service instance
+  kinklink:
+    build:
+      context: .
+      target: server
+    # Identifies the container's name on the host network
+    container_name: kl-app
+    # Traefik routing labels
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kinklink.rule=Host(`localhost`)"
+      - "traefik.http.routers.kinklink.entrypoints=web"
+      - "traefik.http.services.kinklink.loadbalancer.server.port=5006"
+    # While the actual host should be behind some kind of reverse proxy,
+    # For testing we can expose the port directly on port 80 on the host (your PC)
+    # Then this with send all traffic to port 8080 which kinklink actually listens on.
+    expose:
+      - 5006
+    # Docker volumes are where the data gets mounted in the image.
+    # This docker volume contains all the persistent data used by kinklink
+    volumes:
+      - ./AetherRemoteServer/appsettings.json:/app/appsettings.json:ro
+      - ./config.json:/app/config.json:ro
+      - kl-data:/data
+    environment:
+      - ./.env
+    # kinklink itself depends on both the postgres and the redis instances being up
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # For simplicity we create a single docker network to link the services together
+    networks:
+      - kinklink-network
+
+  # Postgres DB image
+  postgres:
+    image: postgres:18-bookworm
+    restart: always
+    container_name: postgres
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test:
+        [CMD-SHELL, "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - 5432:5432
+    volumes:
+      - pg-data:/var/lib/postgresql/18/docker
+    networks:
+      - kinklink-network
+
+volumes:
+  pg-data:
+  redis-data:
+  kl-data:
+
+networks:
+  kinklink-network:

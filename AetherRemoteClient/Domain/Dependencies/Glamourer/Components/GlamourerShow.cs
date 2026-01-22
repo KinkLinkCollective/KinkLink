@@ -11,7 +11,7 @@ public class GlamourerShow
     {
         return $"Show: {Show}, Apply: {Apply}, Show: {Show}";
     }
-    
+
     public bool IsEqualTo(GlamourerShow other)
     {
         if (Apply != other.Apply) return false;

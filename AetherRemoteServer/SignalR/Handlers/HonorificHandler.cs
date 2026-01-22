@@ -28,17 +28,17 @@ public class HonorificHandler(IPresenceService presenceService, IForwardedReques
         var command = new HonorificCommand(senderFriendCode, request.Honorific);
         return await forwardedRequest.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, Method, Permissions, command, clients);
     }
-    
+
     private ActionResponseEc? ValidateHonorificRequest(string senderFriendCode, HonorificRequest request)
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.TooManyRequests;
-        
+
         if (VerificationUtilities.ValidListOfFriendCodes(request.TargetFriendCodes) is false)
             return ActionResponseEc.BadDataInRequest;
-        
+
         // TODO: Define rules for validating Honorific data
-        
+
         return null;
     }
 }

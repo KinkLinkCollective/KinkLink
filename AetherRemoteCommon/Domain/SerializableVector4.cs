@@ -18,7 +18,7 @@ public struct SerializableVector4
     {
         return $"{X}, {Y}, {Z}, {W}";
     }
-    
+
     public static implicit operator Vector4(SerializableVector4 v) => new(v.X, v.Y, v.Z, v.W);
     public static implicit operator SerializableVector4(Vector4 v) => new() { X = v.X, Y = v.Y, Z = v.Z, W = v.W };
 }

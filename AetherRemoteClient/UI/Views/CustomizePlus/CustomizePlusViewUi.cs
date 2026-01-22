@@ -17,11 +17,11 @@ public class CustomizePlusViewUi(
 {
     // Const
     private const int SendProfileButtonHeight = 40;
-    
+
     public void Draw()
     {
         ImGui.BeginChild("CustomizePlusContent", AetherRemoteStyle.ContentSize, false, AetherRemoteStyle.ContentFlags);
-        
+
         var width = ImGui.GetWindowWidth();
         var padding = new Vector2(ImGui.GetStyle().WindowPadding.X, 0);
 
@@ -48,7 +48,7 @@ public class CustomizePlusViewUi(
             {
                 if (folder.Content.Count is 0)
                     continue;
-                
+
                 if (ImGui.CollapsingHeader(folder.Path))
                 {
                     ImGui.PushStyleColor(ImGuiCol.Header, AetherRemoteStyle.PrimaryColor);
@@ -58,23 +58,23 @@ public class CustomizePlusViewUi(
                         var size = i % 2 is 0
                             ? new Vector2(half - padding.X * 2, 0)
                             : new Vector2(half - padding.X, 0);
-                        
-                        if (ImGui.Selectable( profile.Name, profile.Guid == controller.SelectedProfileId, ImGuiSelectableFlags.None, size))
-                            controller.SelectedProfileId =  profile.Guid;
-                        
+
+                        if (ImGui.Selectable(profile.Name, profile.Guid == controller.SelectedProfileId, ImGuiSelectableFlags.None, size))
+                            controller.SelectedProfileId = profile.Guid;
+
                         if (i % 2 is 0 && i < folder.Content.Count - 1)
                             ImGui.SameLine(half);
                     }
-                    
+
                     ImGui.PopStyleColor();
                 }
             }
-            
+
             ImGui.EndChild();
         }
-        
+
         ImGui.Spacing();
-        
+
         SharedUserInterfaces.ContentBox("CustomizePlusSend", AetherRemoteStyle.PanelBackground, false, () =>
         {
             if (selectionManager.Selected.Count is 0)

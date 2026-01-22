@@ -10,7 +10,7 @@ public class GlamourerPercentage
     public float Percentage;
 
     public GlamourerPercentage Clone() => (GlamourerPercentage)MemberwiseClone();
-    
+
     public bool IsEqualTo(GlamourerPercentage other)
     {
         if (Apply != other.Apply) return false;

@@ -29,12 +29,12 @@ public class FriendsViewUiController : IDisposable
     ///     Friend Code is display
     /// </summary>
     public string FriendCode = string.Empty;
-    
+
     /// <summary>
     ///     Note to display
     /// </summary>
     public string Note = string.Empty;
-    
+
     /// <summary>
     ///     The current friend whose permissions you are editing
     /// </summary>
@@ -48,7 +48,7 @@ public class FriendsViewUiController : IDisposable
         _friendsListService = friendsListService;
         _networkService = networkService;
         _selectionManager = selectionManager;
-        
+
         _selectionManager.FriendSelected += OnSelectedChangedEvent;
     }
 
@@ -81,7 +81,7 @@ public class FriendsViewUiController : IDisposable
                 _friendBeingEdited.Note = Note == string.Empty ? null : Note;
                 _friendBeingEdited.PermissionsGrantedToFriend = permissions;
                 _friendBeingEditedUserPermissionsOriginal = BooleanUserPermissions.From(permissions);
-                
+
                 NotificationHelper.Success("Successfully saved friend", string.Empty);
             }
             else
@@ -111,7 +111,7 @@ public class FriendsViewUiController : IDisposable
             {
                 _friendsListService.Delete(_friendBeingEdited);
                 _friendBeingEdited = null;
-                
+
                 NotificationHelper.Success("Successfully deleted friend", string.Empty);
             }
             else
@@ -124,7 +124,7 @@ public class FriendsViewUiController : IDisposable
             Plugin.Log.Warning($"Unable to delete friend, {e.Message}");
         }
     }
-    
+
     /// <summary>
     ///     Checks to see if there are pending changes to the friend you are currently editing
     /// </summary>
@@ -135,7 +135,7 @@ public class FriendsViewUiController : IDisposable
 
         if (EditingUserPermissions.Equals(_friendBeingEditedUserPermissionsOriginal) is false)
             return true;
-        
+
         var note = Note == string.Empty ? null : Note;
         return note != _friendBeingEdited.Note;
     }

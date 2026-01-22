@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using AetherRemoteClient.Managers;
 using AetherRemoteClient.Services;
 using AetherRemoteClient.UI;
 using AetherRemoteClient.Utils;
@@ -19,24 +18,21 @@ public class ChatCommandHandler : IDisposable
     private const string StopArg = "stop";
     private const string SafeMode = "safemode";
     private const string SafeWord = "safeword";
-    
+
     // Injected
     private readonly ActionQueueService _actionQueueService;
-    private readonly HypnosisManager _hypnosisManager;
     private readonly PermanentTransformationHandler _permanentTransformationHandler;
     private readonly MainWindow _mainWindow;
-    
+
     public ChatCommandHandler(
         ActionQueueService actionQueueService,
-        HypnosisManager hypnosisManager,
         PermanentTransformationHandler permanentTransformationHandler,
         MainWindow mainWindow)
     {
         _actionQueueService = actionQueueService;
-        _hypnosisManager = hypnosisManager;
         _permanentTransformationHandler = permanentTransformationHandler;
         _mainWindow = mainWindow;
-        
+
         Plugin.CommandManager.AddHandler(CommandNameShort, new CommandInfo(OnCommand)
         {
             HelpMessage = $"""
@@ -46,18 +42,18 @@ public class ChatCommandHandler : IDisposable
                            /ar {SafeWord} - Put the plugin into safe mode
                            """
         });
-        
+
         Plugin.CommandManager.AddHandler(CommandNameFull, new CommandInfo(OnCommand)
         {
             ShowInHelp = false
         });
-        
+
         Plugin.CommandManager.AddHandler(CommandNameOld, new CommandInfo(OnCommand)
         {
             ShowInHelp = false
         });
     }
-    
+
     private async void OnCommand(string command, string args)
     {
         try
@@ -73,27 +69,23 @@ public class ChatCommandHandler : IDisposable
             {
                 case StopArg:
                     // Stop any spirals
-                    _hypnosisManager.Wake();
                     payloads.Add(new UIForegroundPayload(AetherRemoteStyle.TextColorPurple));
                     payloads.Add(new TextPayload("[AetherRemote] "));
                     payloads.Add(UIForegroundPayload.UIForegroundOff);
-                    payloads.Add( new TextPayload("Stopped current spirals"));
+                    payloads.Add(new TextPayload("Stopped current spirals"));
                     break;
-                
+
                 case SafeMode:
                 case SafeWord:
                     _permanentTransformationHandler.ForceClearPermanentTransformation();
-                    
-                    // Stop any spirals
-                    _hypnosisManager.Wake();
-                    
+
                     // Clear pending chat commands
                     _actionQueueService.Clear();
-                    
+
                     // Enter safe mode
                     Plugin.Configuration.SafeMode = true;
                     await Plugin.Configuration.Save().ConfigureAwait(false);
-                    
+
                     payloads.Add(new UIForegroundPayload(AetherRemoteStyle.TextColorPurple));
                     payloads.Add(new TextPayload("[AetherRemote] "));
                     payloads.Add(UIForegroundPayload.UIForegroundOff);
@@ -102,7 +94,7 @@ public class ChatCommandHandler : IDisposable
                     payloads.Add(new TextPayload("safe mode"));
                     payloads.Add(UIForegroundPayload.UIForegroundOff);
                     break;
-                
+
                 default:
                     payloads.Add(new UIForegroundPayload(AetherRemoteStyle.TextColorPurple));
                     payloads.Add(new TextPayload("[AetherRemote] "));
@@ -110,7 +102,7 @@ public class ChatCommandHandler : IDisposable
                     payloads.Add(new TextPayload($"Unknown argument \"{args}\""));
                     break;
             }
-            
+
             if (payloads.Count > 0)
                 Plugin.ChatGui.Print(new SeString(payloads));
         }
@@ -125,7 +117,7 @@ public class ChatCommandHandler : IDisposable
         Plugin.CommandManager.RemoveHandler(CommandNameShort);
         Plugin.CommandManager.RemoveHandler(CommandNameFull);
         Plugin.CommandManager.RemoveHandler(CommandNameOld);
-        
+
         GC.SuppressFinalize(this);
     }
 }

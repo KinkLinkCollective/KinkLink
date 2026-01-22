@@ -41,7 +41,7 @@ public class CommandLockoutService : IDisposable
     {
         IsLocked = false;
     }
-    
+
     public void Dispose()
     {
         _commandLockoutTimer.Elapsed -= LockoutComplete;

@@ -17,12 +17,12 @@ public class HonorificTitle
     ///     The title of this honorific
     /// </summary>
     public string? Title = string.Empty;
-    
+
     /// <summary>
     ///     The color of this honorific, if one exists
     /// </summary>
     public Vector3? Color;
-    
+
     /// <summary>
     ///     The color glow of this honorific, if one exists
     /// </summary>

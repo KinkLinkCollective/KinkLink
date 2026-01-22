@@ -17,7 +17,7 @@ public class MoodlesHandler(IPresenceService presenceService, IForwardedRequestM
 {
     private const string Method = HubMethod.Moodles;
     private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Moodles, SpeakPermissions2.None, ElevatedPermissions.None);
-    
+
     /// <summary>
     ///     Handles the request
     /// </summary>
@@ -32,12 +32,12 @@ public class MoodlesHandler(IPresenceService presenceService, IForwardedRequestM
         var command = new MoodlesCommand(senderFriendCode, request.Info);
         return await forwardedRequestManager.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, Method, Permissions, command, clients);
     }
-    
+
     private ActionResponseEc? ValidateEmoteRequest(string senderFriendCode, MoodlesRequest request)
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.TooManyRequests;
-        
+
         if (VerificationUtilities.ValidListOfFriendCodes(request.TargetFriendCodes) is false)
             return ActionResponseEc.BadDataInRequest;
 

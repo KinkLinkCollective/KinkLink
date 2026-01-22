@@ -21,19 +21,19 @@ public static class SharedUserInterfaces
         ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
 
     private const ImGuiWindowFlags ComboWithFilterFlags = PopupWindowFlags | ImGuiWindowFlags.ChildWindow;
-    
+
     public const int MassiveFontSize = 300;
     public static ImFontPtr MassiveFont { get; private set; }
     private static IFontHandle? _massiveFont;
-    
+
     private static readonly SafeFontConfig DefaultFontConfig = new() { SizePx = MassiveFontSize };
-    
+
     public const int BigFontSize = 38;
     private static IFontHandle? _bigFont;
 
     public const int MediumFontSize = 24;
     private static IFontHandle? _mediumFont;
-    
+
     /// <summary>
     ///     Draws a tool tip for the last hovered ImGui component
     /// </summary>
@@ -54,7 +54,7 @@ public static class SharedUserInterfaces
     {
         if (ImGui.IsItemHovered() is false)
             return;
-        
+
         ImGui.SetTooltip(string.Join(Environment.NewLine, tips));
     }
 
@@ -79,7 +79,7 @@ public static class SharedUserInterfaces
         var raw = id is null
             ? string.Concat(icon.ToIconString())
             : string.Concat(icon.ToIconString(), "##", id);
-        
+
         ImGui.PushFont(UiBuilder.IconFont);
         var result = ImGui.Button(raw, size ?? Vector2.Zero);
         ImGui.PopFont();
@@ -102,7 +102,7 @@ public static class SharedUserInterfaces
     public static bool IconOptionButton(FontAwesomeIcon icon, Vector2 size, string tooltip, bool selected)
     {
         ImGui.PushFont(UiBuilder.IconFont);
-        
+
         bool result;
         if (selected)
         {
@@ -114,12 +114,12 @@ public static class SharedUserInterfaces
         {
             result = ImGui.Button(icon.ToIconString(), size);
         }
-        
+
         ImGui.PopFont();
-        
+
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(tooltip);
-        
+
         return result;
     }
 
@@ -129,7 +129,7 @@ public static class SharedUserInterfaces
     public static void MediumText(string text, Vector4? color = null)
     {
         _mediumFont?.Push();
-        
+
         if (color is null)
             ImGui.TextUnformatted(text);
         else
@@ -152,12 +152,12 @@ public static class SharedUserInterfaces
             ImGui.Selectable(text, false, ImGuiSelectableFlags.None, ImGui.CalcTextSize(text));
             ImGui.PopStyleColor();
         }
-        
+
         _mediumFont?.Pop();
-        
+
         if (tooltip is null)
             return;
-        
+
         if (ImGui.IsItemHovered())
             ImGui.SetTooltip(tooltip);
     }
@@ -189,12 +189,12 @@ public static class SharedUserInterfaces
 
         _bigFont?.Pop();
     }
-    
+
     public static void PushMassiveFont() => _massiveFont?.Push();
     public static void PopMassiveFont() => _massiveFont?.Pop();
     public static void PushBigFont() => _bigFont?.Push();
     public static void PopBigFont() => _bigFont?.Pop();
-    
+
     /// <summary>
     ///     Creates a button the size of a <see cref="ContentBox"/> on the right
     /// </summary>
@@ -203,10 +203,10 @@ public static class SharedUserInterfaces
         var previousRectSize = ImGui.GetItemRectSize();
         var returnPoint = ImGui.GetCursorPosY();
         var begin = returnPoint - previousRectSize.Y - padding.Y * 2;
-        
+
         var x = windowWidth - previousRectSize.Y - padding.X;
         var size = new Vector2(x, begin);
-        
+
         ImGui.SetCursorPos(size);
         var clicked = IconButton(icon, new Vector2(previousRectSize.Y));
         ImGui.SetCursorPosY(returnPoint);
@@ -251,12 +251,12 @@ public static class SharedUserInterfaces
 
         ImGui.EndPopup();
     }
-    
+
     /// <summary>
     ///     Dictionary used to store the calculated sizes of all content boxes
     /// </summary>
     private static readonly Dictionary<string, Vector2> ContextBoxSizeCache = [];
-    
+
     /// <summary>
     ///     Draws a box of arbitrary size
     /// </summary>
@@ -273,16 +273,16 @@ public static class SharedUserInterfaces
 
         if (ContextBoxSizeCache.TryGetValue(id, out var cached))
             draw.AddRectFilled(startScreenPos, startScreenPos + cached, backgroundColor, AetherRemoteStyle.Rounding);
-        
+
         ImGui.SetCursorPos(startCursorPos + padding);
-        
+
         ImGui.BeginGroup();
         contentToDraw();
         ImGui.EndGroup();
 
         var itemSize = ImGui.GetItemRectSize();
         var size = new Vector2(ImGui.GetWindowWidth(), itemSize.Y + padding.Y * 2);
-        
+
         ContextBoxSizeCache[id] = size;
         ImGui.SetCursorPosY(startCursorPos.Y + size.Y + (includeEndPadding ? padding.Y : 0));
     }
@@ -303,7 +303,7 @@ public static class SharedUserInterfaces
         {
             var path = Path.Combine(Plugin.PluginInterface.DalamudAssetDirectory.FullName, "UIRes",
                 "Inconsolata-Regular.ttf");
-            
+
             if (File.Exists(path))
                 dalamudFontDirectory = path;
         }
@@ -311,17 +311,17 @@ public static class SharedUserInterfaces
         {
             Plugin.Log.Warning($"Unexpectedly failed to read `Inconsolata-Regular` font, {e.Message}");
         }
-        
+
         _massiveFont = Plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(toolkit =>
         {
             toolkit.OnPreBuild(preBuild =>
             {
-                MassiveFont = dalamudFontDirectory is null 
-                    ? preBuild.AddDalamudDefaultFont(MassiveFontSize) 
+                MassiveFont = dalamudFontDirectory is null
+                    ? preBuild.AddDalamudDefaultFont(MassiveFontSize)
                     : preBuild.AddFontFromFile(dalamudFontDirectory, DefaultFontConfig);
             });
         });
-        
+
         _bigFont = Plugin.PluginInterface.UiBuilder.FontAtlas.NewDelegateFontHandle(toolkit =>
         {
             toolkit.OnPreBuild(preBuild => { preBuild.AddDalamudDefaultFont(BigFontSize); });

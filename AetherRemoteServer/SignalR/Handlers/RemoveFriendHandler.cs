@@ -27,15 +27,15 @@ public class RemoveFriendHandler(IPresenceService presenceService, IDatabaseServ
         // If the request wasn't meaningful
         if (result is not RemoveFriendEc.Success)
             return new RemoveFriendResponse(result);
-        
+
         // If the target isn't online
         if (presenceService.TryGet(request.TargetFriendCode) is not { } friend)
             return new RemoveFriendResponse(result);
-        
+
         // If the target is online, but they don't have us added
         if (await databaseService.GetPermissions(request.TargetFriendCode, senderFriendCode) is null)
             return new RemoveFriendResponse(result);
-        
+
         try
         {
             // Send a message to say our status goes from online to pending
@@ -46,7 +46,7 @@ public class RemoveFriendHandler(IPresenceService presenceService, IDatabaseServ
         {
             logger.LogError("Syncing online status {Sender} -> {Target} failed, {Error}", senderFriendCode, request.TargetFriendCode, e);
         }
-        
+
         // Return always
         return new RemoveFriendResponse(result);
     }

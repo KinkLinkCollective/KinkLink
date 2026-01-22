@@ -8,7 +8,7 @@ public enum ElevatedPermissions
 {
     // No Permissions
     None = 0,
-    
+
     /// <summary>
     ///     Allows for the saving of an appearance permanently
     /// </summary>

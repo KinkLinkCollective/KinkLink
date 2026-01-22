@@ -1,0 +1,31 @@
+# Traefik Static Configuration
+# Development setup for AetherRemote with HTTP + HTTP/3
+
+# EntryPoints - HTTP with HTTP/3 (QUIC)
+entryPoints:
+  web:
+    address: ":5006"
+    http3: {}  # Enable HTTP/3/QUIC
+    http:
+      redirections:
+        entryPoint:
+          to: web
+          scheme: http
+          permanent: true
+
+# Providers
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  file:
+    directory: "/etc/traefik/dynamic"
+
+# API & Dashboard (development only - insecure)
+api:
+  dashboard: true
+  insecure: true
+
+# Logging
+log:
+  level: DEBUG

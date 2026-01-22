@@ -11,7 +11,7 @@ namespace AetherRemoteClient.Domain.Attributes;
 public class HonorificAttribute(HonorificService honorific, ushort characterIndex) : ICharacterAttribute
 {
     private HonorificInfo _honorific = new();
-    
+
     public async Task<bool> Store()
     {
         if (await honorific.GetCharacterTitle(characterIndex).ConfigureAwait(false) is not { } json)
@@ -19,7 +19,7 @@ public class HonorificAttribute(HonorificService honorific, ushort characterInde
             Plugin.Log.Warning("[HonorificAttribute.Store] Could not get character's title");
             return false;
         }
-        
+
         _honorific = json;
         return true;
     }
@@ -33,7 +33,7 @@ public class HonorificAttribute(HonorificService honorific, ushort characterInde
         }
 
         NotificationHelper.Honorific();
-        
+
         // TODO: Update PermanentTransformationData with Honorific
         return true;
     }

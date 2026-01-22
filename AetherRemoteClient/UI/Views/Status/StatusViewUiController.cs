@@ -19,12 +19,12 @@ public class StatusViewUiController(
     PermanentTransformationHandler permanentTransformationHandler)
 {
     public readonly FourDigitInput PinInput = new("StatusInput");
-    
+
     /// <summary>
     ///     Attempt to unlock the client's appearance
     /// </summary>
     public void Unlock() => permanentTransformationHandler.TryClearPermanentTransformation(PinInput.Value);
-    
+
     /// <summary>
     ///     Button event to trigger a server disconnect
     /// </summary>
@@ -69,7 +69,7 @@ public class StatusViewUiController(
             // Ignored
         }
     }
-    
+
     public async void ResetCollection()
     {
         try

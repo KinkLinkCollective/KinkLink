@@ -13,7 +13,7 @@ public partial class PrimaryHub
     {
         return await customizePlusHandler.Handle(FriendCode, request, Clients);
     }
-    
+
     [HubMethodName(HubMethod.Honorific)]
     public async Task<ActionResponse> Honorific(HonorificRequest request)
     {
@@ -21,7 +21,7 @@ public partial class PrimaryHub
         LogWithBehavior($"[HonorificRequest] Sender = {friendCode}, Targets = {string.Join(", ", request.TargetFriendCodes)}, Honorific = {request.Honorific}", LogMode.Console);
         return await honorificHandler.Handle(friendCode, request, Clients);
     }
-    
+
     [HubMethodName(HubMethod.Moodles)]
     public async Task<ActionResponse> GetMoodlesAction(MoodlesRequest request)
     {

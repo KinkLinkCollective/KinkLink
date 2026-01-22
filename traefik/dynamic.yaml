@@ -1,0 +1,11 @@
+# Traefik Dynamic Configuration
+# HTTP routing for development
+
+http:
+  # Dashboard routing
+  http:
+    routers:
+      dashboard:
+        rule: "Host(`localhost`)"
+        service: "api@internal"
+        entrypoint: "web"

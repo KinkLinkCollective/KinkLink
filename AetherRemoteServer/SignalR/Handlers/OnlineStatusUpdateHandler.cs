@@ -25,7 +25,7 @@ public class OnlineStatusUpdateHandler(IDatabaseService database, IPresenceServi
             // Ignore pending friends
             if (permission.PermissionsGrantedBy is null)
                 continue;
-            
+
             // Only evaluate online friends
             if (presenceService.TryGet(permission.TargetFriendCode) is not { } target)
                 continue;

@@ -14,7 +14,7 @@ public partial class PrimaryHub
         LogWithBehavior($"[HypnosisRequest] Sender = {friendCode}, Targets = {string.Join(", ", request.TargetFriendCodes)}, Words = {string.Join(", ", request.Data.TextWords)}", LogMode.Both);
         return await hypnosisHandler.Handle(friendCode, request, Clients);
     }
-    
+
     [HubMethodName(HubMethod.HypnosisStop)]
     public async Task<ActionResponse> HypnosisStop(HypnosisStopRequest request)
     {

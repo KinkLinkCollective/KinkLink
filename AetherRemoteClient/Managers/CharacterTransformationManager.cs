@@ -26,15 +26,15 @@ namespace AetherRemoteClient.Managers;
 ///     Manages the application of transformations to the local player
 /// </summary>
 public class CharacterTransformationManager(
-    CustomizePlusService customizePlusService, 
-    GlamourerService glamourerService, 
+    CustomizePlusService customizePlusService,
+    GlamourerService glamourerService,
     HonorificService honorificService,
-    MoodlesService moodlesService, 
+    MoodlesService moodlesService,
     PenumbraService penumbraService)
 {
     // Control how long the plugin should wait before initiating a transformation, useful for clients with high network latency
     private const int TransformationDelayInMilliseconds = 3000;
-    
+
     /// <summary>
     ///     Applies a glamourer code to the local player
     /// </summary> 
@@ -43,7 +43,7 @@ public class CharacterTransformationManager(
         // Convert to JObject
         if (GlamourerService.ConvertGlamourerBase64StringToJObject(glamourerCode) is not { } glamourerCodeAsComponents)
             return new ApplyGenericTransformationResult(ApplyGenericTransformationErrorCode.FailedBase64Conversion, null);
-        
+
         return await ApplyGenericTransformation(glamourerCodeAsComponents, flags).ConfigureAwait(false);
     }
 
@@ -55,17 +55,17 @@ public class CharacterTransformationManager(
         // Get local character data
         if (await glamourerService.GetDesignComponentsAsync(0).ConfigureAwait(false) is not { } local)
             return new ApplyGenericTransformationResult(ApplyGenericTransformationErrorCode.FailedToGetDesign, null);
-        
+
         // Append any details to the converted JObject to clean up the dyes
         if (GlamourerService.CreateJObjectToRevertExistingAdvancedDyes(local, glamourerJObject) is not { } glamourerCodeAsComponentsWithoutAdvancedDyes)
             return new ApplyGenericTransformationResult(ApplyGenericTransformationErrorCode.FailedToRemoveAdvancedDyes, null);
-        
+
         // Apply the newly converted design
-        return await glamourerService.ApplyDesignAsync(glamourerCodeAsComponentsWithoutAdvancedDyes, flags, 0).ConfigureAwait(false) 
+        return await glamourerService.ApplyDesignAsync(glamourerCodeAsComponentsWithoutAdvancedDyes, flags, 0).ConfigureAwait(false)
             ? new ApplyGenericTransformationResult(ApplyGenericTransformationErrorCode.Success, glamourerJObject)
             : new ApplyGenericTransformationResult(ApplyGenericTransformationErrorCode.FailedToApplyDesign, null);
     }
-    
+
     /// <summary>
     ///     Applies another character to the local player
     /// </summary>
@@ -76,39 +76,39 @@ public class CharacterTransformationManager(
         // Try to remove the existing mods on the current collection
         if (await TryRemoveExistingMods().ConfigureAwait(false) is not { } collection)
             return new ApplyCharacterTransformationResult(ApplyCharacterTransformationErrorCode.FailedToClearExistingMods, null);
-        
+
         // Try to get the target player to transform into from the object table
         if (await TryGetPlayerFromObjectTable(characterName).ConfigureAwait(false) is not { } gameObject)
             return new ApplyCharacterTransformationResult(ApplyCharacterTransformationErrorCode.FailedToFindCharacter, null);
-        
+
         // Try to store all the character data we will use in this transformation
         if (await TryGetPlayerAttributes(characterAttributes, gameObject, collection).ConfigureAwait(false) is not { } attributes)
             return new ApplyCharacterTransformationResult(ApplyCharacterTransformationErrorCode.FailedToStoreAttributes, null);
-        
+
         // Await a moment for other clients to get our local client's data
         await Task.Delay(TransformationDelayInMilliseconds).ConfigureAwait(false);
-        
+
         // Ready an object to store all the transformation data
         var permanent = new PermanentTransformationData();
-        
+
         // Apply in reverse order so that C+, Mods, etc... are applied first before glamourer
         attributes.Reverse();
-        
+
         // Iterate over all the attributes and try to apply them one by one
-        foreach(var attribute in attributes)
+        foreach (var attribute in attributes)
             if (await attribute.Apply(permanent).ConfigureAwait(false) is false)
                 return new ApplyCharacterTransformationResult(ApplyCharacterTransformationErrorCode.FailedToApplyAttributes, null);
-        
+
         // Return success with the transformation data
         return new ApplyCharacterTransformationResult(ApplyCharacterTransformationErrorCode.Success, permanent);
     }
-    
+
     public async Task ApplyPerm(PermanentTransformationData permanentTransformationData)
     {
         // Try to remove the existing mods on the current collection
         if (await TryRemoveExistingMods().ConfigureAwait(false) is not { } collection)
             return;
-        
+
         // Get local character data
         if (await glamourerService.GetDesignComponentsAsync(0).ConfigureAwait(false) is not { } localDesignJObject)
             return;
@@ -116,16 +116,16 @@ public class CharacterTransformationManager(
         // Convert to a glamourer design
         if (GlamourerDesignHelper.FromJObject(localDesignJObject) is not { } localDesign)
             return;
-        
+
         // Get a list of the materials to revert
         var designWithAdvancedDyesToRevert = AppendAdvanceDyesToRevertToNewGlamourerDesign(localDesign, permanentTransformationData.GlamourerDesign);
-        
+
         // Convert back to JObject
         var convertedDesign = GlamourerDesignHelper.ToJObject(designWithAdvancedDyesToRevert);
-        
+
         // Plugin.Log.Info($"Applying: {convertedDesign}");
         ImGui.SetClipboardText(convertedDesign.ToString());
-        
+
         // Apply Glamourer
         await glamourerService.ApplyDesignAsync(convertedDesign, permanentTransformationData.GlamourerApplyType, 0).ConfigureAwait(false);
 
@@ -154,11 +154,11 @@ public class CharacterTransformationManager(
         // If the collection guid is the empty guid return
         if (collection == Guid.Empty)
             return null;
-        
+
         // Remove Existing Temp Mods
         if (await penumbraService.CallRemoveTemporaryMod(collection).ConfigureAwait(false) is false)
             return null;
-        
+
         // Return the collection
         return collection;
     }
@@ -189,7 +189,7 @@ public class CharacterTransformationManager(
             // If the object was not found in the table, exit
             if (gameObject is null)
                 Plugin.Log.Warning($"[CharacterTransformationManager] [TryGetPlayerFromObjectTable] Unable to find {characterName} in object table");
-            
+
             // Return the result
             return gameObject;
         }
@@ -205,12 +205,12 @@ public class CharacterTransformationManager(
     {
         // Create a new attribute list
         var attributes = new List<ICharacterAttribute>();
-        
+
         // Store Glamourer always
         var glamourerAttribute = new GlamourerAttribute(this, glamourerService, gameObject.ObjectIndex);
         if (await glamourerAttribute.Store().ConfigureAwait(false) is false)
             return null;
-        
+
         // Add glamourer attribute
         attributes.Add(glamourerAttribute);
 
@@ -221,7 +221,7 @@ public class CharacterTransformationManager(
             var modsAttribute = new ModsAttribute(penumbraService, collection, gameObject.ObjectIndex);
             if (await modsAttribute.Store().ConfigureAwait(false) is false)
                 return null;
-            
+
             // Add mods attribute
             attributes.Add(modsAttribute);
         }
@@ -233,7 +233,7 @@ public class CharacterTransformationManager(
             var moodlesAttribute = new MoodlesAttribute(moodlesService, gameObject.Address);
             if (await moodlesAttribute.Store().ConfigureAwait(false) is false)
                 return null;
-            
+
             // Add Moodles attribute
             attributes.Add(moodlesAttribute);
         }
@@ -245,11 +245,11 @@ public class CharacterTransformationManager(
             var customizePlusAttribute = new CustomizePlusAttribute(customizePlusService, gameObject.Name.TextValue);
             if (await customizePlusAttribute.Store().ConfigureAwait(false) is false)
                 return null;
-            
+
             // Add CustomizePlus attribute
             attributes.Add(customizePlusAttribute);
         }
-        
+
         // Check if Honorific is one of the attributes to store
         if ((characterAttributes & CharacterAttributes.Honorific) is CharacterAttributes.Honorific)
         {
@@ -257,11 +257,11 @@ public class CharacterTransformationManager(
             var honorificAttribute = new HonorificAttribute(honorificService, gameObject.ObjectIndex);
             if (await honorificAttribute.Store().ConfigureAwait(false) is false)
                 return null;
-            
+
             // Add CustomizePlus attribute
             attributes.Add(honorificAttribute);
         }
-        
+
         // Return attributes
         return attributes;
     }
@@ -270,7 +270,7 @@ public class CharacterTransformationManager(
     {
         // Clone the target design
         var finalDesign = targetDesign.Clone();
-        
+
         // Iterate over all the materials on the local design
         foreach (var material in localDesign.Materials)
         {
@@ -278,17 +278,17 @@ public class CharacterTransformationManager(
             var slot = GlamourerDesignHelper.ToEquipmentSlot(material.Key);
             if (AffectsEquipmentSlot(slot, finalDesign.Equipment) is false)
                 continue;
-            
+
             // Check to see if the material is already present in the permanent transformation, and ignore it if is since it will be overwritten anyway
             if (finalDesign.Materials.ContainsKey(material.Key))
                 continue;
 
             // Copy the material
             var clone = material.Value.Clone();
-            
+
             // Mark it to revert when applied
             clone.Revert = true;
-            
+
             // Add to the final design
             finalDesign.Materials.Add(material.Key, clone);
         }

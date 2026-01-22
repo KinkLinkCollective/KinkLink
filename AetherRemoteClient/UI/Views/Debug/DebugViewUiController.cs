@@ -20,14 +20,14 @@ public class DebugViewUiController(HonorificService honorific)
             Plugin.Log.Warning($"{e}");
         }
     }
-    
+
     public async void Debug2()
     {
         try
         {
             if (Plugin.ObjectTable.LocalPlayer?.ObjectIndex is not { } index)
                 return;
-            
+
             await honorific.ClearCharacterTitle(index);
         }
         catch (Exception e)

@@ -20,7 +20,7 @@ public class ForwardedRequestManager(IDatabaseService database, IPresenceService
         {
             var target = targets[i];
             var (client, failure) = await EvaluateTargetAsync(sender, target, permissions, clients);
-            
+
             // If there is not a failure, proceed with the call, otherwise return the failure
             tasks[i] = failure is null
                 ? ForwardRequestWithTimeout<Unit>(method, client, request)
@@ -39,16 +39,12 @@ public class ForwardedRequestManager(IDatabaseService database, IPresenceService
     {
         if (presence.TryGet(targetFriendCode) is not { } target)
             return (null!, ActionResultBuilder.Fail(ActionResultEc.TargetOffline));
-        
+
         if (await database.GetPermissions(senderFriendCode, targetFriendCode) is not { } permissions)
             return (null!, ActionResultBuilder.Fail(ActionResultEc.TargetNotFriends));
 
         if (HasRequiredPermissions(permissions, required) is false)
-        {
-            logger.LogWarning("{Sender} @ {Target} needed {Required} but has {Permissions}", senderFriendCode, targetFriendCode, required, permissions);
-            return  (null!, ActionResultBuilder.Fail(ActionResultEc.TargetHasNotGrantedSenderPermissions));
-        }
-            
+            return (null!, ActionResultBuilder.Fail(ActionResultEc.TargetHasNotGrantedSenderPermissions));
 
         return (clients.Client(target.ConnectionId), null);
     }
@@ -59,7 +55,7 @@ public class ForwardedRequestManager(IDatabaseService database, IPresenceService
                && (granted.Speak & required.Speak) == required.Speak
                && (granted.Elevated & required.Elevated) == required.Elevated;
     }
-    
+
     /// <summary>
     ///     Forwards a request to a client with a timeout of 8 seconds
     /// </summary>

@@ -4,13 +4,12 @@ using AetherRemoteCommon.Domain.Enums.Permissions;
 using AetherRemoteServer.Domain;
 using AetherRemoteServer.Domain.Interfaces;
 using AetherRemoteServer.Domain.Shared;
-using Microsoft.Data.Sqlite;
-// ReSharper disable RedundantBoolCompare
+using Npgsql;
 
 namespace AetherRemoteServer.Services;
 
 /// <summary>
-///     Provides methods for interacting with the underlying Sqlite3 database
+///     Provides methods for interacting with the underlying PostgreSQL database
 /// </summary>
 public class DatabaseService : IDatabaseService
 {
@@ -18,39 +17,28 @@ public class DatabaseService : IDatabaseService
     private readonly ILogger<DatabaseService> _logger;
 
     // Instantiated
-    private readonly SqliteConnection _database;
+    private readonly NpgsqlConnection _database;
 
     /// <summary>
-    ///     <inheritdoc cref="DatabaseService"/>
+    ///     <inheritdoc cref=""/>
     /// </summary>
     public DatabaseService(Configuration configuration, ILogger<DatabaseService> logger)
     {
         // Inject
         _logger = logger;
 
-#if DEBUG
-        var path = configuration.BetaDatabasePath;
-#else
-        var path = configuration.ReleaseDatabasePath;
-#endif
-
-        var connection = new SqliteConnectionStringBuilder
-        {
-            Cache = SqliteCacheMode.Shared,
-            DataSource = path,
-            Mode = SqliteOpenMode.ReadWriteCreate
-        }.ToString();
+        var connectionString = configuration.DatabaseConnectionString;
 
         // Open Db
-        _database = new SqliteConnection(connection);
+        _database = new NpgsqlConnection(connectionString);
         _database.Open();
-        
+
         // Configure Db
         ConfigureDatabaseConnection();
     }
 
     /// <summary>
-    ///     Gets a user entry from the valid users table by secret 
+    ///     Gets a user entry from the accounts table by secret
     /// </summary>
     public async Task<string?> GetFriendCodeBySecret(string secret)
     {
@@ -75,32 +63,34 @@ public class DatabaseService : IDatabaseService
     /// </summary>
     public async Task<DatabaseResultEc> CreatePermissions(string senderFriendCode, string targetFriendCode)
     {
-        await using var transaction = (SqliteTransaction)await _database.BeginTransactionAsync();
+        await using var transaction = await _database.BeginTransactionAsync();
 
         try
         {
             // Result object awaiting population
             DatabaseResultEc result;
-            
+
             // Initial add command
             var command = _database.CreateCommand();
             command.Transaction = transaction;
-            command.CommandText = 
-                 """
-                    INSERT INTO Permissions (FriendCode, TargetFriendCode, PrimaryPermissions, SpeakPermissions, ElevatedPermissions)
-                    SELECT @friendCode, @targetFriendCode, @primary, @speak, @elevated
-                    WHERE EXISTS (
-                        SELECT 1 FROM Accounts WHERE FriendCode = @targetFriendCode
-                    )
-                 """;
+            command.CommandText =
+                """
+                INSERT INTO Permissions (FriendCode, TargetFriendCode, PrimaryPermissions, SpeakPermissions, ElevatedPermissions)
+                SELECT @friendCode, @targetFriendCode, @primary, @speak, @elevated
+                WHERE EXISTS (
+                    SELECT 1 FROM Accounts WHERE FriendCode = @targetFriendCode
+                )
+                ON CONFLICT DO NOTHING
+                """;
             command.Parameters.AddWithValue("@friendCode", senderFriendCode);
             command.Parameters.AddWithValue("@targetFriendCode", targetFriendCode);
             command.Parameters.AddWithValue("@primary", PrimaryPermissions2.None);
             command.Parameters.AddWithValue("@speak", SpeakPermissions2.None);
             command.Parameters.AddWithValue("@elevated", ElevatedPermissions.None);
-            
+
             // If nothing was added, that means we're already friends or friend code doesn't exist
-            if (await command.ExecuteNonQueryAsync() is 0)
+            var rowsAffected = await command.ExecuteNonQueryAsync();
+            if (rowsAffected == 0)
             {
                 // Check to see if the friend code exists, SenderAccountId will always exist because it is a requirement to connect and use the plugin
                 var failure = _database.CreateCommand();
@@ -119,7 +109,7 @@ public class DatabaseService : IDatabaseService
                 pair.Parameters.AddWithValue("@targetFriendCode", targetFriendCode);
                 result = await pair.ExecuteScalarAsync() is null ? DatabaseResultEc.Pending : DatabaseResultEc.Success;
             }
-            
+
             // Commit changes and return what happened
             await transaction.CommitAsync();
             return result;
@@ -147,7 +137,7 @@ public class DatabaseService : IDatabaseService
 
         try
         {
-            return await command.ExecuteNonQueryAsync() is 1 ? DatabaseResultEc.Success : DatabaseResultEc.NoOp;
+            return await command.ExecuteNonQueryAsync() == 1 ? DatabaseResultEc.Success : DatabaseResultEc.NoOp;
         }
         catch (Exception e)
         {
@@ -160,12 +150,12 @@ public class DatabaseService : IDatabaseService
     ///     <inheritdoc cref="IDatabaseService.GetPermissions"/>
     /// </summary>
     public async Task<UserPermissions?> GetPermissions(string friendCode, string targetFriendCode)
-    {   
+    {
         await using var command = _database.CreateCommand();
-        command.CommandText = 
+        command.CommandText =
             """
-                SELECT PrimaryPermissions, SpeakPermissions, ElevatedPermissions 
-                FROM Permissions 
+                SELECT PrimaryPermissions, SpeakPermissions, ElevatedPermissions
+                FROM Permissions
                 WHERE FriendCode = @friendCode AND TargetFriendCode = @targetFriendCode LIMIT 1
             """;
         command.Parameters.AddWithValue("@friendCode", friendCode);
@@ -174,9 +164,9 @@ public class DatabaseService : IDatabaseService
         try
         {
             await using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync() is false)
+            if (await reader.ReadAsync() == false)
                 return null;
-            
+
             var primary = (PrimaryPermissions2)reader.GetInt32(0);
             var speak = (SpeakPermissions2)reader.GetInt32(1);
             var elevated = (ElevatedPermissions)reader.GetInt32(2);
@@ -211,15 +201,15 @@ public class DatabaseService : IDatabaseService
         command.Parameters.AddWithValue("@friendCode", friendCode);
 
         var results = new List<TwoWayPermissions>();
-        
+
         try
         {
             await using var reader = await command.ExecuteReaderAsync();
-            while (reader.Read())
+            while (await reader.ReadAsync())
             {
                 // Always get the friend code
                 var targetFriendCode = reader.GetString(0);
-                
+
                 // Get the permissions we've granted to them
                 var primary = (PrimaryPermissions2)reader.GetInt32(1);
                 var speak = (SpeakPermissions2)reader.GetInt32(2);
@@ -231,7 +221,7 @@ public class DatabaseService : IDatabaseService
                     results.Add(new TwoWayPermissions(friendCode, targetFriendCode, primary, speak, elevated));
                     continue;
                 }
-                
+
                 // Get the permissions they've granted to us
                 var primary2 = (PrimaryPermissions2)reader.GetInt32(4);
                 var speak2 = (SpeakPermissions2)reader.GetInt32(5);
@@ -260,7 +250,7 @@ public class DatabaseService : IDatabaseService
 
         try
         {
-            return await command.ExecuteNonQueryAsync() is 1 ? DatabaseResultEc.Success : DatabaseResultEc.NoOp;
+            return await command.ExecuteNonQueryAsync() == 1 ? DatabaseResultEc.Success : DatabaseResultEc.NoOp;
         }
         catch (Exception e)
         {
@@ -268,7 +258,7 @@ public class DatabaseService : IDatabaseService
             return DatabaseResultEc.Unknown;
         }
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="IDatabaseService.AdminCreateAccount"/>
     /// </summary>
@@ -277,9 +267,10 @@ public class DatabaseService : IDatabaseService
         await using var command = _database.CreateCommand();
         command.CommandText =
             """
-                INSERT OR IGNORE INTO Accounts (DiscordId, FriendCode, Secret, Admin) 
+                INSERT INTO Accounts (DiscordId, FriendCode, Secret, Admin)
                 VALUES (@discord, @friendCode, @secret, 0)
-                RETURNING 1;
+                ON CONFLICT (FriendCode) DO NOTHING
+                RETURNING 1
             """;
         command.Parameters.AddWithValue("@discord", discord);
         command.Parameters.AddWithValue("@friendCode", friendCode);
@@ -287,7 +278,8 @@ public class DatabaseService : IDatabaseService
 
         try
         {
-            return await command.ExecuteScalarAsync() is null ? DatabaseResultEc.FriendCodeAlreadyExists : DatabaseResultEc.Success;
+            var result = await command.ExecuteScalarAsync();
+            return result is null ? DatabaseResultEc.FriendCodeAlreadyExists : DatabaseResultEc.Success;
         }
         catch (Exception e)
         {
@@ -305,19 +297,19 @@ public class DatabaseService : IDatabaseService
         await using var command = _database.CreateCommand();
         command.CommandText = "SELECT * FROM Accounts WHERE DiscordId = @discord";
         command.Parameters.AddWithValue("@discord", discord);
-        
+
         try
         {
             await using var reader = await command.ExecuteReaderAsync();
-            
+
             var results = new List<Account>();
-            while (reader.Read())
+            while (await reader.ReadAsync())
             {
                 var friendCode = reader.GetString(2);
                 var secret = reader.GetString(3);
                 var admin = reader.GetInt32(4);
-                
-                results.Add(new Account(friendCode, secret, admin is 1));
+
+                results.Add(new Account(friendCode, secret, admin == 1));
             }
 
             return results;
@@ -328,7 +320,7 @@ public class DatabaseService : IDatabaseService
             return null;
         }
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="IDatabaseService.AdminUpdateAccount"/>
     /// </summary>
@@ -337,10 +329,10 @@ public class DatabaseService : IDatabaseService
         await using var command = _database.CreateCommand();
         command.CommandText =
             """
-                UPDATE Accounts 
-                SET FriendCode = @newFriendCode 
+                UPDATE Accounts
+                SET FriendCode = @newFriendCode
                 WHERE DiscordId = @discord AND FriendCode = @friendCode
-                RETURNING 1;
+                RETURNING 1
             """;
         command.Parameters.AddWithValue("@discord", discord);
         command.Parameters.AddWithValue("@friendCode", oldFriendCode);
@@ -348,7 +340,8 @@ public class DatabaseService : IDatabaseService
 
         try
         {
-            return await command.ExecuteScalarAsync() is null ? DatabaseResultEc.NoSuchFriendCode : DatabaseResultEc.Success;
+            var result = await command.ExecuteScalarAsync();
+            return result is null ? DatabaseResultEc.NoSuchFriendCode : DatabaseResultEc.Success;
         }
         catch (Exception e)
         {
@@ -356,7 +349,7 @@ public class DatabaseService : IDatabaseService
             return DatabaseResultEc.Unknown;
         }
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="IDatabaseService.AdminDeleteAccount"/>
     /// </summary>
@@ -365,16 +358,17 @@ public class DatabaseService : IDatabaseService
         await using var command = _database.CreateCommand();
         command.CommandText =
             """
-                DELETE FROM Accounts 
+                DELETE FROM Accounts
                 WHERE DiscordId = @discord AND FriendCode = @friendCode
                 RETURNING 1
             """;
         command.Parameters.AddWithValue("@discord", discord);
         command.Parameters.AddWithValue("@friendCode", friendCode);
-        
+
         try
         {
-            return await command.ExecuteScalarAsync() is null ? DatabaseResultEc.NoSuchFriendCode : DatabaseResultEc.Success;
+            var result = await command.ExecuteScalarAsync();
+            return result is null ? DatabaseResultEc.NoSuchFriendCode : DatabaseResultEc.Success;
         }
         catch (Exception e)
         {
@@ -387,16 +381,9 @@ public class DatabaseService : IDatabaseService
     {
         try
         {
-            using var command = _database.CreateCommand();
-
-            command.CommandText = "PRAGMA journal_mode=WAL;";
-            command.ExecuteNonQuery();
-        
-            command.CommandText = "PRAGMA foreign_keys=ON;";
-            command.ExecuteNonQuery();
-        
-            command.CommandText = "PRAGMA busy_timeout=5000;";
-            command.ExecuteNonQuery();
+            // PostgreSQL doesn't need PRAGMA commands like SQLite
+            // Connection is already configured via connection string
+            _logger.LogInformation("PostgreSQL database connection established successfully");
         }
         catch (Exception e)
         {

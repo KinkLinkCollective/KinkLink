@@ -18,7 +18,7 @@ public class ProfileManager
     private const BindingFlags PublicInstance = BindingFlags.Public | BindingFlags.Instance;
     private const BindingFlags PublicStatic = BindingFlags.Public | BindingFlags.Static;
     private static readonly JsonSerializerSettings SerializerSettings = new() { DefaultValueHandling = DefaultValueHandling.Ignore };
-    
+
     // Profile Manager
     private readonly object _profileManager;
     private readonly ActorManager _actorManager;
@@ -26,7 +26,7 @@ public class ProfileManager
     private readonly IpcCharacterProfileContainer _ipcCharacterProfileContainer;
     private readonly ProfileContainer _profileContainer;
     private readonly ProfileManagerContainer _profileManagerContainer;
-    
+
     /// <summary>
     ///     <inheritdoc cref="ProfileManager"/>
     /// </summary>
@@ -35,10 +35,10 @@ public class ProfileManager
         // Objects
         _profileManager = profileManager;
         _actorManager = actorManager;
-        
+
         // Fields
         _profiles = profiles;
-        
+
         // Containers
         _ipcCharacterProfileContainer = ipcCharacterProfileContainer;
         _profileContainer = profileContainer;
@@ -62,7 +62,7 @@ public class ProfileManager
             return null;
         }
     }
-    
+
     /// <summary>
     ///     Adds the local character to the provided profile
     /// </summary>
@@ -83,7 +83,7 @@ public class ProfileManager
             return false;
         }
     }
-    
+
     /// <summary>
     ///     Adds the local character to the provided profile
     /// </summary>
@@ -148,7 +148,7 @@ public class ProfileManager
         {
             if (TryGetTemporaryProfile() is not { } profile)
                 return true; // Exit gracefully
-        
+
             _profileManagerContainer.Delete.Invoke(_profileManager, [profile.Value]);
             return true;
         }
@@ -158,7 +158,7 @@ public class ProfileManager
             return false;
         }
     }
-    
+
     /// <summary>
     ///     Attempts to get the temporary profile created by aether remote, if one exists
     /// </summary>
@@ -171,14 +171,14 @@ public class ProfileManager
         {
             if (_profileContainer.Name.GetValue(profile)?.ToString() is not { } name)
                 continue;
-            
+
             if (name == TemporaryProfileName)
                 return new CustomizePlusProfile(profile);
         }
 
         return null;
     }
-    
+
     /// <summary>
     ///     Attempts to get the active profile on a provided character
     /// </summary>
@@ -196,7 +196,7 @@ public class ProfileManager
             // Check Enabled
             if (_profileContainer.Enabled.GetValue(profile) is false or null)
                 continue;
-            
+
             // Check Character
             if (_profileContainer.Characters.GetValue(profile) is not IEnumerable characters)
                 continue;
@@ -222,7 +222,7 @@ public class ProfileManager
 
             if (priority <= highestPriority)
                 continue;
-            
+
             // Set the current highest profile
             highestPriority = priority;
             highestPriorityProfile = profile;
@@ -259,7 +259,7 @@ public class ProfileManager
         {
             // Get Plugin Type
             var pluginType = pluginInstance.GetType();
-            
+
             // Get Manager Instance
             if (pluginType.GetField("_services", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(pluginInstance) is not { } servicesField)
                 return null;
@@ -272,17 +272,17 @@ public class ProfileManager
 
             if (getServiceMethod.MakeGenericMethod(profileManagerType).Invoke(servicesField, null) is not { } profileManager)
                 return null;
-            
+
             // Get Actor Manager
             if (ActorManager.Create(profileManager) is not { } actorManager)
                 return null;
-            
+
             // Get Manager Types
             var managerType = profileManager.GetType();
-            
+
             // Get Manager Fields
             if (managerType.GetField("Profiles", PublicInstance) is not { } profilesField) return null;
-            
+
             // Get Profile Types
             if (pluginType.Assembly.GetType("CustomizePlus.Profiles.Data.Profile") is not { } profileType) return null;
             if (profileType.GetProperty("Name", PublicInstance) is not { } name) return null;
@@ -290,12 +290,12 @@ public class ProfileManager
             if (profileType.GetProperty("Priority", PublicInstance) is not { } priority) return null;
             if (profileType.GetProperty("Characters", PublicInstance) is not { } characters) return null;
             var profileContainer = new ProfileContainer(name, enabled, priority, characters);
-            
+
             // Get IPCCharacterProfile Types
             if (pluginType.Assembly.GetType("CustomizePlus.Api.Data.IPCCharacterProfile") is not { } ipcCharacterProfileType) return null;
             if (ipcCharacterProfileType.GetMethod("FromFullProfile", PublicStatic) is not { } fromFullProfile) return null;
             var ipcCharacterProfileContainer = new IpcCharacterProfileContainer(fromFullProfile);
-            
+
             // Get Manager Methods
             if (managerType.GetMethod("AddCharacter", PublicInstance) is not { } addCharacter) return null;
             if (managerType.GetMethod("AddTemplate", PublicInstance) is not { } addTemplate) return null;
@@ -304,7 +304,7 @@ public class ProfileManager
             if (managerType.GetMethod("SetEnabled", PublicInstance, null, [profileType, typeof(bool), typeof(bool)], null) is not { } setEnabled) return null;
             if (managerType.GetMethod("SetPriority", PublicInstance, null, [profileType, typeof(int)], null) is not { } setPriority) return null;
             var managerContainer = new ProfileManagerContainer(addCharacter, addTemplate, create, delete, setEnabled, setPriority);
-            
+
             return new ProfileManager(profileManager, actorManager, profilesField, ipcCharacterProfileContainer, profileContainer, managerContainer);
         }
         catch (Exception e)

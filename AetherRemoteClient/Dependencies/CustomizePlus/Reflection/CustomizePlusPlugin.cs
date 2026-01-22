@@ -13,7 +13,7 @@ public class CustomizePlusPlugin
 {
     public readonly ProfileManager ProfileManager;
     public readonly TemplateManager TemplateManager;
-    
+
     private CustomizePlusPlugin(ProfileManager profileManager, TemplateManager templateManager)
     {
         ProfileManager = profileManager;
@@ -30,7 +30,7 @@ public class CustomizePlusPlugin
 
         if (ProfileManager.Create(pluginInstance) is not { } profileManager)
             return null;
-        
+
         return TemplateManager.Create(pluginInstance) is { } templateManager
             ? new CustomizePlusPlugin(profileManager, templateManager)
             : null;
@@ -112,7 +112,7 @@ public class CustomizePlusPlugin
                     if (assemblyName.Name?.Contains("CustomizePlus", StringComparison.OrdinalIgnoreCase) ?? false)
                         if (instanceField.GetValue(plugin) is { } pluginInstance)
                             return pluginInstance;
-            
+
             Plugin.Log.Verbose("[CustomizePlusPlugin.Create] Failed to find CustomizePlus plugin");
             return null;
         }

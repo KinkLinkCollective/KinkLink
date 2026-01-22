@@ -14,17 +14,17 @@ public class FriendsListService
     /// </summary>
     public IReadOnlyList<Friend> Friends => _friends;
     private readonly List<Friend> _friends = [];
-    
+
     /// <summary>
     ///     Event fired when a new friend is added
     /// </summary>
     public event EventHandler<Friend>? FriendAdded;
-    
+
     /// <summary>
     ///     Event fired when a friend is deleted
     /// </summary>
     public event EventHandler<Friend>? FriendDeleted;
-    
+
     /// <summary>
     ///     Event fired when the friends list is cleared
     /// </summary>

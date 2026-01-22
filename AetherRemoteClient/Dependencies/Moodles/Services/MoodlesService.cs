@@ -34,23 +34,23 @@ public class MoodlesService : IExternalPlugin
 {
     // Const
     private const int ExpectedMajor = 3;
-    
+
     // Moodles Version
     private readonly ICallGateSubscriber<int> _version;
-    
+
     // Moodles Status Managers
     private readonly ICallGateSubscriber<nint, string> _getStatusManager;
     private readonly ICallGateSubscriber<nint, string, object> _setStatusManager;
-    
+
     // Moodles Statuses
     private readonly ICallGateSubscriber<List<MoodlesStatusInfo>> _listMoodles;
     private readonly ICallGateProvider<MoodlesStatusInfo, bool, object?> _applyMoodle;
-    
+
     /// <summary>
     ///     Is Moodles available for use?
     /// </summary>
     public bool ApiAvailable;
-        
+
     /// <summary>
     ///     <inheritdoc cref="IExternalPlugin.IpcReady"/>
     /// </summary>
@@ -67,7 +67,7 @@ public class MoodlesService : IExternalPlugin
         _listMoodles = Plugin.PluginInterface.GetIpcSubscriber<List<MoodlesStatusInfo>>("Moodles.GetStatusInfoListV2");
         _applyMoodle = Plugin.PluginInterface.GetIpcProvider<MoodlesStatusInfo, bool, object?>("GagSpeak.ApplyStatusInfo");
     }
-    
+
     /// <summary>
     ///     Tests for availability for Moodles
     /// </summary>
@@ -75,10 +75,10 @@ public class MoodlesService : IExternalPlugin
     {
         // Set everything to disabled state
         ApiAvailable = false;
-        
+
         // Invoke Api
         var version = await Plugin.RunOnFrameworkSafely(() => _version.InvokeFunc()).ConfigureAwait(false);
-        
+
         // Test for proper versioning
         if (version < ExpectedMajor)
             return false;
@@ -101,7 +101,7 @@ public class MoodlesService : IExternalPlugin
     ///     Sets the Moodles Status Manager for a provided character
     /// </summary>
     public async Task<bool> SetStatusManager(nint address, string status)
-    { 
+    {
         return await ExecuteOnThread(() => _setStatusManager.InvokeAction(address, status)).ConfigureAwait(false);
     }
 
@@ -125,7 +125,7 @@ public class MoodlesService : IExternalPlugin
     {
         return await ExecuteOnThread(() => _applyMoodle.SendMessage(ConvertMoodleToStatusInfo(moodle), false)).ConfigureAwait(false);
     }
-    
+
     /// <summary>
     ///     Executes a Moodles command on the main thread
     /// </summary>
@@ -170,7 +170,7 @@ public class MoodlesService : IExternalPlugin
             return default;
         }
     }
-    
+
     private static MoodlesStatusInfo ConvertMoodleToStatusInfo(MoodleInfo info)
     {
         return new MoodlesStatusInfo
@@ -197,7 +197,7 @@ public class MoodlesService : IExternalPlugin
     private static Moodle ConvertStatusInfoToMoodle(MoodlesStatusInfo info)
     {
         var time = TimeSpan.FromMilliseconds(info.ExpireTicks < 0 ? 0 : info.ExpireTicks);
-        
+
         return new Moodle
         {
             Info = new MoodleInfo
@@ -219,13 +219,13 @@ public class MoodlesService : IExternalPlugin
                 Dispeller = info.Dispeller,
                 Permanent = info.Permanent
             },
-                
+
             PrettyTitle = RemoveTagsFromTitle(info.Title),
             PrettyDescription = RemoveTagsFromTitle(info.Description, true),
             PrettyExpiration = $"{time.Days}d, {time.Hours}h, {time.Minutes}m, {time.Seconds}s"
         };
     }
-    
+
     /// <summary>
     ///     Removes all text between a [ and a ] including the brackets themselves
     /// </summary>
@@ -233,7 +233,7 @@ public class MoodlesService : IExternalPlugin
     {
         // Resulting string
         var cleanTitle = new StringBuilder();
-        
+
         // A variable to mark when we're inside a tag
         var cleaning = false;
 
@@ -253,22 +253,22 @@ public class MoodlesService : IExternalPlugin
                 cleaning = false;
                 continue;
             }
-            
+
             // If we're cleaning, ignore the character
             if (cleaning)
                 continue;
-            
+
             // Skip new lines
             if (!withNewLines && character is '\n' or '\r')
             {
                 cleanTitle.Append(' ');
                 continue;
             }
-            
+
             // Append the character otherwise
             cleanTitle.Append(character);
         }
-        
+
         // Return resulting string
         return cleanTitle.ToString();
     }

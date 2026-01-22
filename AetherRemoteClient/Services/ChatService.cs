@@ -35,11 +35,11 @@ public static class ChatService
                 case 0:
                     Plugin.Log.Warning("[ChatProvider] Attempted to send an empty message");
                     return;
-                
+
                 case > 500:
                     Plugin.Log.Warning("[ChatProvider] Attempted to send a message longer than 500 bytes");
                     return;
-                
+
                 default:
                     SendMessageUnsafe(message);
                     break;

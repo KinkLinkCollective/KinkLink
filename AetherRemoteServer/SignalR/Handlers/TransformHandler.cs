@@ -40,12 +40,12 @@ public class TransformHandler(IPresenceService presenceService, IForwardedReques
         var command = new TransformCommand(senderFriendCode, request.GlamourerData, request.GlamourerApplyType, request.LockCode);
         return await forwardedRequestManager.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, Method, permissions, command, clients);
     }
-    
+
     private ActionResponseEc? ValidateEmoteRequest(string senderFriendCode, TransformRequest request)
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.TooManyRequests;
-        
+
         if (VerificationUtilities.ValidListOfFriendCodes(request.TargetFriendCodes) is false)
             return ActionResponseEc.BadDataInRequest;
 

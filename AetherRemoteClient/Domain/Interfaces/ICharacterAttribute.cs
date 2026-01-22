@@ -13,8 +13,8 @@ public interface ICharacterAttribute
     ///     Store this attribute for future use
     /// </summary>
     public Task<bool> Store();
-    
-    
+
+
     /// <summary>
     ///     Apply this attribute to the local player
     /// </summary>

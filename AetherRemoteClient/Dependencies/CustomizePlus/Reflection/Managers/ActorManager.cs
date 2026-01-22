@@ -11,7 +11,7 @@ public class ActorManager
     // Injected
     private readonly object _actionManager;
     private readonly MethodInfo _getCurrentPlayer;
-    
+
     /// <summary>
     ///     <inheritdoc cref="ActorManager"/>
     /// </summary>
@@ -36,7 +36,7 @@ public class ActorManager
             return null;
         }
     }
-    
+
     /// <summary>
     ///     Creates a new instance of the ActorManager
     /// </summary>
@@ -50,12 +50,12 @@ public class ActorManager
             var type = profileManagerInstance.GetType();
             if (type.GetField("_actorManager", BindingFlags.Instance | BindingFlags.NonPublic) is not { } actorManagerField)
                 return null;
-            
+
             if (actorManagerField.GetValue(profileManagerInstance) is not { } actorManager)
                 return null;
-            
-            return actorManager.GetType().GetMethod("GetCurrentPlayer") is { } getCurrentPlayer 
-                ? new ActorManager(actorManager, getCurrentPlayer) 
+
+            return actorManager.GetType().GetMethod("GetCurrentPlayer") is { } getCurrentPlayer
+                ? new ActorManager(actorManager, getCurrentPlayer)
                 : null;
         }
         catch (Exception e)

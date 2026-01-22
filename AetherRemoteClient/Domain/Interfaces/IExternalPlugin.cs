@@ -12,7 +12,7 @@ public interface IExternalPlugin
     ///     Event fired when an exposed plugin is ready for use
     /// </summary>
     public event EventHandler IpcReady;
-    
+
     /// <summary>
     ///     Function that should be called periodically to test plugin availability
     /// </summary>

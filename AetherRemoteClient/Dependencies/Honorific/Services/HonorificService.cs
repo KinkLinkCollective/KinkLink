@@ -22,19 +22,19 @@ public class HonorificService : IExternalPlugin
     private const int ExpectedMajor = 3;
     private const int ExpectedMinor = 2;
     private static readonly JsonSerializerSettings Options = new() { TypeNameHandling = TypeNameHandling.None };
-    
+
     // Instantiated
     private readonly ICallGateSubscriber<(uint, uint)> _apiVersion;
     private readonly ICallGateSubscriber<int, object> _clearCharacterTitle;
     private readonly ICallGateSubscriber<int, string> _getCharacterTitle;
     private readonly ICallGateSubscriber<string> _getLocalCharacterTitle;
     private readonly ICallGateSubscriber<int, string, object> _setCharacterTitle;
-    
+
     /// <summary>
     ///     Is Honorific available for use?
     /// </summary>
     public bool ApiAvailable;
-    
+
     /// <summary>
     ///     <inheritdoc cref="IExternalPlugin.IpcReady"/>
     /// </summary>
@@ -51,7 +51,7 @@ public class HonorificService : IExternalPlugin
         _clearCharacterTitle = Plugin.PluginInterface.GetIpcSubscriber<int, object>("Honorific.ClearCharacterTitle");
         _setCharacterTitle = Plugin.PluginInterface.GetIpcSubscriber<int, string, object>("Honorific.SetCharacterTitle");
     }
-    
+
     /// <summary>
     ///     Tests for availability to Honorific
     /// </summary>
@@ -63,13 +63,13 @@ public class HonorificService : IExternalPlugin
 
         if (major is not ExpectedMajor || minor < ExpectedMinor)
             return false;
-        
+
         ApiAvailable = true;
-        
+
         IpcReady?.Invoke(this, EventArgs.Empty);
         return true;
     }
-    
+
     /// <summary>
     ///     Clears the local character's title. Honorific does not allow clients to change their honorifics if set by another plugin
     /// </summary>
@@ -113,13 +113,13 @@ public class HonorificService : IExternalPlugin
         // NOTE:    This is probably not an ideal solution. In order to get ALL the honorifics for every character
         //          it makes more sense to load the actual configuration and get the required data, rather than
         //          calling the IPC to get just the current character's.
-        
+
         try
         {
             // Go up a level so we're in just the configuration directory
             if (Plugin.PluginInterface.ConfigDirectory.Parent is not { } parent)
                 return [];
-            
+
             // Construct the path to the file and load the configuration
             var path = Path.Combine(parent.FullName, "Honorific.json");
             var raw = await File.ReadAllTextAsync(path).ConfigureAwait(false);
@@ -127,7 +127,7 @@ public class HonorificService : IExternalPlugin
             // Convert the JSON into our local domain model of all the fields relevant
             if (JsonConvert.DeserializeObject<HonorificConfiguration>(raw, Options) is not { } configuration)
                 return [];
-            
+
             // Convert the returned object to domain models
             var results = new Dictionary<uint, Dictionary<string, List<HonorificInfo>>>();
             foreach (var (world, dictionary) in configuration.WorldCharacterDictionary)
@@ -135,10 +135,10 @@ public class HonorificService : IExternalPlugin
                 var sub = new Dictionary<string, List<HonorificInfo>>();
                 foreach (var (character, config) in dictionary)
                     sub[character] = config.CustomTitles.Select(title => title.ToHonorificInfo()).ToList();
-                
+
                 results.Add(world, sub);
             }
-            
+
             return results;
         }
         catch (Exception e)
@@ -163,7 +163,7 @@ public class HonorificService : IExternalPlugin
             return null;
         }
     }
-    
+
     /// <summary>
     ///     Sets a title
     /// </summary>

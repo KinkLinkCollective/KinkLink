@@ -1,68 +1,95 @@
-# What is Aether Remote
-Aether Remote is a plugin that allows you to control the speech and emotes of other players using the plugin. If Glamourer and Mare Synchronos are installed, this expands to include their other player's customization and equipment. The intended audience of this plugin is anyone interested in possession, hypnosis, body swaps, transformations, and mind control.
+# What is KinkLink
+
+KinkLink is a community driven kinky community plugin. It aims to serve as a way to connect with other kinksters as well as to help facilitate fun kinky play.
+
+The intended audience is for BDSM inclined adults 18+
 
 ### Repo
+
 ```sh
-https://raw.githubusercontent.com/aetherremote/AetherRemote/main/repo.json
+TODO: Include once available
 ```
 
 # Features
-> ⚠️ Some of Aether Remote interacts with the chat directly, sending a message on your behalf to the server. Any feature of the plugin that utilizes this will be marked with a `⚠️` to indicate. See more in the [safety & security](#safety--security).
+>
+> ⚠️ Some of KinkLink interacts with the chat directly, modifying your messages that are sent to the service. Additionally, certain features may remove control over your appearance and take control of your character in certain ways. `⚠️` to indicate. See more in the [safety & security](#safety--security).
 
-## 🗣️ Speak
+## 🗣️ Community Chat
+>
 > ⚠️ This feature interacts with the server
 
 Forces up to `3` users to send to any of the supported chat channels in game.
 
 ## 💃 Emote
+>
 > ⚠️ This feature interacts with the server
 
 Forces up to `3` users to perform an emote. This plugin will only play emotes a user has unlocked.
 
 ## 🪄 Transform
+>
 > ❗ This feature requires Glamourer and Mare Synchronos
 
 Forces any number of users to change their customization and or equipment.
 
 ## 🔄 Body Swap
+>
 > ❗ This feature requires Glamourer and Mare Synchronos
 
 Forces any number of users and yourself to swap bodies at random.
 
 ## 👯 Twinning
+>
 > ❗ This feature requires Glamourer and Mare Synchronos
 
-Forces any number of users to become you. 
+Forces any number of users to become you.
 
 # Safety & Security
+>
 > ❗ You should only use this plugin with those you trust
 
-If you have gotten this far, it is no secret that this plugin interacts in a very invasive, and automated way. I have taken many measures to ensure it is as safe as possible to use.
-
-### 🔑 HTTPS
-The connection to the server is encrypted just as any other modern website is.
+If you have gotten this far, it is no secret that this plugin interacts in a very invasive, and automated way with your client. While our team attempts to make this as safe as possible, it is up to you to ensure that you trust your partners.
 
 ### 📖 Open Source
+
 All of the code is uploaded on to github here. You can build and compile your own, or verify anything you like about the behavior of the client or server. I believe that this is one of the most important steps to earning trust with this tool.
 
+Additionally server packages are provided should you prefer to host your own tools. While we cannot guarantee to assist with directly bringing up the server. Template files using docker compose are provided as-is.
+
 ### ⚙️ Permissions
-Users can set permissions controlling exactly what another user can and can't do. These permissions are validated both server side, and client side to ensure no tampering can be done.
+
+Robust user pairing and permissions ensures that you give permissions only as you require.
 
 ### 🛡️ Safe Word
+
 Functionality found in the settings tab to immediately disable the plugin and refuse any further or pending actions.
 
-### ✅ Validation
-All actions sent to the server and receieved by the client are validated for correctness. This means, like permissions, both the server and the client will ensure no tampering has occurred. The plugin will not act on invalid data, examples include trying to utilize a command instead of an emote such as `/logout` or `/trade`, or sending invalid message data to the server.
+### ✅ Server Authoritative
 
-# Community & Discord
-Please feel free to join the [Discord](https://discord.gg/aetherremote) community! I would love to hear any feedback you have, or bugs you discover. I would also just love to chat about all things this plugin relates to!
+This is a server centered plugin. You will need to join and register with a server prior to being able to make use of this plugin. If you do not wish to join one, you may host your own.
+
+# Community Driven
+
+This project aims to be primarily driven by those that wish to contribute and assist in the future.
+
+All contributions are welcome, but please read the contribution guide and read out on our discord before attempting to fork and make a PR.
 
 # About The Plugin
-Aether Remote is a project I have been working on for a little under a year now. I took inspiration from many sources in the XIV community involving these fetishes. It started as a tool just control speech and emotes but slowly grew as new ideas popped into my mind. I hope that it can be fun for everyone who decides to use it, and I really wish to improve the tool any way I can! Feel free to take a look through any of the code, I've documented the best I can, and hope that they may be of help to anyone seeking to do something similar.
 
-# Development Testers
-A huge thank you to everyone who helped test the plugin during development!
+KinkLink is a new community drive project inspired by [ProjectGagspeak](https://github.com/Project-GagSpeak/) and built upon the foundations of [AetherRemote](http://github.com/aetherremote/AetherRemote/) projects. I am deeply indepted to both projects for providing the foundations that I walk on. I merely stand on the shoulders of giants as I build this.
 
+# Acknowledgements
+
+- Mora Nightshade for her tireless effort in helping me to built this from Aether Remote.
+- Cordelia Mistress for the original Gagspeak which served as the initial inspiration towards building this.
+- All the contributors
+- The community members
+
+## Original Testing and Development team for Aether Remote
+
+A huge thank you to everyone who helped in the testing of AetherRemote!
+
+- Mora Nightshade
 - Inanis, Patient #11
 - Khada
 - Jakual ([Twitter](https://twitter.com/JakualPiccies))

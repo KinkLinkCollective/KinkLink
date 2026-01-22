@@ -36,7 +36,7 @@ public class EmoteViewUiController(EmoteService emoteService, NetworkService net
             var response = await networkService.InvokeAsync<ActionResponse>(HubMethod.Emote, request).ConfigureAwait(false);
             if (response.Result is ActionResponseEc.Success)
                 EmoteSelection = string.Empty;
-            
+
             ActionResponseParser.Parse("Emote", response);
         }
         catch (Exception e)

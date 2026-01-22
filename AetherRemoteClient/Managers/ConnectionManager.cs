@@ -16,7 +16,7 @@ public class ConnectionManager : IDisposable
     private readonly IdentityService _identityService;
     private readonly NetworkService _networkService;
     private readonly ViewService _viewService;
-    
+
     /// <summary>
     ///     <inheritdoc cref="ConnectionManager"/>
     /// </summary>
@@ -30,12 +30,12 @@ public class ConnectionManager : IDisposable
         _networkService.Connected += OnConnected;
         _networkService.Disconnected += OnDisconnected;
     }
-    
+
     private async Task OnConnected()
     {
         if (Plugin.CharacterConfiguration is not { } character)
             return;
-        
+
         // Get account data from the server
         var request = new GetAccountDataRequest(character.Name, character.World);
         var response = await _networkService.InvokeAsync<GetAccountDataResponse>(HubMethod.GetAccountData, request).ConfigureAwait(false);
@@ -50,16 +50,18 @@ public class ConnectionManager : IDisposable
 
         // Set the friend code
         _identityService.SetFriendCode(response.FriendCode);
-        
+
         // Clear the friend list in preparation for adding friends returned from the server
         _friendsListService.Clear();
 
         // Iterate over all the relationships to transform them into domain models
         foreach (var relationship in response.Relationships)
         {
+            Plugin.Log.Info($"{relationship.TargetFriendCode} is {relationship.Status}");
+
             // Try to extract the note
             Plugin.Configuration.Notes.TryGetValue(relationship.TargetFriendCode, out var note);
-            
+
             // Add the new friend with all the data required
             _friendsListService.Add(new Friend(relationship.TargetFriendCode, relationship.Status, note, relationship.PermissionsGrantedTo, relationship.PermissionsGrantedBy));
         }
@@ -72,10 +74,10 @@ public class ConnectionManager : IDisposable
     {
         // Clear the friend list
         _friendsListService.Clear();
-        
+
         // Reset the view if required
         _viewService.ResetView();
-        
+
         // Return
         return Task.CompletedTask;
     }

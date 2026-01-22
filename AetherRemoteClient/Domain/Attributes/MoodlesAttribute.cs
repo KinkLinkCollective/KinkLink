@@ -13,7 +13,7 @@ public class MoodlesAttribute(MoodlesService moodlesService, nint objectAddress)
     ///     Moodles saved while storing
     /// </summary>
     public string Moodles = string.Empty;
-    
+
     /// <summary>
     ///     <inheritdoc cref="ICharacterAttribute.Store"/>
     /// </summary>
@@ -24,7 +24,7 @@ public class MoodlesAttribute(MoodlesService moodlesService, nint objectAddress)
             Moodles = statusManager;
             return true;
         }
-        
+
         Plugin.Log.Warning("[MoodlesAttribute] Could not retrieve moodles");
         return false;
     }

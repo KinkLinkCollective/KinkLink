@@ -24,7 +24,7 @@ public class MoodlesViewUiController : IDisposable
 
     public MoodlesViewUiController(CommandLockoutService commandLockoutService, NetworkService networkService, MoodlesService moodlesService, SelectionManager selectionManager)
     {
-        _commandLockoutService =  commandLockoutService;
+        _commandLockoutService = commandLockoutService;
         _networkService = networkService;
         _moodlesService = moodlesService;
         _selectionManager = selectionManager;
@@ -43,7 +43,7 @@ public class MoodlesViewUiController : IDisposable
     ///     The list of moodles available
     /// </summary>
     private List<Moodle> _moodles = [];
-    
+
     /// <summary>
     ///     A filtered list of moodles based on search term
     /// </summary>
@@ -53,7 +53,7 @@ public class MoodlesViewUiController : IDisposable
     ///     The current index of the selected Moodle, -1 if none selected
     /// </summary>
     public int SelectedMoodleIndex = -1;
-    
+
     /// <summary>
     ///     Attempts to get the image asset. Implements caching to ease burden of searching / loading images
     /// </summary>
@@ -80,7 +80,7 @@ public class MoodlesViewUiController : IDisposable
         {
             // Reset index
             SelectedMoodleIndex = -1;
-            
+
             // Request all the Moodles again
             _moodles = await _moodlesService.GetMoodles().ConfigureAwait(false);
         }
@@ -89,20 +89,20 @@ public class MoodlesViewUiController : IDisposable
             // ignored
         }
     }
-    
+
     public async void SendMoodle()
     {
         try
         {
             if (SelectedMoodleIndex < 0)
                 return;
-            
+
             _commandLockoutService.Lock();
-            
+
             var moodle = FilteredMoodles[SelectedMoodleIndex];
             var request = new MoodlesRequest(_selectionManager.GetSelectedFriendCodes(), moodle.Info);
             var response = await _networkService.InvokeAsync<ActionResponse>(HubMethod.Moodles, request).ConfigureAwait(false);
-            
+
             ActionResponseParser.Parse("Moodles", response);
         }
         catch (Exception e)
@@ -110,7 +110,7 @@ public class MoodlesViewUiController : IDisposable
             Plugin.Log.Warning($"Failed to add moodle, {e.Message}");
         }
     }
-    
+
     /// <summary>
     ///     Calculates the friends who you lack correct permissions to send to
     /// </summary>
@@ -123,7 +123,7 @@ public class MoodlesViewUiController : IDisposable
 
         return false;
     }
-    
+
     private void OnIpcReady(object? sender, EventArgs e)
     {
         RefreshMoodles();

@@ -13,35 +13,35 @@ public class SelectionManager : IDisposable
 {
     // Injected
     private readonly FriendsListService _friendsListService;
-    
+
     /// <summary>
     ///     Exposed list of who is selected
     /// </summary>
     public IReadOnlySet<Friend> Selected => _selected;
     private readonly HashSet<Friend> _selected = [];
-    
+
     /// <summary>
     ///     Event fired when a friend is selected
     /// </summary>
     public event EventHandler<Friend>? FriendSelected;
-    
+
     /// <summary>
     ///     Event fired when a friend is deselected
     /// </summary>
     public event EventHandler<HashSet<Friend>>? FriendsDeselected;
-    
+
     /// <summary>
     ///     Event fired when something about the selected friends has been modified, such as an internal value
     /// </summary>
     public event EventHandler? FriendsInteractedWith;
-    
+
     /// <summary>
     ///     <inheritdoc cref="SelectionManager"/>
     /// </summary>
     public SelectionManager(FriendsListService friendsListService)
     {
         _friendsListService = friendsListService;
-        
+
         _friendsListService.FriendDeleted += OnFriendDeleted;
         _friendsListService.FriendsListCleared += OnFriendsListCleared;
     }
@@ -76,9 +76,9 @@ public class SelectionManager : IDisposable
         {
             if (_selected.Count is 1 && _selected.Contains(friend))
                 return;
-        
+
             Clear();
-            
+
             _selected.Add(friend);
             FriendSelected?.Invoke(this, friend);
         }
@@ -101,7 +101,7 @@ public class SelectionManager : IDisposable
     public void Clear()
     {
         var selected = new HashSet<Friend>(_selected);
-        
+
         _selected.Clear();
         FriendsDeselected?.Invoke(this, selected);
     }
@@ -126,11 +126,11 @@ public class SelectionManager : IDisposable
             list.Add(friend.FriendCode);
             friend.LastInteractedWith = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         }
-        
+
         FriendsInteractedWith?.Invoke(this, EventArgs.Empty);
         return list;
     }
-    
+
     private void OnFriendDeleted(object? sender, Friend friend) => Deselect(friend);
 
     private void OnFriendsListCleared(object? sender, EventArgs e) => Clear();

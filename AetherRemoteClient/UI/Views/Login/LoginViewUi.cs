@@ -14,7 +14,7 @@ public class LoginViewUi(LoginViewUiController controller, NetworkService networ
 {
     private const ImGuiInputTextFlags SecretInputFlags =
         ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.Password | ImGuiInputTextFlags.AutoSelectAll;
-    
+
     public void Draw()
     {
         ImGui.BeginChild("LoginContent", Vector2.Zero, false, AetherRemoteStyle.ContentFlags);

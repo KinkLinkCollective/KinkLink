@@ -24,10 +24,10 @@ public class MoodlesHandler : AbstractNetworkHandler, IDisposable
     // Injected
     private readonly LogService _log;
     private readonly MoodlesService _moodles;
-    
+
     // Instantiated
     private readonly IDisposable _handler;
-    
+
     /// <summary>
     ///     <inheritdoc cref="MoodlesHandler"/>
     /// </summary>
@@ -38,21 +38,21 @@ public class MoodlesHandler : AbstractNetworkHandler, IDisposable
 
         _handler = network.Connection.On<MoodlesCommand, ActionResult<Unit>>(HubMethod.Moodles, Handle);
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="MoodlesHandler"/>
     /// </summary>
     private async Task<ActionResult<Unit>> Handle(MoodlesCommand request)
     {
         Plugin.Log.Verbose($"{request}");
-        
+
         var sender = TryGetFriendWithCorrectPermissions(Operation, request.SenderFriendCode, Permissions);
         if (sender.Result is not ActionResultEc.Success)
             return ActionResultBuilder.Fail(sender.Result);
-        
+
         if (sender.Value is not { } friend)
             return ActionResultBuilder.Fail(ActionResultEc.ValueNotSet);
-        
+
         // Attempt to apply the Moodle
         if (await _moodles.ApplyMoodle(request.Info).ConfigureAwait(false))
         {

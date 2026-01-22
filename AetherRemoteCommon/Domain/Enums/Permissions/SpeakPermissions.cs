@@ -5,7 +5,7 @@ public enum SpeakPermissions2
 {
     // No Permissions
     None = 0,
-    
+
     // General Channels
     Say = 1 << 1,
     Yell = 1 << 2,
@@ -17,7 +17,7 @@ public enum SpeakPermissions2
     PvPTeam = 1 << 8,
     Echo = 1 << 9,
     Roleplay = 1 << 10,
-    
+
     // Linkshells
     Ls1 = 1 << 11,
     Ls2 = 1 << 12,
@@ -27,7 +27,7 @@ public enum SpeakPermissions2
     Ls6 = 1 << 16,
     Ls7 = 1 << 17,
     Ls8 = 1 << 18,
-    
+
     // Cross-world Linkshells
     Cwl1 = 1 << 19,
     Cwl2 = 1 << 20,

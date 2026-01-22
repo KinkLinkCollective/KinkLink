@@ -17,8 +17,8 @@ namespace AetherRemoteServer.Api.Controllers;
 public class AuthController(Configuration config, IDatabaseService database) : ControllerBase
 {
     // Const
-    private static readonly Version ExpectedVersion = new(2, 8,6, 3);
-    
+    private static readonly Version ExpectedVersion = new(2, 8, 6, 0);
+
     // Instantiated
     private readonly SymmetricSecurityKey _key = new(Encoding.UTF8.GetBytes(config.SigningKey));
 
@@ -28,7 +28,7 @@ public class AuthController(Configuration config, IDatabaseService database) : C
     {
         if (request.Version < ExpectedVersion)
             return StatusCode(StatusCodes.Status409Conflict, new LoginAuthenticationResult(LoginAuthenticationErrorCode.VersionMismatch, null));
-        
+
         if (await database.GetFriendCodeBySecret(request.Secret) is not { } friendCode)
             return StatusCode(StatusCodes.Status401Unauthorized, new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownSecret, null));
 

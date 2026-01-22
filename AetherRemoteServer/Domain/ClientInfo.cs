@@ -10,7 +10,7 @@ public class ClientInfo(string connectionId)
     ///     Signal R connection id granted to this client
     /// </summary>
     public readonly string ConnectionId = connectionId;
-    
+
     /// <summary>
     ///     The local character name associated with this client.
     ///     This can be exploited by modifying the request.
@@ -18,7 +18,7 @@ public class ClientInfo(string connectionId)
     ///     A fix can be implemented by enforcing all accounts onboard to Aether Remote to do a lodestone registration process.
     /// </summary>
     public string CharacterName = string.Empty;
-    
+
     /// <summary>
     ///     The last time this user submitted a command
     /// </summary>

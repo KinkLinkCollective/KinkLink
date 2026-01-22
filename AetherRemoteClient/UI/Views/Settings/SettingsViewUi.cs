@@ -13,10 +13,10 @@ using Dalamud.Interface.Colors;
 namespace AetherRemoteClient.UI.Views.Settings;
 
 public class SettingsViewUi(
-    SettingsViewUiController controller, 
-    PenumbraService penumbraService, 
-    GlamourerService glamourerService, 
-    MoodlesService moodlesService, 
+    SettingsViewUiController controller,
+    PenumbraService penumbraService,
+    GlamourerService glamourerService,
+    MoodlesService moodlesService,
     CustomizePlusService customizePlusService,
     HonorificService honorificService) : IDrawable
 {
@@ -46,7 +46,7 @@ public class SettingsViewUi(
             else
                 ImGui.TextColored(ImGuiColors.DalamudRed, "OFF");
         });
-        
+
         SharedUserInterfaces.ContentBox("SettingsGeneral", AetherRemoteStyle.PanelBackground, true, () =>
         {
             SharedUserInterfaces.MediumText("General");
@@ -54,11 +54,11 @@ public class SettingsViewUi(
             // Only draw the remaining UI elements if the character configuration value is set
             if (Plugin.CharacterConfiguration is null)
                 return;
-            
+
             if (ImGui.Checkbox("Auto Connect", ref Plugin.CharacterConfiguration.AutoLogin))
                 controller.SaveConfiguration();
         });
-        
+
         SharedUserInterfaces.ContentBox("SettingsDependencies", AetherRemoteStyle.PanelBackground, true, () =>
         {
             SharedUserInterfaces.MediumText("Dependencies");
@@ -74,15 +74,15 @@ public class SettingsViewUi(
             DrawCheckmarkOrCrossOut(glamourerService.ApiAvailable);
             ImGui.SameLine();
             ImGui.TextUnformatted("Glamourer");
-            
+
             DrawCheckmarkOrCrossOut(moodlesService.ApiAvailable);
             ImGui.SameLine();
             ImGui.TextUnformatted("Moodles");
-            
+
             DrawCheckmarkOrCrossOut(customizePlusService.ApiAvailable);
             ImGui.SameLine();
             ImGui.TextUnformatted("Customize+");
-            
+
             DrawCheckmarkOrCrossOut(honorificService.ApiAvailable);
             ImGui.SameLine();
             ImGui.TextUnformatted("Honorific");
@@ -91,7 +91,7 @@ public class SettingsViewUi(
         ImGui.PopStyleVar();
         ImGui.EndChild();
     }
-    
+
     private static void DrawCheckmarkOrCrossOut(bool apiAvailable)
     {
         if (apiAvailable)
@@ -99,5 +99,5 @@ public class SettingsViewUi(
         else
             SharedUserInterfaces.Icon(FontAwesomeIcon.Times, ImGuiColors.DalamudRed);
     }
-    
+
 }

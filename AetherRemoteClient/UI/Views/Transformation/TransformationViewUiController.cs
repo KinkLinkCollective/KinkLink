@@ -24,16 +24,16 @@ public class TransformationViewUiController : IDisposable
     private readonly GlamourerService _glamourerService;
     private readonly NetworkService _networkService;
     private readonly SelectionManager _selectionManager;
-    
+
     // TODO: More commenting
-    
+
     public string SearchTerm = string.Empty;
-    
+
     private List<Folder<Design>> _designs = [];
-    public List<Folder<Design>> FilteredDesigns => SearchTerm == string.Empty 
+    public List<Folder<Design>> FilteredDesigns => SearchTerm == string.Empty
         ? _designs.ToList()
         : _designs.Select(folder => new Folder<Design>(folder.Path, folder.Content.Where(design => design.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)).ToList())).ToList();
-    
+
     public Guid SelectedDesignId = Guid.Empty;
     public bool ShouldApplyCustomization = true;
     public bool ShouldApplyEquipment = true;
@@ -49,7 +49,7 @@ public class TransformationViewUiController : IDisposable
         if (_glamourerService.ApiAvailable)
             RefreshDesigns();
     }
-    
+
     public async void RefreshDesigns()
     {
         try
@@ -63,7 +63,7 @@ public class TransformationViewUiController : IDisposable
             // Ignored
         }
     }
-    
+
     public bool MissingPermissionsForATarget()
     {
         foreach (var friend in _selectionManager.Selected)
@@ -71,12 +71,12 @@ public class TransformationViewUiController : IDisposable
             if (ShouldApplyCustomization)
                 if ((friend.PermissionsGrantedByFriend.Primary & PrimaryPermissions2.GlamourerCustomization) is not PrimaryPermissions2.GlamourerCustomization)
                     return true;
-            
+
             if (ShouldApplyEquipment)
                 if ((friend.PermissionsGrantedByFriend.Primary & PrimaryPermissions2.GlamourerEquipment) is not PrimaryPermissions2.GlamourerEquipment)
                     return true;
         }
-        
+
         return false;
     }
 
@@ -86,10 +86,10 @@ public class TransformationViewUiController : IDisposable
         {
             if (SelectedDesignId == Guid.Empty)
                 return;
-            
+
             if (await _glamourerService.GetDesignAsync(SelectedDesignId).ConfigureAwait(false) is not { } design)
                 return;
-            
+
             _commandLockoutService.Lock();
 
             var flags = GlamourerApplyFlags.Once;
@@ -101,10 +101,10 @@ public class TransformationViewUiController : IDisposable
             // Don't send one with nothing
             if (flags is GlamourerApplyFlags.Once)
                 return;
-            
+
             var request = new TransformRequest(_selectionManager.GetSelectedFriendCodes(), design, flags, null);
             var response = await _networkService.InvokeAsync<ActionResponse>(HubMethod.Transform, request).ConfigureAwait(false);
-            
+
             ActionResponseParser.Parse("Transformation", response);
         }
         catch (Exception)
@@ -112,7 +112,7 @@ public class TransformationViewUiController : IDisposable
             // Ignored
         }
     }
-    
+
     private void OnIpcReady(object? sender, EventArgs e)
     {
         RefreshDesigns();

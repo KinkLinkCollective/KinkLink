@@ -21,14 +21,14 @@ public class CustomizePlusHandler : AbstractNetworkHandler, IDisposable
     // Const
     private const string Operation = "Customize+";
     private static readonly UserPermissions Permissions = new(PrimaryPermissions2.CustomizePlus, SpeakPermissions2.None, ElevatedPermissions.None);
-    
+
     // Injected
     private readonly CustomizePlusService _customize;
     private readonly LogService _log;
-    
+
     // Instantiated
     private readonly IDisposable _handler;
-    
+
     /// <summary>
     ///     <inheritdoc cref="CustomizePlusHandler"/>
     /// </summary>
@@ -39,18 +39,18 @@ public class CustomizePlusHandler : AbstractNetworkHandler, IDisposable
 
         _handler = network.Connection.On<CustomizeCommand, ActionResult<Unit>>(HubMethod.CustomizePlus, Handle);
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="MoodlesHandler"/>
     /// </summary>
     private async Task<ActionResult<Unit>> Handle(CustomizeCommand request)
     {
         Plugin.Log.Verbose($"{request}");
-        
+
         var sender = TryGetFriendWithCorrectPermissions(Operation, request.SenderFriendCode, Permissions);
         if (sender.Result is not ActionResultEc.Success)
             return ActionResultBuilder.Fail(sender.Result);
-        
+
         if (sender.Value is not { } friend)
             return ActionResultBuilder.Fail(ActionResultEc.ValueNotSet);
 
@@ -62,13 +62,13 @@ public class CustomizePlusHandler : AbstractNetworkHandler, IDisposable
                 Plugin.Log.Warning("[CustomizePlusHandler] Unable to delete existing customize");
                 return ActionResultBuilder.Fail(ActionResultEc.ClientPluginDependency);
             }
-            
+
             if (await _customize.ApplyCustomizeAsync(json).ConfigureAwait(false) is false)
             {
                 Plugin.Log.Warning("[CustomizePlusHandler] Unable to apply customize");
                 return ActionResultBuilder.Fail(ActionResultEc.ClientPluginDependency);
             }
-            
+
             _log.Custom($"{friend.NoteOrFriendCode} applied a customize plus template to you");
             return ActionResultBuilder.Ok();
         }

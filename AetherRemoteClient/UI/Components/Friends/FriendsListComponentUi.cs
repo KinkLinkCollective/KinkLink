@@ -23,9 +23,9 @@ public class FriendsListComponentUi(FriendsListComponentUiController controller,
             ImGui.EndChild();
             return;
         }
-        
+
         var width = ImGui.GetWindowWidth() - ImGui.GetCursorPosX() - AetherRemoteImGui.WindowPadding.X * 2;
-        
+
         SharedUserInterfaces.ContentBox("FriendsListSearch", AetherRemoteStyle.PanelBackground, true, () =>
         {
             ImGui.TextUnformatted("Search");
@@ -65,7 +65,7 @@ public class FriendsListComponentUi(FriendsListComponentUiController controller,
                     FriendOnlineStatus.Online => online,
                     _ => offline
                 };
-                
+
                 list.Add(friend);
             }
 
@@ -110,13 +110,13 @@ public class FriendsListComponentUi(FriendsListComponentUiController controller,
 
                 if (ImGui.IsItemHovered())
                     ImGui.SetTooltip("Friend codes are case sensitive");
-                
+
                 ImGui.Spacing();
                 if (ImGui.Button("Add Friend", new Vector2(width, 0)))
                     _ = controller.Add();
             });
         }
-        
+
         ImGui.EndChild();
     }
 }

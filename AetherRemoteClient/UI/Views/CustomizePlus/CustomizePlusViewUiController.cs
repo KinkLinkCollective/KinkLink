@@ -24,12 +24,12 @@ public class CustomizePlusViewUiController : IDisposable
     private readonly CustomizePlusService _customizePlusService;
     private readonly NetworkService _networkService;
     private readonly SelectionManager _selectionManager;
-    
+
     /// <summary>
     ///     Customize+ data to send
     /// </summary>
     public string SearchTerm = string.Empty;
-    
+
     /// <summary>
     ///     The currently selected Guid of the Profile to send
     /// </summary>
@@ -39,7 +39,7 @@ public class CustomizePlusViewUiController : IDisposable
     public List<Folder<Profile>> FilteredProfiles => SearchTerm == string.Empty
         ? _profiles.ToList()
         : _profiles.Select(folder => new Folder<Profile>(folder.Path, folder.Content.Where(design => design.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)).ToList())).ToList();
-    
+
     /// <summary>
     ///     <inheritdoc cref="CustomizePlusViewUiController"/>
     /// </summary>
@@ -60,7 +60,7 @@ public class CustomizePlusViewUiController : IDisposable
         try
         {
             SelectedProfileId = Guid.Empty;
-            
+
             _profiles = await _customizePlusService.GetProfiles().ConfigureAwait(false);
         }
         catch (Exception)
@@ -68,7 +68,7 @@ public class CustomizePlusViewUiController : IDisposable
             // Ignored
         }
     }
-    
+
     /// <summary>
     ///     Calculates the friends who you lack correct permissions to send to
     /// </summary>
@@ -81,7 +81,7 @@ public class CustomizePlusViewUiController : IDisposable
 
         return false;
     }
-    
+
     public async void SendCustomizeProfile()
     {
         try
@@ -90,7 +90,7 @@ public class CustomizePlusViewUiController : IDisposable
                 return;
 
             _commandLockoutService.Lock();
-        
+
             if (await _customizePlusService.GetProfile(SelectedProfileId).ConfigureAwait(false) is not { } profile)
                 return;
 
@@ -105,7 +105,7 @@ public class CustomizePlusViewUiController : IDisposable
             // Ignored
         }
     }
-    
+
     private void OnIpcReady(object? sender, EventArgs e)
     {
         RefreshCustomizeProfiles();

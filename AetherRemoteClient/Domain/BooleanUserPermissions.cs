@@ -12,13 +12,13 @@ public class BooleanUserPermissions
 {
     // Primary Permissions
     public bool Emote, Customization, Equipment, Mods, BodySwap, Twinning, CustomizePlus, Moodles, Hypnosis, Honorific;
-    
+
     // Speak Permissions
     public bool Say, Yell, Shout, Tell, Party, Alliance, FreeCompany, PvPTeam, Echo, Roleplay;
-    
+
     // Linkshell Permissions
     public bool Ls1, Ls2, Ls3, Ls4, Ls5, Ls6, Ls7, Ls8, Cwl1, Cwl2, Cwl3, Cwl4, Cwl5, Cwl6, Cwl7, Cwl8;
-    
+
     // Elevated Permissions
     public bool PermanentTransformation;
 
@@ -33,12 +33,12 @@ public class BooleanUserPermissions
         if (Equipment != other.Equipment) return false;
         if (Mods != other.Mods) return false;
         if (BodySwap != other.BodySwap) return false;
-        if (Twinning!= other.Twinning) return false;
+        if (Twinning != other.Twinning) return false;
         if (CustomizePlus != other.CustomizePlus) return false;
         if (Moodles != other.Moodles) return false;
         if (Hypnosis != other.Hypnosis) return false;
         if (Honorific != other.Honorific) return false;
-        
+
         // Speak Permissions
         if (Say != other.Say) return false;
         if (Yell != other.Yell) return false;
@@ -50,7 +50,7 @@ public class BooleanUserPermissions
         if (PvPTeam != other.PvPTeam) return false;
         if (Echo != other.Echo) return false;
         if (Roleplay != other.Roleplay) return false;
-        
+
         // Linkshell Permissions
         if (Ls1 != other.Ls1) return false;
         if (Ls2 != other.Ls2) return false;
@@ -71,7 +71,7 @@ public class BooleanUserPermissions
 
         // Elevated Permissions
         if (PermanentTransformation != other.PermanentTransformation) return false;
-        
+
         return true;
     }
 
@@ -84,8 +84,8 @@ public class BooleanUserPermissions
         {
             // Primary
             Emote = (permissions.Primary & PrimaryPermissions2.Emote) == PrimaryPermissions2.Emote,
-            Customization = (permissions.Primary & PrimaryPermissions2.GlamourerCustomization) ==  PrimaryPermissions2.GlamourerCustomization,
-            Equipment = (permissions.Primary & PrimaryPermissions2.GlamourerEquipment) ==  PrimaryPermissions2.GlamourerEquipment,
+            Customization = (permissions.Primary & PrimaryPermissions2.GlamourerCustomization) == PrimaryPermissions2.GlamourerCustomization,
+            Equipment = (permissions.Primary & PrimaryPermissions2.GlamourerEquipment) == PrimaryPermissions2.GlamourerEquipment,
             Mods = (permissions.Primary & PrimaryPermissions2.Mods) == PrimaryPermissions2.Mods,
             BodySwap = (permissions.Primary & PrimaryPermissions2.BodySwap) == PrimaryPermissions2.BodySwap,
             Twinning = (permissions.Primary & PrimaryPermissions2.Twinning) == PrimaryPermissions2.Twinning,
@@ -93,7 +93,7 @@ public class BooleanUserPermissions
             Moodles = (permissions.Primary & PrimaryPermissions2.Moodles) == PrimaryPermissions2.Moodles,
             Hypnosis = (permissions.Primary & PrimaryPermissions2.Hypnosis) == PrimaryPermissions2.Hypnosis,
             Honorific = (permissions.Primary & PrimaryPermissions2.Honorific) == PrimaryPermissions2.Honorific,
-            
+
             // Speak Permissions
             Say = (permissions.Speak & SpeakPermissions2.Say) == SpeakPermissions2.Say,
             Yell = (permissions.Speak & SpeakPermissions2.Yell) == SpeakPermissions2.Yell,
@@ -105,7 +105,7 @@ public class BooleanUserPermissions
             PvPTeam = (permissions.Speak & SpeakPermissions2.PvPTeam) == SpeakPermissions2.PvPTeam,
             Echo = (permissions.Speak & SpeakPermissions2.Echo) == SpeakPermissions2.Echo,
             Roleplay = (permissions.Speak & SpeakPermissions2.Roleplay) == SpeakPermissions2.Roleplay,
-            
+
             // Linkshell Permissions
             Ls1 = (permissions.Speak & SpeakPermissions2.Ls1) == SpeakPermissions2.Ls1,
             Ls2 = (permissions.Speak & SpeakPermissions2.Ls2) == SpeakPermissions2.Ls2,
@@ -123,9 +123,9 @@ public class BooleanUserPermissions
             Cwl6 = (permissions.Speak & SpeakPermissions2.Cwl6) == SpeakPermissions2.Cwl6,
             Cwl7 = (permissions.Speak & SpeakPermissions2.Cwl7) == SpeakPermissions2.Cwl7,
             Cwl8 = (permissions.Speak & SpeakPermissions2.Cwl8) == SpeakPermissions2.Cwl8,
-            
+
             // Elevated Permissions
-            PermanentTransformation = (permissions.Elevated & ElevatedPermissions.PermanentTransformation) == ElevatedPermissions.PermanentTransformation 
+            PermanentTransformation = (permissions.Elevated & ElevatedPermissions.PermanentTransformation) == ElevatedPermissions.PermanentTransformation
         };
     }
 
@@ -136,9 +136,9 @@ public class BooleanUserPermissions
     {
         // Initialization
         var primary = PrimaryPermissions2.None;
-        var speak =  SpeakPermissions2.None;
+        var speak = SpeakPermissions2.None;
         var elevated = ElevatedPermissions.None;
-        
+
         // Primary
         if (permissions.Emote) primary |= PrimaryPermissions2.Emote;
         if (permissions.Customization) primary |= PrimaryPermissions2.GlamourerCustomization;
@@ -180,10 +180,10 @@ public class BooleanUserPermissions
         if (permissions.Cwl6) speak |= SpeakPermissions2.Cwl6;
         if (permissions.Cwl7) speak |= SpeakPermissions2.Cwl7;
         if (permissions.Cwl8) speak |= SpeakPermissions2.Cwl8;
-        
+
         // Elevated Permissions
         if (permissions.PermanentTransformation) elevated |= ElevatedPermissions.PermanentTransformation;
-        
+
         return new UserPermissions(primary, speak, elevated);
     }
 }

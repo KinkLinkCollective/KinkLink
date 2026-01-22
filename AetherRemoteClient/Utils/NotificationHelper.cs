@@ -12,7 +12,7 @@ public static class NotificationHelper
     private static readonly TimeSpan SuccessDuration = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan WarningDuration = TimeSpan.FromSeconds(6);
     private static readonly TimeSpan LongRead = TimeSpan.FromSeconds(12);
-    
+
     public static void Honorific()
     {
         var notification = new Notification
@@ -26,10 +26,10 @@ public static class NotificationHelper
             Title = "An Honorific was applied to you",
             Content = "While you have an honorific applied, you will not be able to access your others. To clear an honorific, visit the status tab and click Reset Honorific."
         };
-        
+
         Plugin.NotificationManager.AddNotification(notification);
     }
-    
+
     /// <summary>
     ///     Shorthand to create an information notification minimized
     /// </summary>
@@ -46,10 +46,10 @@ public static class NotificationHelper
             Title = title,
             Content = content
         };
-        
+
         Plugin.NotificationManager.AddNotification(notification);
     }
-    
+
     /// <summary>
     ///     Shorthand to create a success notification minimized
     /// </summary>
@@ -66,7 +66,7 @@ public static class NotificationHelper
             Title = title,
             Content = content
         };
-        
+
         Plugin.NotificationManager.AddNotification(notification);
     }
 
@@ -85,7 +85,7 @@ public static class NotificationHelper
             Title = title,
             Content = content
         };
-        
+
         Plugin.NotificationManager.AddNotification(notification);
     }
 
@@ -104,7 +104,7 @@ public static class NotificationHelper
             Title = title,
             Content = content
         };
-        
+
         Plugin.NotificationManager.AddNotification(notification);
     }
 }

@@ -24,22 +24,22 @@ public class CustomizePlusHandler(IPresenceService presenceService, IForwardedRe
             logger.LogWarning("{Sender} sent invalid customize+ request {Error}", senderFriendCode, error);
             return new ActionResponse(error, []);
         }
-        
+
         var forwardedRequest = new CustomizeCommand(senderFriendCode, request.JsonBoneDataBytes);
         return await forwardedRequestManager.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, Method, Permissions, forwardedRequest, clients);
     }
-    
+
     private ActionResponseEc? ValidateCustomizeRequest(string senderFriendCode, CustomizeRequest request)
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.TooManyRequests;
-        
+
         if (VerificationUtilities.ValidListOfFriendCodes(request.TargetFriendCodes) is false)
             return ActionResponseEc.BadDataInRequest;
 
         if (VerificationUtilities.IsJsonBytes(request.JsonBoneDataBytes) is false)
             return ActionResponseEc.BadDataInRequest;
-        
+
         return null;
     }
 }

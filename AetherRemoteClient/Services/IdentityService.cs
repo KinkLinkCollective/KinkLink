@@ -26,7 +26,7 @@ public class IdentityService
     ///     Sets the current friend code
     /// </summary>
     public void SetFriendCode(string code) => FriendCode = code;
-    
+
     /// <summary>
     ///     Clears any alterations made to the local player
     /// </summary>

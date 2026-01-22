@@ -1,7 +1,6 @@
 using System.Numerics;
 using AetherRemoteClient.Domain;
 using AetherRemoteClient.Domain.Interfaces;
-using AetherRemoteClient.Managers;
 using AetherRemoteClient.Services;
 using AetherRemoteClient.UI.Components.Input;
 using AetherRemoteClient.Utils;
@@ -15,13 +14,12 @@ public class StatusViewUi(
     StatusViewUiController controller,
     PermanentTransformationLockService permanentTransformationLockService,
     IdentityService identityService,
-    TipService tipService,
-    HypnosisManager hypnosisManager) : IDrawable
+    TipService tipService) : IDrawable
 {
     public void Draw()
     {
         ImGui.BeginChild("SettingsContent", Vector2.Zero, false, AetherRemoteStyle.ContentFlags);
-        
+
         var windowWidth = ImGui.GetWindowWidth();
         var windowPadding = ImGui.GetStyle().WindowPadding;
 
@@ -41,7 +39,7 @@ public class StatusViewUi(
             SharedUserInterfaces.PopBigFont();
             SharedUserInterfaces.TextCentered("(click friend code to copy)", ImGuiColors.DalamudGrey);
         });
-        
+
         SharedUserInterfaces.ContentBox("StatusLogout", AetherRemoteStyle.PanelBackground, true, () =>
         {
             SharedUserInterfaces.MediumText("Welcome");
@@ -50,18 +48,18 @@ public class StatusViewUi(
 
         if (SharedUserInterfaces.ContextBoxButton(FontAwesomeIcon.Plug, windowPadding, windowWidth))
             controller.Disconnect();
-        
+
         SharedUserInterfaces.Tooltip("Disconnect");
-        
+
         SharedUserInterfaces.ContentBox("StatusButtons", AetherRemoteStyle.PanelBackground, true, () =>
         {
             SharedUserInterfaces.MediumText("Statuses");
             ImGui.TextUnformatted("Various aspects of the plugin have lingering affects. You can find them below.");
-            
+
             ImGui.SameLine();
             SharedUserInterfaces.Icon(FontAwesomeIcon.QuestionCircle);
             SharedUserInterfaces.Tooltip("Only active statuses will be displayed");
-            
+
             SharedUserInterfaces.Tooltip(
                 [
                     "Only active statuses will be displayed. Such statuses include:",
@@ -72,16 +70,13 @@ public class StatusViewUi(
                     "- Being hypnotized"
                 ]);
         });
-        
+
         if (permanentTransformationLockService.Locked)
             RenderPermanentTransformationComponent(windowPadding, windowWidth);
 
         if (identityService.IsAltered)
             RenderTransformationComponent(windowPadding, windowWidth);
 
-        if (hypnosisManager.IsBeingHypnotized)
-            RenderHypnosisComponent(windowPadding, windowWidth);
-        
         SharedUserInterfaces.ContentBox("OmniTool", AetherRemoteStyle.PanelBackground, false, () =>
         {
             SharedUserInterfaces.MediumText("Plugin Misbehaving? (Temporary Solution)");
@@ -94,10 +89,10 @@ public class StatusViewUi(
             if (ImGui.Button("Reset Customize+"))
                 controller.ResetCustomize();
         });
-        
+
         ImGui.EndChild();
     }
-    
+
     private void RenderPermanentTransformationComponent(Vector2 windowPadding, float windowWidth)
     {
         SharedUserInterfaces.ContentBox("StatusLock", AetherRemoteStyle.ElevatedBackground, true, () =>
@@ -108,20 +103,20 @@ public class StatusViewUi(
 
         var previousContextBoxSize = ImGui.GetItemRectSize();
         var endingCursorPosition = ImGui.GetCursorPosY();
-        
+
         SharedUserInterfaces.PushBigFont();
         var cursorPositionStartX = windowWidth - previousContextBoxSize.Y - FourDigitInput.Width - windowPadding.Y * 2;
-        var start = new Vector2(cursorPositionStartX ,endingCursorPosition - previousContextBoxSize.Y - windowPadding.Y * 2);
+        var start = new Vector2(cursorPositionStartX, endingCursorPosition - previousContextBoxSize.Y - windowPadding.Y * 2);
         ImGui.SetCursorPos(start);
-        
+
         controller.PinInput.Draw();
         SharedUserInterfaces.PopBigFont();
-        
+
         ImGui.SameLine();
 
         if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Unlock, new Vector2(previousContextBoxSize.Y)))
             controller.Unlock();
-        
+
         ImGui.SetCursorPosY(endingCursorPosition);
     }
 
@@ -144,7 +139,7 @@ public class StatusViewUi(
                 IdentityAlterationType.BodySwap => $"{alteration.Sender} swapped your body",
                 _ => $"{alteration.Sender} altered your identity"
             };
-            
+
             ImGui.TextUnformatted(type);
         });
 
@@ -159,17 +154,5 @@ public class StatusViewUi(
             if (SharedUserInterfaces.ContextBoxButton(FontAwesomeIcon.History, windowPadding, windowWidth))
                 controller.ResetIdentity();
         }
-    }
-
-    private void RenderHypnosisComponent(Vector2 windowPadding, float windowWidth)
-    {
-        SharedUserInterfaces.ContentBox("StatusHypnosis", AetherRemoteStyle.PanelBackground, true, () =>
-        {
-            SharedUserInterfaces.MediumText("Hypnosis");
-            ImGui.TextUnformatted($"{hypnosisManager.Hypnotist?.NoteOrFriendCode ?? "Unknown"} is hypnotizing you");
-        });
-        
-        if (SharedUserInterfaces.ContextBoxButton(FontAwesomeIcon.Square, windowPadding, windowWidth))
-            hypnosisManager.Wake();
     }
 }

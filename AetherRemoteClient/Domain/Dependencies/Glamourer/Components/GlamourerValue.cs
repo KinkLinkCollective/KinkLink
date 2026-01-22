@@ -6,7 +6,7 @@ public class GlamourerValue
     public uint Value;
 
     public GlamourerValue Clone() => (GlamourerValue)MemberwiseClone();
-    
+
     public bool IsEqualTo(GlamourerValue other)
     {
         if (Apply != other.Apply) return false;

@@ -26,16 +26,16 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
 {
     // Default folder for designs without homes
     private const string Uncategorized = "Uncategorized";
-    
+
     // Const
     private const int ExpectedMajor = 6;
     private const int ExpectedMinor = 4;
-    
+
     // Instantiated
     private readonly ICallGateSubscriber<(int, int)> _getVersion;
     private readonly ICallGateSubscriber<IList<ProfileData>> _getProfileList;
     private readonly ICallGateSubscriber<Guid, (int, string?)> _getProfileById;
-    
+
     /// <summary>
     ///     Reflected instance of CustomizePlus
     /// </summary>
@@ -45,12 +45,12 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
     ///     Is CustomizePlus available for use?
     /// </summary>
     public bool ApiAvailable;
-    
+
     /// <summary>
     ///     <inheritdoc cref="IExternalPlugin.IpcReady"/>
     /// </summary>
     public event EventHandler? IpcReady;
-    
+
     /// <summary>
     ///     <inheritdoc cref="CustomizePlusService"/>
     /// </summary>
@@ -60,7 +60,7 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
         _getProfileList = Plugin.PluginInterface.GetIpcSubscriber<IList<ProfileData>>("CustomizePlus.Profile.GetList");
         _getProfileById = Plugin.PluginInterface.GetIpcSubscriber<Guid, (int, string?)>("CustomizePlus.Profile.GetByUniqueId");
     }
-    
+
     /// <summary>
     ///     Tests for availability to CustomizePlus
     /// </summary>
@@ -69,10 +69,10 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
         // Set everything to disabled state
         _customizePlusPlugin = null;
         ApiAvailable = false;
-        
+
         // Invoke Api
         var version = await Plugin.RunOnFrameworkSafely(() => _getVersion.InvokeFunc()).ConfigureAwait(false);
-        
+
         // Test for proper versioning
         if (version.Item1 is not ExpectedMajor || version.Item2 < ExpectedMinor)
             return false;
@@ -80,17 +80,17 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
         // Check to make sure the reflection process was successful
         if (await Plugin.RunOnFrameworkSafely(CustomizePlusPlugin.Create).ConfigureAwait(false) is not { } plugin)
             return false;
-        
+
         // Call the delete method for safety
         await DeleteTemporaryCustomizeAsync().ConfigureAwait(false);
-        
+
         // Mark as ready
         _customizePlusPlugin = plugin;
         ApiAvailable = true;
-        
+
         // As a safety precaution, attempt to delete any lingering Aether Remote profiles that may exist
         await DeleteTemporaryCustomizeAsync().ConfigureAwait(false);
-        
+
         IpcReady?.Invoke(this, EventArgs.Empty);
         return true;
     }
@@ -104,7 +104,7 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
         {
             if (ApiAvailable is false)
                 return [];
-            
+
             var result = await Plugin.RunOnFramework(() => _getProfileList.InvokeFunc()).ConfigureAwait(false);
 
             var folders = new Dictionary<string, List<Profile>>();
@@ -155,7 +155,7 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
         {
             if (ApiAvailable is false)
                 return null;
-            
+
             var tuple = await Plugin.RunOnFramework(() => _getProfileById.InvokeFunc(guid)).ConfigureAwait(false);
             return tuple.Item1 is 0 ? tuple.Item2 : null;
         }
@@ -165,7 +165,7 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
             return null;
         }
     }
-    
+
     /// <summary>
     ///     Tries to get the template data for the active profile on a provided character
     /// </summary>
@@ -173,7 +173,7 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
     public async Task<string?> TryGetActiveProfileOnCharacter(string characterNameToSearchFor)
     {
         return await Plugin.RunOnFrameworkSafely(() => _customizePlusPlugin?.ProfileManager.TryGetActiveProfileOnCharacter(characterNameToSearchFor)).ConfigureAwait(false);
-    } 
+    }
 
     /// <summary>
     ///     Apply a CustomizePlus profile to the local player
@@ -214,7 +214,7 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
             }
         }).ConfigureAwait(false);
     }
-    
+
     /// <summary>
     ///     Deletes the temporary profile created by Aether Remote, if one exists
     /// </summary>

@@ -15,7 +15,7 @@ public class LoginManager : IDisposable
     ///     If we have finished processing all the login events
     /// </summary>
     public event Action? LoginFinished;
-    
+
     /// <summary>
     ///     <inheritdoc cref="LoginManager"/>
     /// </summary>
@@ -23,11 +23,11 @@ public class LoginManager : IDisposable
     {
         // Store injected services
         _networkService = networkService;
-        
+
         // Subscribe to log in events
         Plugin.ClientState.Login += OnLogin;
         Plugin.ClientState.Logout += OnLogout;
-        
+
         // If we're already logged in, fire the login function
         if (Plugin.ClientState.IsLoggedIn)
             OnLogin();
@@ -54,7 +54,7 @@ public class LoginManager : IDisposable
 
             // Emit an event
             LoginFinished?.Invoke();
-            
+
             // Initiate a connection to the server if auto login is set to true
             if (Plugin.CharacterConfiguration.AutoLogin is true)
                 await _networkService.StartAsync().ConfigureAwait(false);
@@ -64,7 +64,7 @@ public class LoginManager : IDisposable
             Plugin.Log.Error($"[LoginManager] Unexpected error handling login event, {e}");
         }
     }
-    
+
     private async void OnLogout(int type, int code)
     {
         try

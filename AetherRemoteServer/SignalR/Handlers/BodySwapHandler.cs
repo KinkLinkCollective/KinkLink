@@ -25,7 +25,7 @@ public class BodySwapHandler(IDatabaseService database, IPresenceService presenc
             logger.LogWarning("{Sender} sent invalid body swap request {Error}", senderFriendCode, error);
             return new BodySwapResponse(error, [], null, null);
         }
-        
+
         // Convert the swap attributes to primary permissions
         var primary = request.SwapAttributes.ToPrimaryPermission();
         primary |= PrimaryPermissions2.BodySwap;
@@ -49,7 +49,7 @@ public class BodySwapHandler(IDatabaseService database, IPresenceService presenc
             // Body swap will only every make use of primary and elevated permissions
             if ((targetPermissions.Primary & primary) != primary || (targetPermissions.Elevated & elevated) != elevated)
                 return new BodySwapResponse(ActionResponseEc.TargetBodySwapLacksPermissions, [], null, null);
-            
+
             characters.Add(new Character(target.CharacterName, target.CharacterName));
         }
 
@@ -66,14 +66,14 @@ public class BodySwapHandler(IDatabaseService database, IPresenceService presenc
         {
             // Get the new body to be assigned to this person
             var character = deranged[i];
-            
+
             // Construct the tailored request
             var forwarded = new BodySwapCommand(senderFriendCode, character.Name, character.World, request.SwapAttributes, request.LockCode);
 
             // Double-check the target is still online
             if (presenceService.TryGet(request.TargetFriendCodes[i]) is not { } connectionClient)
                 return new BodySwapResponse(ActionResponseEc.TargetOffline, [], null, null);
-            
+
             try
             {
                 var client = clients.Client(connectionClient.ConnectionId);
@@ -93,7 +93,7 @@ public class BodySwapHandler(IDatabaseService database, IPresenceService presenc
         // In practice, this will never be greater than, only equal to
         if (request.TargetFriendCodes.Count >= deranged.Count)
             return new BodySwapResponse(ActionResponseEc.Success, results, null, null);
-        
+
         var own = deranged[^1];
         return new BodySwapResponse(ActionResponseEc.Success, results, own.Name, own.World);
     }
@@ -102,19 +102,19 @@ public class BodySwapHandler(IDatabaseService database, IPresenceService presenc
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.TooManyRequests;
-        
+
         // This function does not function if the sender includes themselves in the target
         foreach (var target in request.TargetFriendCodes)
             if (target == senderFriendCode)
                 return ActionResponseEc.IncludedSelfInBodySwap;
-        
+
         // Needs at least two people total
         if (request.TargetFriendCodes.Count < 2 && request.SenderCharacterName is null)
             return ActionResponseEc.TooFewTargets;
 
         return null;
     }
-    
+
     private static List<Character> Derange(IReadOnlyList<Character> source)
     {
         var list = source.ToList();
@@ -133,6 +133,6 @@ public class BodySwapHandler(IDatabaseService database, IPresenceService presenc
         (list[n - 1], list[fix]) = (list[fix], list[n - 1]);
         return list;
     }
-    
+
     private record Character(string Name, string World);
 }

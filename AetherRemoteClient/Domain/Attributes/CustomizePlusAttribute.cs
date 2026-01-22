@@ -22,7 +22,7 @@ public class CustomizePlusAttribute(CustomizePlusService customize, string chara
             Plugin.Log.Warning("[CustomizePlusAttribute.Apply] Could not get customize templates");
             return false;
         }
-        
+
         _customizeTemplateJson = json;
         return true;
     }

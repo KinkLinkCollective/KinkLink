@@ -24,17 +24,17 @@ public class CharacterConfiguration
     ///     Character's home world
     /// </summary>
     public string World = string.Empty;
-    
+
     /// <summary>
     ///     Should the plugin login automatically
     /// </summary>
     public bool AutoLogin;
-    
+
     /// <summary>
     ///     The secret to use for this character
     /// </summary>
     public string Secret = string.Empty;
-    
+
     /// <summary>
     ///     Save the configuration
     /// </summary>

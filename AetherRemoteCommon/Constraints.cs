@@ -14,7 +14,7 @@ public static class Constraints
     ///     How many seconds in between each command must a user wait to use in-game commands (Speak, Emote, etc.)
     /// </summary>
     public const uint GlobalCommandCooldownInSeconds = 4;
-    
+
     // Friend Code
     public const int FriendCodeMinimumLength = 2;
     public const int FriendCodeMaximumLength = 16;
@@ -38,25 +38,25 @@ public static class Constraints
     {
         public const int ArmsMin = 1;
         public const int ArmsMax = 5;
-    
+
         public const int TurnsMin = 1;
         public const int TurnsMax = 10;
-    
+
         public const int CurvesMin = 1;
         public const int CurvesMax = 10;
-    
+
         public const int ThicknessMin = 1;
         public const int ThicknessMax = 10;
-    
+
         public const int SpeedMin = 0;
         public const int SpeedMax = 10;
-    
+
         public const int TextDelayMin = 0;
         public const int TextDelayMax = 10;
-    
+
         public const int TextDurationMin = 0;
         public const int TextDurationMax = 10;
-    
+
         public const int TextWordsMin = 0;
         public const int TextWordsMax = 2024;
     }

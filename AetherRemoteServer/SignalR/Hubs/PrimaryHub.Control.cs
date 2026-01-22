@@ -14,7 +14,7 @@ public partial class PrimaryHub
         LogWithBehavior($"[SpeakRequest] Sender = {friendCode}, Targets = {string.Join(", ", request.TargetFriendCodes)}, Message = {request.Message}", LogMode.Both);
         return await speakHandler.Handle(friendCode, request, Clients);
     }
-    
+
     [HubMethodName(HubMethod.Emote)]
     public async Task<ActionResponse> Emote(EmoteRequest request)
     {

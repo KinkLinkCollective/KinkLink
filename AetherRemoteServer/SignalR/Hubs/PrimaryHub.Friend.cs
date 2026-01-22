@@ -15,7 +15,7 @@ public partial class PrimaryHub
         LogWithBehavior($"[AddFriendRequest] Sender = {friendCode}, Target = {request.TargetFriendCode}", LogMode.Both);
         return await addFriendHandler.Handle(friendCode, request, Clients);
     }
-    
+
     [HubMethodName(HubMethod.RemoveFriend)]
     public async Task<RemoveFriendResponse> RemoveFriend(RemoveFriendRequest request)
     {
@@ -23,7 +23,7 @@ public partial class PrimaryHub
         LogWithBehavior($"[RemoveFriendRequest] Sender = {friendCode}, Target = {request.TargetFriendCode}", LogMode.Both);
         return await removeFriendHandler.Handle(friendCode, request, Clients);
     }
-    
+
     [HubMethodName(HubMethod.UpdateFriend)]
     public async Task<UpdateFriendResponse> UpdateFriend(UpdateFriendRequest request)
     {

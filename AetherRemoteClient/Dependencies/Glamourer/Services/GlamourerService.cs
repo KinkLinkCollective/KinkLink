@@ -25,11 +25,11 @@ public class GlamourerService : IExternalPlugin, IDisposable
 {
     // Default folder for designs without homes
     private const string Uncategorized = "Uncategorized";
-    
+
     // Const
     private const int ExpectedMajor = 1;
     private const int ExpectedMinor = 7;
-    
+
     // Syncing solutions lock other player profiles to prevent tampering by the client. To view the glamourer data
     // of these other players, we need a key to unlock them. Since there are multiple services, we must try multiple
     // keys to account for all possibilities.
@@ -38,14 +38,14 @@ public class GlamourerService : IExternalPlugin, IDisposable
 
     // An array containing all the lock codes for various syncing solutions
     private static readonly uint[] LockCodes = [MareLockCode, BnuyLockCode];
-    
+
     // Glamourer Api
     private readonly ApiVersion _apiVersion;
-    
+
     // Glamourer Api Design
     private readonly GetDesignBase64 _getDesignBase64;
     private readonly GetDesignListExtended _getDesignListExtended;
-    
+
     // Glamourer Api State
     private readonly ApplyState _applyState;
     private readonly GetState _getState;
@@ -71,7 +71,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
     ///     Is Glamourer available for use?
     /// </summary>
     public bool ApiAvailable;
-    
+
     /// <summary>
     ///     <inheritdoc cref="IExternalPlugin.IpcReady"/>
     /// </summary>
@@ -86,7 +86,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
 
         _getDesignBase64 = new GetDesignBase64(Plugin.PluginInterface);
         _getDesignListExtended = new GetDesignListExtended(Plugin.PluginInterface);
-        
+
         _applyState = new ApplyState(Plugin.PluginInterface);
         _getState = new GetState(Plugin.PluginInterface);
         _getStateBase64 = new GetStateBase64(Plugin.PluginInterface);
@@ -95,7 +95,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
 
         _stateChangedWithType = StateChangedWithType.Subscriber(Plugin.PluginInterface);
         _stateChangedWithType.Event += OnGlamourerStateChanged;
-        
+
         _stateFinalizedWithType = StateFinalized.Subscriber(Plugin.PluginInterface);
         _stateFinalizedWithType.Event += OnGlamourerStateFinalized;
     }
@@ -107,7 +107,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
     {
         // Set everything to disabled state
         ApiAvailable = false;
-        
+
         // Invoke Api
         var version = await Plugin.RunOnFrameworkSafely(() => _apiVersion.Invoke()).ConfigureAwait(false);
 
@@ -128,7 +128,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
     {
         return await Task.Run(GetDesignListExtended).ConfigureAwait(false);
     }
-    
+
     private async Task<List<Folder<Design>>> GetDesignListExtended()
     {
         if (!ApiAvailable)
@@ -139,7 +139,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
         try
         {
             var result = await Plugin.RunOnFramework(() => _getDesignListExtended.Invoke()).ConfigureAwait(false);
-            
+
             var folders = new Dictionary<string, List<Design>>();
             foreach (var kvp in result)
             {
@@ -150,7 +150,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
                 var folderPathSpan = index is -1
                     ? Uncategorized.AsSpan()
                     : span[..index];
-                
+
                 var folderPath = folderPathSpan.ToString();
 
                 if (folders.TryGetValue(folderPath, out var list))
@@ -202,7 +202,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             return false;
         }
     }
-    
+
     /// <summary>
     ///     Reverts to original automation
     /// </summary>
@@ -214,7 +214,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             Plugin.Log.Warning($"[GlamourerService] [RevertToAutomation] Unable to revert index {index} because glamourer is not available");
             return false;
         }
-        
+
         try
         {
             var result = await Plugin.RunOnFramework(() => _revertToAutomation.Invoke(index)).ConfigureAwait(false);
@@ -226,7 +226,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             return false;
         }
     }
-    
+
     /// <summary>
     ///     Applies a given design to an object index
     /// </summary>
@@ -246,10 +246,10 @@ public class GlamourerService : IExternalPlugin, IDisposable
         {
             // Convert the flags to glamourer domain
             var converted = ConvertGlamourerToApplyFlags(flags);
-        
+
             // Invoke the function
             var result = await Plugin.RunOnFramework(() => _applyState.Invoke(glamourerData, index, 0, converted)).ConfigureAwait(false);
-        
+
             // Process results
             return LogAndProcessResult("[ApplyDesignAsync]", index, result);
         }
@@ -279,10 +279,10 @@ public class GlamourerService : IExternalPlugin, IDisposable
         {
             // Convert the flags to glamourer domain
             var converted = ConvertGlamourerToApplyFlags(flags);
-        
+
             // Invoke the function
             var result = await Plugin.RunOnFramework(() => _applyState.Invoke(glamourerData, index, 0, converted)).ConfigureAwait(false);
-        
+
             // Process results
             return LogAndProcessResult("[ApplyDesignAsync]", index, result);
         }
@@ -292,7 +292,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             return false;
         }
     }
-    
+
     /// <summary>
     ///     Get a design from glamourer by providing Guid
     /// </summary>
@@ -336,19 +336,19 @@ public class GlamourerService : IExternalPlugin, IDisposable
             {
                 // Invoke the function
                 var (code, data) = await Plugin.RunOnFramework(() => _getStateBase64.Invoke(index, key)).ConfigureAwait(false);
-                
+
                 // Process result
                 switch (code)
                 {
                     // If successful, just return the data
                     case GlamourerApiEc.Success:
                         return data;
-                        
+
                     // If the key was invalid, just continue and try the next
                     case GlamourerApiEc.InvalidKey:
                         Plugin.Log.Verbose($"[GlamourerService] [GetDesignAsync] Key {code} was invalid");
                         continue;
-                        
+
                     // Otherwise, just return null
                     case GlamourerApiEc.NothingDone:
                     case GlamourerApiEc.ActorNotFound:
@@ -361,7 +361,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
                         return null;
                 }
             }
-            
+
             Plugin.Log.Warning($"[GlamourerService] [GetDesignAsync] Could not find a valid key for actor {index}. This is likely due to using an unsupported syncing solution.");
             return null;
         }
@@ -383,7 +383,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             Plugin.Log.Warning($"[GlamourerService] [GetDesignComponentsAsync] Unable to get design for actor index {index} because glamourer is not available");
             return null;
         }
-        
+
         try
         {
             // Iterate over all the codes
@@ -391,19 +391,19 @@ public class GlamourerService : IExternalPlugin, IDisposable
             {
                 // Invoke the function
                 var (code, data) = await Plugin.RunOnFramework(() => _getState.Invoke(index, key)).ConfigureAwait(false);
-                
+
                 // Process result
                 switch (code)
                 {
                     // If successful, just return the data
                     case GlamourerApiEc.Success:
                         return data;
-                        
+
                     // If the key was invalid, just continue and try the next
                     case GlamourerApiEc.InvalidKey:
                         Plugin.Log.Verbose($"[GlamourerService] [GetDesignComponentsAsync] Key {code} was invalid");
                         continue;
-                        
+
                     // Otherwise, just return null
                     case GlamourerApiEc.NothingDone:
                     case GlamourerApiEc.ActorNotFound:
@@ -416,7 +416,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
                         return null;
                 }
             }
-            
+
             Plugin.Log.Warning($"[GlamourerService] [GetDesignComponentsAsync] Could not find a valid key for actor {index}. This is likely due to using an unsupported syncing solution.");
             return null;
         }
@@ -426,7 +426,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             return null;
         }
     }
-    
+
     /// <summary>
     ///     Converts domain <see cref="GlamourerApplyFlags"/> to Glamourer <see cref="ApplyFlag"/>
     /// </summary>
@@ -434,22 +434,22 @@ public class GlamourerService : IExternalPlugin, IDisposable
     {
         // Always start with the 'once' flag
         var apply = ApplyFlag.Once;
-        
+
         // If the 'customization' flag is set, convert
         if ((flags & GlamourerApplyFlags.Customization) is not 0)
             apply |= ApplyFlag.Customization;
-        
+
         // If the 'equipment' flag is set, convert
         if ((flags & GlamourerApplyFlags.Equipment) is not 0)
             apply |= ApplyFlag.Equipment;
-        
+
         // If only the 'once' flag is set, add both 'customization' and 'equipment' flags
         if ((flags & (GlamourerApplyFlags.Customization | GlamourerApplyFlags.Equipment)) is 0)
             apply |= ApplyFlag.Customization | ApplyFlag.Equipment;
-        
+
         return apply;
     }
-    
+
     private unsafe void OnGlamourerStateChanged(IntPtr objectIndexPointer, StateChangeType stateChangeType)
     {
         try
@@ -458,7 +458,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             var objectIndex = (GameObject*)objectIndexPointer;
             if (objectIndex->ObjectIndex is not 0)
                 return;
-            
+
             // Invoke
             LocalPlayerChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -476,7 +476,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             var objectIndex = (GameObject*)objectIndexPointer;
             if (objectIndex->ObjectIndex is not 0)
                 return;
-            
+
             switch (stateFinalizationType)
             {
                 case StateFinalizationType.Revert:
@@ -488,7 +488,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
                 case StateFinalizationType.ReapplyAutomation:
                     LocalPlayerResetOrReapply?.Invoke(this, new GlamourerStateChangedEventArgs(stateFinalizationType));
                     break;
-                
+
                 case StateFinalizationType.ModelChange:
                 case StateFinalizationType.DesignApplied:
                 case StateFinalizationType.Gearset:
@@ -511,13 +511,13 @@ public class GlamourerService : IExternalPlugin, IDisposable
             Plugin.Log.Warning("[GlamourerIpc] Could not clone target JObject");
             return null;
         }
-        
+
         // Get materials of both sets
         if (currentDesign["Materials"] is not JObject currentDesignMaterials)
         {
             return null;
         }
-        
+
         if (targetDesign["Materials"] is not JObject targetDesignMaterials)
         {
             return null;
@@ -529,7 +529,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
             // Target has the material, which will always get updated
             if (targetDesign.ContainsKey(material.Name))
                 continue;
-            
+
             // Copy to a new object to avoid referencing even though this is just a JObject
             if (material.Value.DeepClone() is not JObject copy)
             {
@@ -555,13 +555,13 @@ public class GlamourerService : IExternalPlugin, IDisposable
         {
             // Convert from string64 to bytes
             var compressedBytes = Convert.FromBase64String(base64String);
-        
+
             // Glamourer compresses bytes, see https://github.com/Ottermandias/Glamourer/blob/main/Glamourer/Api/StateApi.cs#L311
             var decompressedBytes = Decompress(compressedBytes);
-        
+
             // Convert to raw JSON string
             var raw = Encoding.UTF8.GetString(decompressedBytes);
-        
+
             // Parse
             return JObject.Parse(raw);
         }
@@ -579,16 +579,16 @@ public class GlamourerService : IExternalPlugin, IDisposable
     {
         // Add the bytes to a stream
         using var stream = new MemoryStream(compressed, 1, compressed.Length - 1);
-        
+
         // Decompress the stream 
         using var zip = new GZipStream(stream, CompressionMode.Decompress);
-        
+
         // Create a results buffer
         using var results = new MemoryStream();
-        
+
         // Copy the decompressed bytes to the new buffer
         zip.CopyTo(results);
-        
+
         // Convert stream to byte array and return
         return results.ToArray();
     }
@@ -605,19 +605,19 @@ public class GlamourerService : IExternalPlugin, IDisposable
         {
             case GlamourerApiEc.Success or GlamourerApiEc.NothingDone:
                 return true;
-            
+
             case GlamourerApiEc.ActorNotFound:
                 Plugin.Log.Warning($"[GlamourerService] [{operation}] Actor {actor} not found");
                 return false;
-            
+
             case GlamourerApiEc.ActorNotHuman:
                 Plugin.Log.Warning($"[GlamourerService] [{operation}] Actor {actor} is not a valid target");
                 return false;
-            
+
             case GlamourerApiEc.InvalidKey:
                 Plugin.Log.Warning($"[GlamourerService] [{operation}] Invalid key. This likely means you are using an unsupported syncing solution");
                 return false;
-            
+
             default:
                 Plugin.Log.Warning($"[GlamourerService] [{operation}] The operation did not success, {error}");
                 return false;
@@ -628,7 +628,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
     {
         _stateChangedWithType.Event -= OnGlamourerStateChanged;
         _stateChangedWithType.Disable();
-        
+
         _stateFinalizedWithType.Event -= OnGlamourerStateFinalized;
         _stateFinalizedWithType.Disable();
         GC.SuppressFinalize(this);

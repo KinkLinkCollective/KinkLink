@@ -18,11 +18,11 @@ public class TransformationViewUi(
 {
     // Const
     private const int SendDesignButtonHeight = 40;
-    
+
     public void Draw()
     {
         ImGui.BeginChild("TransformationContent", AetherRemoteStyle.ContentSize, false, AetherRemoteStyle.ContentFlags);
-        
+
         var width = ImGui.GetWindowWidth();
         var padding = new Vector2(ImGui.GetStyle().WindowPadding.X, 0);
 
@@ -39,10 +39,10 @@ public class TransformationViewUi(
             if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Sync, null, "Refresh Designs"))
                 controller.RefreshDesigns();
         });
-        
+
         var headerHeight = ImGui.GetCursorPosY() - begin;
         var designContextBoxSize = new Vector2(0, ImGui.GetWindowHeight() - headerHeight - padding.X * 6 - SendDesignButtonHeight * 2);
-        
+
         if (ImGui.BeginChild("##DesignsDisplayBox", designContextBoxSize, true, ImGuiWindowFlags.NoScrollbar))
         {
             var half = ImGui.GetWindowWidth() * 0.5f;
@@ -50,7 +50,7 @@ public class TransformationViewUi(
             {
                 if (folder.Content.Count is 0)
                     continue;
-                
+
                 if (ImGui.CollapsingHeader(folder.Path))
                 {
                     ImGui.PushStyleColor(ImGuiCol.Header, AetherRemoteStyle.PrimaryColor);
@@ -60,7 +60,7 @@ public class TransformationViewUi(
                         var size = i % 2 is 0
                             ? new Vector2(half - padding.X * 2, 0)
                             : new Vector2(half - padding.X, 0);
-                        
+
                         if (design.Color is uint.MaxValue)
                         {
                             if (ImGui.Selectable(design.Name, controller.SelectedDesignId == design.Id, ImGuiSelectableFlags.None, size))
@@ -73,18 +73,18 @@ public class TransformationViewUi(
                                 controller.SelectedDesignId = design.Id;
                             ImGui.PopStyleColor();
                         }
-                        
+
                         if (i % 2 is 0 && i < folder.Content.Count - 1)
                             ImGui.SameLine(half);
                     }
-                    
+
                     ImGui.PopStyleColor();
                 }
             }
-            
+
             ImGui.EndChild();
         }
-        
+
         ImGui.Spacing();
 
         SharedUserInterfaces.ContentBox("DesignOptions", AetherRemoteStyle.PanelBackground, true, () =>
@@ -101,10 +101,10 @@ public class TransformationViewUi(
                 if (SharedUserInterfaces.IconButton(FontAwesomeIcon.User, new Vector2(SendDesignButtonHeight)))
                     controller.ShouldApplyCustomization = !controller.ShouldApplyCustomization;
             }
-            
+
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip(controller.ShouldApplyCustomization ? "Currently applying customizations, click to disable" : "Not applying customizations, click to enable");
-            
+
             ImGui.SameLine();
 
             if (controller.ShouldApplyEquipment)
@@ -119,11 +119,11 @@ public class TransformationViewUi(
                 if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Tshirt, new Vector2(SendDesignButtonHeight)))
                     controller.ShouldApplyEquipment = !controller.ShouldApplyEquipment;
             }
-            
+
             if (ImGui.IsItemHovered())
                 ImGui.SetTooltip(controller.ShouldApplyEquipment ? "Currently applying equipment, click to disable" : "Not applying equipment, click to enable");
         });
-        
+
         SharedUserInterfaces.ContentBox("DesignSend", AetherRemoteStyle.PanelBackground, false, () =>
         {
             if (selectionManager.Selected.Count is 0)

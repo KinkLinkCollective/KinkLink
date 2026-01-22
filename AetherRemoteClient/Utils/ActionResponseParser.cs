@@ -64,10 +64,10 @@ public static class ActionResponseParser
             ActionResponseEc.TargetBodySwapLacksPermissions => "You lack permissions for one of your targets",
             ActionResponseEc.TargetBodySwapIsNotFriends => "You are not friends with one of your targets",
             ActionResponseEc.BadDataInRequest => "Your request contained bad data",
-            
+
             // Disabled
             ActionResponseEc.Disabled => "This feature is temporarily disabled - How did you call this?!",
-            
+
             // Exception
             ActionResponseEc.Unknown => "Unknown failure",
 
@@ -75,7 +75,7 @@ public static class ActionResponseParser
             _ => "The error code was uninitialized."
         };
     }
-    
+
     private static string BuildActionFailedNotification2(string target, ActionResultEc code)
     {
         if (code is ActionResultEc.Success)
@@ -99,7 +99,7 @@ public static class ActionResponseParser
             ActionResultEc.ClientPluginDependency => string.Concat(name, " ran into an issue with another plugin"),
             ActionResultEc.ClientBeingHypnotized => string.Concat(name, " is currently occupied elsewhere"),
             ActionResultEc.ClientPermanentlyTransformed => string.Concat(name, " is permanently transformed and cannot change form"),
-            
+
             ActionResultEc.TargetTimeout => string.Concat("The command timed out to ", name),
             ActionResultEc.TargetOffline => string.Concat(name, " is offline"),
             ActionResultEc.ValueNotSet => string.Concat(name, "Report to developer the code 730"),

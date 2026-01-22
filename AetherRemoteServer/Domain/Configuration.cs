@@ -6,19 +6,15 @@ namespace AetherRemoteServer.Domain;
 
 [Serializable]
 public class Configuration(
-    string certificatePasswordPath,
-    string certificatePath,
-    string betaDatabasePath,
-    string releaseDatabasePath,
-    string signingKey)
+    string databaseConnectionString,
+    string signingKey,
+    string serverUrl)
 {
-    private static readonly string ConfigurationPath = Path.Combine(Directory.GetCurrentDirectory(), "Configuration", "Paths.json");
+    private static readonly string ConfigurationPath = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
     
-    public readonly string CertificatePasswordPath = certificatePasswordPath;
-    public readonly string CertificatePath = certificatePath;
-    public readonly string BetaDatabasePath = betaDatabasePath;
-    public readonly string ReleaseDatabasePath = releaseDatabasePath;
+    public readonly string DatabaseConnectionString = databaseConnectionString;
     public readonly string SigningKey = signingKey;
+    public readonly string ServerUrl = serverUrl;
 
     public static Configuration? Load()
     {
@@ -41,7 +37,7 @@ public class Configuration(
 
             if (configuration.HasDefaultValues())
             {
-                Console.WriteLine($"[Configuration] [Load] Paths not set in {ConfigurationPath}, please edit the values and run the application again.");
+                Console.WriteLine($"[Configuration] [Load] Connection string not set in {ConfigurationPath}, please edit the values and run the application again.");
                 return null;
             }
             
@@ -55,12 +51,8 @@ public class Configuration(
         }
     }
 
-    private bool HasDefaultValues() => CertificatePath is Empty || 
-                                       CertificatePasswordPath is Empty ||
-                                       BetaDatabasePath is Empty || 
-                                       ReleaseDatabasePath is Empty ||
-                                       SigningKey is Empty;
+    private bool HasDefaultValues() => DatabaseConnectionString is Empty || SigningKey is Empty || ServerUrl is Empty;
 
     private const string Empty = "Empty"; 
-    private static readonly Configuration Default = new(Empty, Empty, Empty, Empty, Empty);
+    private static readonly Configuration Default = new(Empty, Empty, Empty);
 }

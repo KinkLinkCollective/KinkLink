@@ -19,11 +19,11 @@ public class SpeakHandler : AbstractNetworkHandler, IDisposable
 {
     // Const
     private const string Operation = "Speak";
-    
+
     // Injected
     private readonly ActionQueueService _actionQueue;
     private readonly LogService _log;
-    
+
     // Instantiated
     private readonly IDisposable _handler;
 
@@ -37,21 +37,21 @@ public class SpeakHandler : AbstractNetworkHandler, IDisposable
 
         _handler = network.Connection.On<SpeakCommand, ActionResult<Unit>>(HubMethod.Speak, Handle);
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="SpeakHandler"/>
     /// </summary>
     private ActionResult<Unit> Handle(SpeakCommand request)
     {
         Plugin.Log.Verbose($"{request}");
-        
+
         var speakPermissions = request.ChatChannel.ToSpeakPermissions(request.Extra);
         var permissions = new UserPermissions(PrimaryPermissions2.None, speakPermissions, ElevatedPermissions.None);
-        
+
         var sender = TryGetFriendWithCorrectPermissions(Operation, request.SenderFriendCode, permissions);
         if (sender.Result is not ActionResultEc.Success)
             return ActionResultBuilder.Fail(sender.Result);
-        
+
         if (sender.Value is not { } friend)
             return ActionResultBuilder.Fail(ActionResultEc.ValueNotSet);
 
@@ -71,7 +71,7 @@ public class SpeakHandler : AbstractNetworkHandler, IDisposable
                 log.Append(request.ChatChannel.Beautify());
                 log.Append(request.Extra);
                 break;
-            
+
             case ChatChannel.Tell:
                 log.Append(" in a tell to ");
                 log.Append(request.Extra);
@@ -92,7 +92,7 @@ public class SpeakHandler : AbstractNetworkHandler, IDisposable
                 log.Append(" chat");
                 break;
         }
-        
+
         // Add log to history
         _log.Custom(log.ToString());
         return ActionResultBuilder.Ok();

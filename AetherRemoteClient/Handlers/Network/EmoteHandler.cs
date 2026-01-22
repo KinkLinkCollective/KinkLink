@@ -19,11 +19,11 @@ public class EmoteHandler : AbstractNetworkHandler, IDisposable
     // Const
     private const string Operation = "Emote";
     private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Emote, SpeakPermissions2.None, ElevatedPermissions.None);
-    
+
     // Injected
     private readonly EmoteService _emote;
     private readonly LogService _log;
-    
+
     // Instantiated
     private readonly IDisposable _handler;
 
@@ -34,21 +34,21 @@ public class EmoteHandler : AbstractNetworkHandler, IDisposable
     {
         _emote = emote;
         _log = log;
-        
+
         _handler = network.Connection.On<EmoteCommand, ActionResult<Unit>>(HubMethod.Emote, Handle);
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="EmoteHandler"/>
     /// </summary>
     private ActionResult<Unit> Handle(EmoteCommand request)
     {
         Plugin.Log.Verbose($"{request}");
-        
+
         var sender = TryGetFriendWithCorrectPermissions(Operation, request.SenderFriendCode, Permissions);
         if (sender.Result is not ActionResultEc.Success)
             return ActionResultBuilder.Fail(sender.Result);
-        
+
         if (sender.Value is not { } friend)
             return ActionResultBuilder.Fail(ActionResultEc.ValueNotSet);
 
@@ -65,13 +65,13 @@ public class EmoteHandler : AbstractNetworkHandler, IDisposable
         command.Append(request.Emote);
         if (request.DisplayLogMessage is false)
             command.Append(" <mo>");
-        
+
         // Execute command
         ChatService.SendMessage(command.ToString());
-        
+
         // Log success
         _log.Custom($"{friend.NoteOrFriendCode} made you do the {request.Emote} emote");
-        
+
         // Success
         return ActionResultBuilder.Ok();
     }

@@ -5,7 +5,7 @@ namespace AetherRemoteClient.Domain.Dependencies.Glamourer.Components;
 public class GlamourerMaterial
 {
     private const float Tolerance = 1e-5f;
-    
+
     public bool Enabled;
     public bool Revert;
     public float Gloss;

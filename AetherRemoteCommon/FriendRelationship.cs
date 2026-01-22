@@ -14,17 +14,17 @@ public record FriendRelationship
     ///     The friend code of the target user
     /// </summary>
     public string TargetFriendCode { get; set; } = string.Empty;
-    
+
     /// <summary>
     ///     The online status of the target user
     /// </summary>
     public FriendOnlineStatus Status { get; set; }
-    
+
     /// <summary>
     ///     The permissions the owning user has granted the target user
     /// </summary>
     public UserPermissions PermissionsGrantedTo { get; set; } = new();
-    
+
     /// <summary>
     ///     The permissions the target yser has granted the owning user
     /// </summary>

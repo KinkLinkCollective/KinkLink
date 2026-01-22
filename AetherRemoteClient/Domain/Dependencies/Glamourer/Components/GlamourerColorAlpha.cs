@@ -11,9 +11,9 @@ public class GlamourerColorAlpha
     public float Green;
     public float Blue;
     public float Alpha;
-    
+
     public GlamourerColorAlpha Clone() => (GlamourerColorAlpha)MemberwiseClone();
-    
+
     public bool IsEqualTo(GlamourerColorAlpha other)
     {
         if (Apply != other.Apply) return false;

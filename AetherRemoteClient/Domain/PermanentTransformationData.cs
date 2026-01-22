@@ -12,7 +12,7 @@ public class PermanentTransformationData
     // ====================================
     // !! This is a database schema file !!
     // ====================================
-    
+
     // public int CharacterId;
     // public int Version;
     public string Sender = string.Empty;

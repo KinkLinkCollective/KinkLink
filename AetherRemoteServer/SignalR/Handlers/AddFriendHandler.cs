@@ -20,7 +20,7 @@ public class AddFriendHandler(IPresenceService presenceService, IDatabaseService
     {
         // Create the permissions in the database
         var result = await database.CreatePermissions(friendCode, request.TargetFriendCode);
-        
+
         // Map the result
         var code = result switch
         {
@@ -30,19 +30,19 @@ public class AddFriendHandler(IPresenceService presenceService, IDatabaseService
             DatabaseResultEc.NoSuchFriendCode => AddFriendEc.NoSuchFriendCode,
             _ => AddFriendEc.Unknown
         };
-        
+
         // Only update other person if it is a success
         if (code is not AddFriendEc.Success)
         {
-            return code is AddFriendEc.Pending 
-                ? new AddFriendResponse(code, FriendOnlineStatus.Pending) 
+            return code is AddFriendEc.Pending
+                ? new AddFriendResponse(code, FriendOnlineStatus.Pending)
                 : new AddFriendResponse(code, FriendOnlineStatus.Offline);
         }
 
         // Only update if they are online
         if (presenceService.TryGet(request.TargetFriendCode) is not { } target)
             return new AddFriendResponse(code, FriendOnlineStatus.Offline);
-        
+
         try
         {
             // Try to send an update to that client that we've accepted the friend request
@@ -53,7 +53,7 @@ public class AddFriendHandler(IPresenceService presenceService, IDatabaseService
         {
             logger.LogError("Syncing online status {Sender} -> {Target} failed, {Error}", friendCode, request.TargetFriendCode, e);
         }
-        
+
         return new AddFriendResponse(code, FriendOnlineStatus.Online);
     }
 }

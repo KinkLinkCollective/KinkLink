@@ -12,12 +12,12 @@ public record Moodle
     ///     Moodle properties
     /// </summary>
     public MoodleInfo Info = new();
-    
+
     /// <summary>
     ///     A formatting of the <see cref="MoodleInfo.Title"/> field with all colors, accents, and other fields removed
     /// </summary>
     public string PrettyTitle = string.Empty;
-    
+
     /// <summary>
     ///     A formatting of the <see cref="MoodleInfo.Description"/> field with all colors, accents, and other fields removed
     /// </summary>

@@ -10,7 +10,7 @@ public class TemplateManager
 {
     // Injected
     private readonly Type _templateType;
-    
+
     /// <summary>
     ///     <inheritdoc cref="TemplateManager"/>
     /// </summary>
@@ -36,7 +36,7 @@ public class TemplateManager
             return null;
         }
     }
-    
+
     /// <summary>
     ///     Creates a new instance of the TemplateManager
     /// </summary>
@@ -51,7 +51,7 @@ public class TemplateManager
             var pluginType = pluginInstance.GetType();
 
             // Template Type
-            return pluginType.Assembly.GetType("CustomizePlus.Templates.Data.Template") is { } template 
+            return pluginType.Assembly.GetType("CustomizePlus.Templates.Data.Template") is { } template
                 ? new TemplateManager(template)
                 : null;
         }

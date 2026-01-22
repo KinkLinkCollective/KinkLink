@@ -13,7 +13,7 @@ namespace AetherRemoteClient.UI.Views.Friends;
 ///     Handles UI elements for the Friends tab
 /// </summary>
 public class FriendsViewUi(
-    FriendsListComponentUi friendsList, 
+    FriendsListComponentUi friendsList,
     FriendsViewUiController controller,
     SelectionManager selectionManager) : IDrawable
 {
@@ -51,9 +51,9 @@ public class FriendsViewUi(
             if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Trash, IconSize) && (ImGui.IsKeyDown(ImGuiKey.RightAlt) || ImGui.IsKeyDown(ImGuiKey.LeftAlt)))
                 controller.Delete();
             SharedUserInterfaces.Tooltip("Hold Alt to remove friend");
-            
+
             ImGui.SameLine(windowWidth - windowPadding.X * 2 - IconSize.X);
-            
+
             if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Save, IconSize))
                 controller.Save();
             SharedUserInterfaces.Tooltip("Save permissions");
@@ -155,7 +155,7 @@ public class FriendsViewUi(
                 ImGui.EndTable();
             }
         });
-        
+
         // TODO: Change includeEndPadding once elevated permissions are back
         SharedUserInterfaces.ContentBox("FriendsCharacterAttributesOptions", AetherRemoteStyle.PanelBackground, false, () =>
         {
@@ -178,11 +178,11 @@ public class FriendsViewUi(
                 ImGui.Checkbox("Customize+", ref controller.EditingUserPermissions.CustomizePlus);
                 ImGui.TableNextColumn();
                 ImGui.Checkbox("Honorific", ref controller.EditingUserPermissions.Honorific);
-                
+
                 ImGui.EndTable();
             }
         });
-        
+
         /*
         SharedUserInterfaces.ContentBox("FriendsElevatedOptions", AetherRemoteStyle.ElevatedBackground, false, () =>
         {

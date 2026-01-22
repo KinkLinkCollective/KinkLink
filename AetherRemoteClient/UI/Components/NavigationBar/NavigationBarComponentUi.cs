@@ -13,7 +13,7 @@ public class NavigationBarComponentUi(NetworkService networkService, ViewService
 {
     // Const
     private static readonly Vector2 AlignButtonTextLeft = new(0, 0.5f);
-    
+
     public void Draw()
     {
         var spacing = ImGui.GetStyle().ItemSpacing;
@@ -45,7 +45,7 @@ public class NavigationBarComponentUi(NetworkService networkService, ViewService
                 NavBarButton(FontAwesomeIcon.Comments, "Speak", View.Speak, size, offset, spacing);
                 NavBarButton(FontAwesomeIcon.WandMagicSparkles, "Transformation", View.Transformation, size, offset, spacing);
                 NavBarButton(FontAwesomeIcon.PeopleGroup, "Twinning", View.Twinning, size, offset, spacing);
-                
+
                 ImGui.TextUnformatted("Configuration");
                 NavBarButton(FontAwesomeIcon.History, "History", View.History, size, offset, spacing);
             }
@@ -58,7 +58,7 @@ public class NavigationBarComponentUi(NetworkService networkService, ViewService
             }
 
             NavBarButton(FontAwesomeIcon.Wrench, "Settings", View.Settings, size, offset, spacing);
-            
+
 #if DEBUG
             ImGui.TextUnformatted("Testing");
             NavBarButton(FontAwesomeIcon.Bug, "Debug", View.Debug, size, offset, spacing);
@@ -70,7 +70,7 @@ public class NavigationBarComponentUi(NetworkService networkService, ViewService
 
         ImGui.PopStyleVar(2);
     }
-    
+
     private void NavBarButton(FontAwesomeIcon icon, string text, View view, Vector2 size, Vector2 offset, Vector2 spacing)
     {
         var begin = ImGui.GetCursorPos();
@@ -85,7 +85,7 @@ public class NavigationBarComponentUi(NetworkService networkService, ViewService
             if (ImGui.Button($"##{text}", size))
             {
                 viewService.CurrentView = view;
-            
+
                 // Required to in cases where you move from things like Friends -> Speak, and the friend you were editing was offline
                 selection.ClearOfflineFriends();
             }

@@ -9,14 +9,14 @@ namespace AetherRemoteClient.Services;
 /// <summary>
 ///     Responsible for sending actions to the in-game chat
 /// </summary>
-public class ActionQueueService: IDisposable
+public class ActionQueueService : IDisposable
 {
     private const int MinProcessTime = 1100;
     private const int MaxProcessTime = 2400;
 
     private readonly ConcurrentQueue<ChatAction> _actions = new();
     private readonly Random _random = new();
-    
+
     private DateTime _timeLastUpdated = DateTime.Now;
     private double _timeUntilNextProcess;
 
@@ -27,7 +27,7 @@ public class ActionQueueService: IDisposable
     {
         Plugin.PluginInterface.UiBuilder.Draw += Update;
     }
-    
+
     /// <summary>
     ///     Enqueues a chat command to take place. An empty queue will process a message immediately.
     /// </summary>
@@ -43,11 +43,11 @@ public class ActionQueueService: IDisposable
                     Plugin.Log.Warning("Could not enqueue tell action because target data is missing");
                     return;
                 }
-                
+
                 command = $"/{channel.ChatCommand()} {extra} {message}";
                 log = $"{sender.NoteOrFriendCode} made you send a tell to {extra} saying {message}";
                 break;
-            
+
             case ChatChannel.Linkshell:
             case ChatChannel.CrossWorldLinkshell:
                 if (extra is null)
@@ -55,11 +55,11 @@ public class ActionQueueService: IDisposable
                     Plugin.Log.Warning("Could not enqueue linkshell action because linkshell number is missing");
                     return;
                 }
-                
+
                 command = $"/{channel.ChatCommand()}{extra} {message}";
                 log = $"{sender.NoteOrFriendCode} made you send a message in {channel.Beautify()} {extra} saying {message}";
                 break;
-            
+
             case ChatChannel.Roleplay:
                 command = $"/{channel.ChatCommand()} {message}";
                 log = $"{sender.NoteOrFriendCode} made you emote the following: {message}";
@@ -78,10 +78,10 @@ public class ActionQueueService: IDisposable
                 log = $"{sender.NoteOrFriendCode} made you send a message in {channel.Beautify()} chat saying {message}";
                 break;
         }
-        
+
         _actions.Enqueue(new ChatAction { Command = command, Log = log });
     }
-    
+
     private void Update()
     {
         if (_actions.IsEmpty || Plugin.ObjectTable.LocalPlayer is null)
@@ -96,7 +96,7 @@ public class ActionQueueService: IDisposable
             _timeUntilNextProcess -= delta;
             return;
         }
-        
+
         // Begin processing a message
         if (_actions.TryDequeue(out var action) is false)
         {
@@ -106,11 +106,11 @@ public class ActionQueueService: IDisposable
 
         // Cannot send messages during pvp
         if (Plugin.ClientState.IsPvPExcludingDen)
-            return; 
-        
+            return;
+
         ChatService.SendMessage(action.Command);
         Plugin.Log.Info(action.Log);
-        
+
         // Queue next process
         _timeUntilNextProcess = _random.Next(MinProcessTime, MaxProcessTime);
     }
@@ -119,14 +119,14 @@ public class ActionQueueService: IDisposable
     ///     Clears all pending actions
     /// </summary>
     public void Clear() => _actions.Clear();
-    
+
     private class ChatAction
     {
         /// <summary>
         ///     Message that is executed in chat
         /// </summary>
         public string Command = string.Empty;
-        
+
         /// <summary>
         ///     Message that is posted in logs
         /// </summary>

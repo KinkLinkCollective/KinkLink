@@ -21,14 +21,14 @@ public class HonorificHandler : AbstractNetworkHandler, IDisposable
     // Const
     private const string Operation = "Honorific";
     private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Honorific, SpeakPermissions2.None, ElevatedPermissions.None);
-    
+
     // Injected
     private readonly HonorificService _honorific;
     private readonly LogService _log;
-    
+
     // Instantiated
     private readonly IDisposable _handler;
-    
+
     /// <summary>
     ///     <inheritdoc cref="HonorificHandler"/>
     /// </summary>
@@ -36,7 +36,7 @@ public class HonorificHandler : AbstractNetworkHandler, IDisposable
     {
         _honorific = honorific;
         _log = log;
-        
+
         _handler = network.Connection.On<HonorificCommand, ActionResult<Unit>>(HubMethod.Honorific, Handle);
     }
 
@@ -46,14 +46,14 @@ public class HonorificHandler : AbstractNetworkHandler, IDisposable
     private async Task<ActionResult<Unit>> Handle(HonorificCommand request)
     {
         Plugin.Log.Verbose($"{request}");
-        
+
         var sender = TryGetFriendWithCorrectPermissions(Operation, request.SenderFriendCode, Permissions);
         if (sender.Result is not ActionResultEc.Success)
             return ActionResultBuilder.Fail(sender.Result);
-        
+
         if (sender.Value is not { } friend)
             return ActionResultBuilder.Fail(ActionResultEc.ValueNotSet);
-        
+
         try
         {
             if (await Plugin.RunOnFramework(() => Plugin.ObjectTable.LocalPlayer?.ObjectIndex).ConfigureAwait(false) is not { } index)
@@ -65,7 +65,7 @@ public class HonorificHandler : AbstractNetworkHandler, IDisposable
                 _log.Custom($"{friend.NoteOrFriendCode} applied the {request.Honorific.Title} honorific to you");
                 return ActionResultBuilder.Ok();
             }
-            
+
             _log.Custom($"{friend.NoteOrFriendCode} failed to apply an honorific to you");
             return ActionResultBuilder.Fail(ActionResultEc.ClientPluginDependency);
         }
@@ -76,7 +76,7 @@ public class HonorificHandler : AbstractNetworkHandler, IDisposable
             return ActionResultBuilder.Fail(ActionResultEc.Unknown);
         }
     }
-    
+
     public void Dispose()
     {
         _handler.Dispose();

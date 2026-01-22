@@ -9,7 +9,7 @@ public enum FilterSortMode
     ///     Filter alphabetically
     /// </summary>
     Alphabetically,
-    
+
     /// <summary>
     ///     Filter by the last time an item was interacted with
     /// </summary>

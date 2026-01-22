@@ -15,10 +15,10 @@ public class GlamourerEventHandler : IDisposable
     private readonly PermanentTransformationHandler _permanentTransformationHandler;
 
     private readonly Timer _batchLocalPlayerChangedEventsTimer = new(1000);
-    
+
     public GlamourerEventHandler(
-        CustomizePlusService customizePlusService, 
-        GlamourerService glamourerService, 
+        CustomizePlusService customizePlusService,
+        GlamourerService glamourerService,
         PenumbraService penumbraService,
         PermanentTransformationHandler permanentTransformationHandler)
     {
@@ -26,14 +26,14 @@ public class GlamourerEventHandler : IDisposable
         _glamourerService = glamourerService;
         _penumbraService = penumbraService;
         _permanentTransformationHandler = permanentTransformationHandler;
-        
+
         _glamourerService.LocalPlayerResetOrReapply += OnLocalPlayerResetOrReapply;
         // _glamourerService.LocalPlayerChanged += OnLocalPlayerChanged; // TODO: Re-enable when permanent transformations are a thing
 
         _batchLocalPlayerChangedEventsTimer.AutoReset = false;
         _batchLocalPlayerChangedEventsTimer.Elapsed += OnBatchedLocalPlayerChanged;
     }
-    
+
     // ReSharper disable once UnusedMember.Local
     // ReSharper disable UnusedParameter.Local
     private void OnLocalPlayerChanged(object? sender, EventArgs e)
@@ -44,7 +44,7 @@ public class GlamourerEventHandler : IDisposable
         _batchLocalPlayerChangedEventsTimer.Stop();
         _batchLocalPlayerChangedEventsTimer.Start();
     }
-    
+
     private async void OnBatchedLocalPlayerChanged(object? sender, ElapsedEventArgs e)
     {
         try
@@ -63,7 +63,7 @@ public class GlamourerEventHandler : IDisposable
         {
             // Clean up the created CustomizePlus resources
             await _customizePlusService.DeleteTemporaryCustomizeAsync();
-            
+
             // Clean up the temporary mods added to the collection
             var currentCollection = await _penumbraService.GetCollection().ConfigureAwait(false);
             await _penumbraService.CallRemoveTemporaryMod(currentCollection).ConfigureAwait(false);

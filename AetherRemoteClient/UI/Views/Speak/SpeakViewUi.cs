@@ -81,7 +81,7 @@ public class SpeakViewUi(
                     SharedUserInterfaces.MediumText("Tell Target");
                     ImGui.SetNextItemWidth(180);
                     ImGui.InputTextWithHint("##Wa", "Character Name", ref controller.CharacterName, 200);
-                    
+
                     ImGui.SameLine();
                     SharedUserInterfaces.Icon(FontAwesomeIcon.At);
 
@@ -101,7 +101,7 @@ public class SpeakViewUi(
                 });
                 break;
         }
-        
+
         var friendsLackingPermissions = controller.GetFriendsLackingPermissions();
         if (friendsLackingPermissions.Count is not 0)
         {
@@ -126,7 +126,7 @@ public class SpeakViewUi(
                 ref controller.Message, Constraints.Speak.MessageMax, ImGuiInputTextFlags.EnterReturnsTrue);
 
             ImGui.Spacing();
-            
+
             if (commandLockoutService.IsLocked)
             {
                 ImGui.BeginDisabled();
@@ -140,7 +140,7 @@ public class SpeakViewUi(
 
                 if (shouldSendMessage is false)
                     return;
-                
+
                 commandLockoutService.Lock();
                 controller.SendMessage();
             }

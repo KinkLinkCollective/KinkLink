@@ -49,7 +49,7 @@ public class GlamourerAttribute(CharacterTransformationManager characterTransfor
             // TODO: Logging
             return false;
         }
-        
+
         data.GlamourerDesign = design;
         data.GlamourerApplyType = GlamourerApplyFlags.All;
         return true;

@@ -19,7 +19,7 @@ public record MoodleInfo
     public uint Modifiers { get; set; }
     public Guid ChainedStatus { get; set; }
     public MoodleChainTrigger ChainTrigger { get; set; }
-    public string Applier { get ; set; } = string.Empty;
+    public string Applier { get; set; } = string.Empty;
     public string Dispeller { get; set; } = string.Empty;
     public bool Permanent { get; set; }
 }

@@ -5,10 +5,10 @@ public enum PrimaryPermissions2
 {
     // No Permissions
     None = 0,
-    
+
     // XIV
     Emote = 1 << 0,
-    
+
     // External Plugins
     GlamourerCustomization = 1 << 1,
     GlamourerEquipment = 1 << 2,

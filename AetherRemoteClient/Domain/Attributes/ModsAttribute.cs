@@ -14,7 +14,7 @@ public class ModsAttribute(PenumbraService penumbraService, Guid collection, ush
     // Instantiated
     private Dictionary<string, string> _modifiedPaths = [];
     private string _metaData = string.Empty;
-    
+
     /// <summary>
     ///     <inheritdoc cref="ICharacterAttribute.Store"/>
     /// </summary>
@@ -24,7 +24,7 @@ public class ModsAttribute(PenumbraService penumbraService, Guid collection, ush
         _metaData = await penumbraService.GetMetaManipulations(objectIndex).ConfigureAwait(false);
         return true;
     }
-    
+
     /// <summary>
     ///     <inheritdoc cref="ICharacterAttribute.Apply"/>
     /// </summary>
@@ -35,7 +35,7 @@ public class ModsAttribute(PenumbraService penumbraService, Guid collection, ush
             Plugin.Log.Warning("[ModAttribute] Could not apply mods");
             return false;
         }
-        
+
         data.ModPathData = _modifiedPaths;
         data.ModMetaData = _metaData;
         return true;

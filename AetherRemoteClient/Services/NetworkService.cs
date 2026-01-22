@@ -32,21 +32,10 @@ public class NetworkService : IDisposable
     ///     Event fired when the server connection is lost, either by disruption or manual intervention
     /// </summary>
     public event Func<Task>? Disconnected;
-    
-#if DEBUG
+
     private const string HubUrl = "https://localhost:5006/primaryHub";
     private const string PostUrl = "https://localhost:5006/api/auth/login";
-    // private const string HubUrl = "https://foxitsvc.com:5017/primaryHub";
-    // private const string PostUrl = "https://foxitsvc.com:5017/api/auth/login";
-    // private const string HubUrl = "https://foxitsvc.com:5006/primaryHub";
-    // private const string PostUrl = "https://foxitsvc.com:5006/api/auth/login";
-#else
-    private const string HubUrl = "https://foxitsvc.com:5006/primaryHub";
-    private const string PostUrl = "https://foxitsvc.com:5006/api/auth/login";
-#endif
 
-    private static readonly JsonSerializerOptions DeserializationOptions = new() { PropertyNameCaseInsensitive = true };
-    
     /// <summary>
     ///     Access token required to connect to the SignalR hub
     /// </summary>
@@ -91,14 +80,14 @@ public class NetworkService : IDisposable
         }
 
         Connecting = true;
-        
+
         try
         {
             // Try to get the Token
             if (await TryAuthenticateSecret().ConfigureAwait(false) is { } token)
             {
                 _token = token;
-            
+
                 await Connection.StartAsync().ConfigureAwait(false);
 
                 if (Connection.State is HubConnectionState.Connected)
@@ -107,7 +96,7 @@ public class NetworkService : IDisposable
                     NotificationHelper.Success("[Aether Remote] Connected", string.Empty);
                 }
                 else
-                { 
+                {
                     NotificationHelper.Warning("[Aether Remote] Unable to connect", "See developer console for more information");
                 }
             }
@@ -117,7 +106,7 @@ public class NetworkService : IDisposable
             Plugin.Log.Warning($"[NetworkService] [StartAsync] {e.Message}]");
             NotificationHelper.Warning("[Aether Remote] Could not connect", "See developer console for more information");
         }
-        
+
         Connecting = false;
     }
 
@@ -195,7 +184,7 @@ public class NetworkService : IDisposable
             Plugin.Log.Warning("[NetworkService.TryAuthenticateSecret] You do not have a secret to provide for authentication");
             return null;
         }
-        
+
         using var client = new HttpClient();
         var request = new GetTokenRequest(Plugin.CharacterConfiguration.Secret, Plugin.Version);
         var payload = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
@@ -204,7 +193,7 @@ public class NetworkService : IDisposable
         {
             var response = await client.PostAsync(PostUrl, payload).ConfigureAwait(false);
             var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            if (JsonSerializer.Deserialize<LoginAuthenticationResult>(content, DeserializationOptions) is not { } result)
+            if (JsonSerializer.Deserialize<LoginAuthenticationResult>(content) is not { } result)
             {
                 Plugin.Log.Warning("[NetworkService.TryAuthenticateSecret] A deserialization error occurred");
                 return null;

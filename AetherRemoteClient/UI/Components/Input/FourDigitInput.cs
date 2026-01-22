@@ -20,13 +20,13 @@ public class FourDigitInput(string id)
 
     // Labels for all four character input fields
     private readonly string[] _ids = [string.Concat("##1", id), string.Concat("##2", id), string.Concat("##3", id), string.Concat("##4", id)];
-    
+
     // Track the four character input fields
     private readonly string[] _characters = [string.Empty, string.Empty, string.Empty, string.Empty];
-    
+
     // Track if the four character input fields are focused or not
     private readonly bool[] _focused = [false, false, false, false];
-    
+
     /// <summary>
     ///     Render the component
     /// </summary>

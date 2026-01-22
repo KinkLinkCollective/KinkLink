@@ -16,10 +16,10 @@ public class PenumbraService : IExternalPlugin
     // Const
     private const string TemporaryModName = "AetherRemoteMods";
     private const int Priority = int.MaxValue - 32; // Give other mods the opportunity to override if needed;
-    
+
     // Const
     private const int ExpectedMajor = 4;
-    
+
     // Penumbra API
     private readonly AddTemporaryMod _addTemporaryMod;
     private readonly GetGameObjectResourcePaths _getGameObjectResourcePaths;
@@ -28,12 +28,12 @@ public class PenumbraService : IExternalPlugin
     private readonly RemoveTemporaryMod _removeTemporaryMod;
     private readonly RedrawObject _redrawObject;
     private readonly ApiVersion _version;
-    
+
     /// <summary>
     ///     Is Penumbra available for use?
     /// </summary>
     public bool ApiAvailable;
-        
+
     /// <summary>
     ///     <inheritdoc cref="IExternalPlugin.IpcReady"/>
     /// </summary>
@@ -52,7 +52,7 @@ public class PenumbraService : IExternalPlugin
         _redrawObject = new RedrawObject(Plugin.PluginInterface);
         _version = new ApiVersion(Plugin.PluginInterface);
     }
-    
+
     /// <summary>
     ///     Tests for availability to Penumbra
     /// </summary>
@@ -60,20 +60,20 @@ public class PenumbraService : IExternalPlugin
     {
         // Set everything to disabled state
         ApiAvailable = false;
-        
+
         // Invoke Api
         var version = await Plugin.RunOnFrameworkSafely(() => _version.Invoke()).ConfigureAwait(false);
 
         // Test for proper versioning
         if (version.Breaking < ExpectedMajor)
             return false;
-        
+
         // Mark as ready
         ApiAvailable = true;
         IpcReady?.Invoke(this, EventArgs.Empty);
         return true;
     }
-    
+
     /// <summary>
     ///     Calls penumbra's GetGameObjectResourcePaths function
     /// </summary>
@@ -85,7 +85,7 @@ public class PenumbraService : IExternalPlugin
         //          and ../../something_something.tex
         //          There is a possibility of fixing this just by forcing everything lowercase
         //          however I don't know enough about mod paths to know if this is problematic
-        
+
         if (ApiAvailable)
             return await Plugin.RunOnFramework(() =>
             {
@@ -107,7 +107,7 @@ public class PenumbraService : IExternalPlugin
                                     Plugin.Log.Verbose($"Skipping .imc redirect {item} --> {kvp.Key}");
                                     continue;
                                 }
-                                
+
                                 paths.TryAdd(item, kvp.Key);
                             }
                         }

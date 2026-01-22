@@ -28,7 +28,7 @@ public class EmoteService
             var command = emote.GetValueOrDefault().TextCommand.ValueNullable?.Command.ToString();
             if (command.IsNullOrEmpty()) continue;
             var commandWithoutSlash = command[1..];
-            
+
             /*
              * For some reason, there is a bug in game where if someone is actively doing the /pet emote
              * and someone in Aether Remote issues them a /stroke command, the game will hard crash to

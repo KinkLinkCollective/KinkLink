@@ -27,24 +27,24 @@ public class TwinningHandler(IPresenceService presenceService, IForwardedRequest
             logger.LogWarning("{Sender} sent invalid twinning request {Error}", senderFriendCode, error);
             return new ActionResponse(error, []);
         }
-        
+
         var primary = request.SwapAttributes.ToPrimaryPermission();
         primary |= PrimaryPermissions2.Twinning;
-        
+
         var elevated = ElevatedPermissions.None;
         if (request.LockCode is not null)
             elevated = ElevatedPermissions.PermanentTransformation;
-        
+
         var permissions = new UserPermissions(primary, SpeakPermissions2.None, elevated);
         var command = new TwinningCommand(senderFriendCode, request.CharacterName, request.CharacterWorld, request.SwapAttributes, request.LockCode);
         return await forwardedRequestManager.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, Method, permissions, command, clients);
     }
-    
+
     private ActionResponseEc? ValidateEmoteRequest(string senderFriendCode, TwinningRequest request)
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.TooManyRequests;
-        
+
         if (VerificationUtilities.ValidListOfFriendCodes(request.TargetFriendCodes) is false)
             return ActionResponseEc.BadDataInRequest;
 

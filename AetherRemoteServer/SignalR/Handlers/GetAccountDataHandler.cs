@@ -18,7 +18,7 @@ public class GetAccountDataHandler(IDatabaseService database, IPresenceService p
     {
         var presence = new Presence(connectionId, request.CharacterName, request.CharacterWorld);
         presenceService.Add(friendCode, presence);
-        
+
         var results = new List<FriendRelationship>();
         var permissions = await database.GetAllPermissions(friendCode);
         foreach (var permission in permissions)
@@ -28,9 +28,9 @@ public class GetAccountDataHandler(IDatabaseService database, IPresenceService p
                 : presenceService.TryGet(permission.TargetFriendCode) is null
                     ? FriendOnlineStatus.Offline
                     : FriendOnlineStatus.Online;
-            
+
             results.Add(new FriendRelationship(permission.TargetFriendCode, online, permission.PermissionsGrantedTo, permission.PermissionsGrantedBy));
-        } 
+        }
 
         return new GetAccountDataResponse(GetAccountDataEc.Success, friendCode, results);
     }

@@ -17,7 +17,7 @@ public class EmoteHandler(IPresenceService presenceService, IForwardedRequestMan
 {
     private const string Method = HubMethod.Emote;
     private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Emote, SpeakPermissions2.None, ElevatedPermissions.None);
-    
+
     /// <summary>
     ///     Handles the request
     /// </summary>
@@ -28,7 +28,7 @@ public class EmoteHandler(IPresenceService presenceService, IForwardedRequestMan
             logger.LogWarning("{Sender} sent invalid speak request {Error}", senderFriendCode, error);
             return new ActionResponse(error, []);
         }
-        
+
         var command = new EmoteCommand(senderFriendCode, request.Emote, request.DisplayLogMessage);
         return await forwardedRequestManager.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, Method, Permissions, command, clients);
     }
@@ -37,7 +37,7 @@ public class EmoteHandler(IPresenceService presenceService, IForwardedRequestMan
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.TooManyRequests;
-        
+
         if (VerificationUtilities.ValidListOfFriendCodes(request.TargetFriendCodes) is false)
             return ActionResponseEc.BadDataInRequest;
 

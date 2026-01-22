@@ -24,7 +24,7 @@ public class Program
             Environment.Exit(1);
             return;
         }
-        
+
         // Create service builder
         var builder = WebApplication.CreateBuilder(args);
 
@@ -41,20 +41,17 @@ public class Program
         builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
         builder.Services.AddSingleton<IPresenceService, PresenceService>();
         builder.Services.AddSingleton<IRequestLoggingService, RequestLoggingService>();
-        
+
         // Managers
         builder.Services.AddSingleton<IForwardedRequestManager, ForwardedRequestManager>();
 
         // Handles
         builder.Services.AddSingleton<OnlineStatusUpdateHandler>();
         builder.Services.AddSingleton<AddFriendHandler>();
-        builder.Services.AddSingleton<BodySwapHandler>();
-        builder.Services.AddSingleton<CustomizePlusHandler>();
+        // builder.Services.AddSingleton<CustomizePlusHandler>();
         builder.Services.AddSingleton<EmoteHandler>();
         builder.Services.AddSingleton<GetAccountDataHandler>();
         builder.Services.AddSingleton<HonorificHandler>();
-        builder.Services.AddSingleton<HypnosisHandler>();
-        builder.Services.AddSingleton<HypnosisStopHandler>();
         builder.Services.AddSingleton<MoodlesHandler>();
         builder.Services.AddSingleton<RemoveFriendHandler>();
         builder.Services.AddSingleton<SpeakHandler>();
@@ -62,29 +59,7 @@ public class Program
         builder.Services.AddSingleton<TwinningHandler>();
         builder.Services.AddSingleton<UpdateFriendHandler>();
 
-#if DEBUG
         builder.WebHost.UseUrls("https://localhost:5006");
-        /*
-        builder.WebHost.ConfigureKestrel(options =>
-        {
-            var ip = IPAddress.Parse("192.168.1.14");
-            options.Listen(ip, 5017, listenOptions =>
-            {
-                listenOptions.UseHttps($"{configuration.CertificatePath}", $"{configuration.CertificatePasswordPath}");
-            });
-        });
-        */
-#else
-        builder.WebHost.ConfigureKestrel(options =>
-        {
-            var ip = IPAddress.Parse("192.168.1.14");
-            options.Listen(ip, 5006, listenOptions =>
-            {
-                listenOptions.UseHttps($"{configuration.CertificatePath}", $"{configuration.CertificatePasswordPath}");
-            });
-        });
-#endif
-
         var app = builder.Build();
 
         // Configure the HTTP request pipeline
@@ -95,7 +70,7 @@ public class Program
         }
 
         app.UseRouting();
-        app.UseHttpsRedirection();
+        // app.UseHttpsRedirection(); // Disabled for Traefik development setup
 
         app.UseAuthentication();
         app.UseAuthorization();

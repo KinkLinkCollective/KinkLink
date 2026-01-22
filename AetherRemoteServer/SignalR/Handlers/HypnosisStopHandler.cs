@@ -13,7 +13,7 @@ public class HypnosisStopHandler(IPresenceService presenceService, IForwardedReq
 {
     private const string Method = HubMethod.HypnosisStop;
     private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Hypnosis, SpeakPermissions2.None, ElevatedPermissions.None);
-    
+
     public async Task<ActionResponse> Handle(string senderFriendCode, HypnosisStopRequest request, IHubCallerClients clients)
     {
         if (ValidateEmoteRequest(senderFriendCode, request) is { } error)
@@ -21,16 +21,16 @@ public class HypnosisStopHandler(IPresenceService presenceService, IForwardedReq
             logger.LogWarning("{Sender} sent invalid hypnosis stop request {Error}", senderFriendCode, error);
             return new ActionResponse(error, []);
         }
-        
+
         var command = new HypnosisStopCommand(senderFriendCode);
         return await forwardedRequestManager.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, Method, Permissions, command, clients);
     }
-    
+
     private ActionResponseEc? ValidateEmoteRequest(string senderFriendCode, HypnosisStopRequest request)
     {
         if (presenceService.IsUserExceedingCooldown(senderFriendCode))
             return ActionResponseEc.TooManyRequests;
-        
+
         if (VerificationUtilities.ValidListOfFriendCodes(request.TargetFriendCodes) is false)
             return ActionResponseEc.BadDataInRequest;
 

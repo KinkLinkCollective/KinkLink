@@ -31,25 +31,25 @@ public class GlamourerDesign
         var tags = new string[Tags.Length];
         for (var i = 0; i < Tags.Length; i++)
             tags[i] = Tags[i];
-        
+
         // Clone Materials
         var materials = new Dictionary<string, GlamourerMaterial>();
         foreach (var material in Materials)
             materials[material.Key] = material.Value.Clone();
-        
+
         // Memberwise copy
         var copy = (GlamourerDesign)MemberwiseClone();
-        
+
         // Add created fields
         copy.Tags = tags;
         copy.Materials = materials;
-        
+
         // Add cloned fields
         copy.Equipment = Equipment.Clone();
         copy.Bonus = Bonus.Clone();
         copy.Customize = Customize.Clone();
         copy.Parameters = Parameters.Clone();
-        
+
         // Return copy
         return copy;
     }

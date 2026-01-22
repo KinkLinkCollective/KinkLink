@@ -25,7 +25,7 @@ public class PermanentTransformationHandler(
     ///     <inheritdoc cref="PermanentTransformationLockService.Locked"/>
     /// </summary>
     public bool IsPermanentTransformed => permanentTransformationLockService.Locked;
-    
+
     /// <summary>
     ///     Load a permanent transformation from the stored configuration
     /// </summary>
@@ -40,10 +40,10 @@ public class PermanentTransformationHandler(
 
         // TODO: Error handle
         await characterTransformationManager.ApplyPerm(perma);//
-        
-        
+
+
         permanentTransformationLockService.Lock(perma.Key);
-        
+
         _permanentTransformationData = perma;
     }
 
@@ -57,7 +57,7 @@ public class PermanentTransformationHandler(
             Plugin.Log.Warning("[PermanentTransformationManager] Cannot apply permanent character transformation because local player is already locked");
             return false;
         }
-        
+
         var result = await characterTransformationManager.ApplyCharacterTransformation(characterName, characterAttributes);
         if (result.Success is not ApplyCharacterTransformationErrorCode.Success)
         {
@@ -72,11 +72,11 @@ public class PermanentTransformationHandler(
         }
 
         permanentTransformationLockService.Lock(permanentTransformationData.Key);
-        
+
         _permanentTransformationData = permanentTransformationData;
         _permanentTransformationData.Sender = sender;
         _permanentTransformationData.Key = key;
-        
+
         return true;
     }
 
@@ -106,9 +106,9 @@ public class PermanentTransformationHandler(
             // TODO: Logging
             return false;
         }
-        
+
         permanentTransformationLockService.Lock(key);
-        
+
         _permanentTransformationData = new PermanentTransformationData
         {
             Sender = sender,
@@ -167,11 +167,11 @@ public class PermanentTransformationHandler(
             // Check if the equipped items differ
             if (LocalPlayerEquippedItemsChanged(localDesign.Equipment, data.GlamourerDesign.Equipment))
                 return true;
-            
+
             // Check if dictionary size for the materials is different
             if (localDesign.Materials.Count != data.GlamourerDesign.Materials.Count)
                 return true;
-            
+
             // Iterate over all the local design keys
             foreach (var kvp in localDesign.Materials)
             {
@@ -184,13 +184,13 @@ public class PermanentTransformationHandler(
                     return true;
             }
         }
-        
+
         if ((data.GlamourerApplyType & GlamourerApplyFlags.Customization) is GlamourerApplyFlags.Customization)
         {
             // Check if customize differs
             if (LocalPlayerCustomizeChanged(localDesign.Customize, data.GlamourerDesign.Customize))
                 return true;
-            
+
             // Check if parameters differ
             if (localDesign.Parameters.IsEqualTo(data.GlamourerDesign.Parameters) is false)
                 return true;

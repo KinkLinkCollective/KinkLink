@@ -19,7 +19,7 @@ public class HonorificViewUi(HonorificViewUiController controller, FriendsListCo
 {
     // Const
     private const int SendHonorificButtonHeight = 40;
-    
+
     public void Draw()
     {
         ImGui.BeginChild("HonorificContent", AetherRemoteStyle.ContentSize, false, AetherRemoteStyle.ContentFlags);
@@ -40,7 +40,7 @@ public class HonorificViewUi(HonorificViewUiController controller, FriendsListCo
             if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Sync, null, "Refresh Titles"))
                 controller.RefreshTitles();
         });
-        
+
         var headerHeight = ImGui.GetCursorPosY() - begin;
         var honorificContextBoxSize = new Vector2(0, ImGui.GetWindowHeight() - headerHeight - padding.X * 3 - SendHonorificButtonHeight);
         if (ImGui.BeginChild("##HonorificContextBoxDisplay", honorificContextBoxSize, true, ImGuiWindowFlags.NoScrollbar))
@@ -54,24 +54,24 @@ public class HonorificViewUi(HonorificViewUiController controller, FriendsListCo
                 Font = UiBuilder.DefaultFont,
                 FontSize = UiBuilder.DefaultFontSizePx
             };
-            
+
             foreach (var (character, titles) in controller.FilteredTitles)
             {
                 if (ImGui.CollapsingHeader(character) is false)
                     continue;
-                
+
                 ImGui.PushStyleColor(ImGuiCol.Header, AetherRemoteStyle.PrimaryColor);
                 foreach (var title in titles)
                     DrawTitleOption(draw, parameters, title);
-                
+
                 ImGui.PopStyleColor();
             }
-            
+
             ImGui.EndChild();
         }
 
         ImGui.Spacing();
-        
+
         SharedUserInterfaces.ContentBox("HonorificSend", AetherRemoteStyle.PanelBackground, false, () =>
         {
             if (selectionManager.Selected.Count is 0)
@@ -107,7 +107,7 @@ public class HonorificViewUi(HonorificViewUiController controller, FriendsListCo
                 }
             }
         });
-        
+
         ImGui.EndChild();
         ImGui.SameLine();
         friendsList.Draw();
@@ -125,16 +125,16 @@ public class HonorificViewUi(HonorificViewUiController controller, FriendsListCo
 
         draw.ChannelsSplit(2);
         draw.ChannelsSetCurrent(1);
-        
+
         parameters.ScreenOffset = ImGui.GetCursorScreenPos();
-        
+
         var bytes = Dalamud.Game.Text.SeStringHandling.SeString.Parse(builder.GetViewAsSpan()).Encode();
         ImGuiHelpers.SeStringWrapped(bytes, parameters);
-        
+
         draw.ChannelsSetCurrent(0);
         if (ImGui.Selectable($"##{honorific.Title}", controller.SelectedTitle == honorific))
             controller.SelectedTitle = honorific;
-        
+
         draw.ChannelsMerge();
     }
 }

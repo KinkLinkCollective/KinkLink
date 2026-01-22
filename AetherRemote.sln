@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34221.43
@@ -8,6 +8,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AetherRemoteServer", "AetherRemoteServer\AetherRemoteServer.csproj", "{9B71BADE-ABAD-44FF-882B-E25D12B15AAC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AetherRemoteCommon", "AetherRemoteCommon\AetherRemoteCommon.csproj", "{D53DD637-ED93-4127-8D2F-5D86C0AD6320}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KinkLinkBot", "KinkLinkBot\KinkLinkBot.csproj", "{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,8 @@ Global
 		{9B71BADE-ABAD-44FF-882B-E25D12B15AAC}.Release|ARM32.ActiveCfg = Release|Any CPU
 		{9B71BADE-ABAD-44FF-882B-E25D12B15AAC}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{9B71BADE-ABAD-44FF-882B-E25D12B15AAC}.Release|ARM64.Build.0 = Release|Any CPU
+		{9B71BADE-ABAD-44FF-882B-E25D12B15AAC}.Release|x64.ActiveCfg = Release|Any CPU
+		{9B71BADE-ABAD-44FF-882B-E25D12B15AAC}.Release|x64.Build.0 = Release|Any CPU
 		{D53DD637-ED93-4127-8D2F-5D86C0AD6320}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D53DD637-ED93-4127-8D2F-5D86C0AD6320}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D53DD637-ED93-4127-8D2F-5D86C0AD6320}.Debug|ARM64.ActiveCfg = Debug|Any CPU
@@ -56,6 +60,17 @@ Global
 		{D53DD637-ED93-4127-8D2F-5D86C0AD6320}.Release|ARM64.Build.0 = Release|Any CPU
 		{D53DD637-ED93-4127-8D2F-5D86C0AD6320}.Release|x64.ActiveCfg = Release|Any CPU
 		{D53DD637-ED93-4127-8D2F-5D86C0AD6320}.Release|x64.Build.0 = Release|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Debug|x64.Build.0 = Debug|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Release|ARM64.Build.0 = Release|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Release|x64.ActiveCfg = Release|Any CPU
+		{F4A7B2C1-8E9A-4D2B-9F7A-3D2E8C5B1A7D}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

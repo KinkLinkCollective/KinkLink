@@ -28,7 +28,7 @@ public interface IDatabaseService
     ///     Returns the permissions a friend has granted another, if they exists
     /// </summary>
     public Task<UserPermissions?> GetPermissions(string friendCode, string targetFriendCode);
-    
+
     /// <summary>
     ///     Returns a list of all the permissions that friend code has granted others, as well as the permissions those friends have granted the friend code
     /// </summary>

@@ -18,10 +18,10 @@ public class UpdateFriendHandler(IPresenceService presenceService, IDatabaseServ
             DatabaseResultEc.NoOp => UpdateFriendEc.NoOp,
             _ => UpdateFriendEc.Unknown
         };
-        
+
         if (presenceService.TryGet(request.TargetFriendCode) is not { } connectedClient)
             return new UpdateFriendResponse(result);
-        
+
         try
         {
             var sync = new SyncPermissionsCommand(friendCode, request.Permissions);

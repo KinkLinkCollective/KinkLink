@@ -14,16 +14,16 @@ public partial class PrimaryHub
     {
         if (request.LockCode is not null)
             return new ActionResponse(ActionResponseEc.Disabled, []);
-        
+
         return await bodySwapHandler.Handle(FriendCode, request, Clients);
     }
-    
+
     [HubMethodName(HubMethod.Transform)]
     public async Task<ActionResponse> Transform(TransformRequest request)
     {
         if (request.LockCode is not null)
             return new ActionResponse(ActionResponseEc.Disabled, []);
-        
+
         return await transformHandler.Handle(FriendCode, request, Clients);
     }
 
@@ -32,7 +32,7 @@ public partial class PrimaryHub
     {
         if (request.LockCode is not null)
             return new ActionResponse(ActionResponseEc.Disabled, []);
-        
+
         return await twinningHandler.Handle(FriendCode, request, Clients);
     }
 }

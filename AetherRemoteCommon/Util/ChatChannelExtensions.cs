@@ -69,7 +69,7 @@ public static class ChatChannelExtensions
             _ => SpeakPermissions2.None
         };
     }
-    
+
     private static SpeakPermissions2 ConvertToLinkshell(SpeakPermissions2 starting, string? extra)
     {
         return int.TryParse(extra, out var number)

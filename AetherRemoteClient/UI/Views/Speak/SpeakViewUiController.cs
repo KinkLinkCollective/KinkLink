@@ -31,7 +31,7 @@ public class SpeakViewUiController
     public ChatChannel ChannelSelect;
     public int ChannelSelectionIndex;
     public int LinkshellSelection;
-    
+
     public string CharacterName = string.Empty;
     public string WorldName = string.Empty;
     public string Message = string.Empty;
@@ -44,7 +44,7 @@ public class SpeakViewUiController
         _networkService = networkService;
         _worldService = worldService;
         _selectionManager = selectionManager;
-        
+
         WorldsListFilter = new ListFilter<string>(worldService.WorldNames, FilterWorld);
         ChatModeOptions = (from ChatChannel mode in Enum.GetValues<ChatChannel>() select mode.Beautify()).ToArray();
     }
@@ -54,34 +54,34 @@ public class SpeakViewUiController
     /// </summary>
     public void FillWithPlayerData()
     {
-        if (Plugin.ObjectTable.LocalPlayer is not {} target)
+        if (Plugin.ObjectTable.LocalPlayer is not { } target)
             return;
-        
+
         SetTellTarget(target);
     }
-    
+
     /// <summary>
     ///     Fills the <see cref="CharacterName"/> and <see cref="WorldName"/> with target player data
     /// </summary>
     public void FillWithTargetData()
     {
-        if (Plugin.TargetManager.Target is not {} target)
+        if (Plugin.TargetManager.Target is not { } target)
             return;
-        
+
         SetTellTarget(target);
     }
-    
+
     private unsafe void SetTellTarget(IGameObject target)
     {
         var character = CharacterManager.Instance()->LookupBattleCharaByEntityId(target.EntityId);
         if (character is null)
             return;
-        
+
         var id = character->HomeWorld;
         var home = _worldService.TryGetWorldById(id);
         if (home is null)
             return;
-        
+
         CharacterName = character->NameString ?? CharacterName;
         WorldName = home;
     }
@@ -102,18 +102,18 @@ public class SpeakViewUiController
                 ChatChannel.Linkshell or ChatChannel.CrossWorldLinkshell => (LinkshellSelection + 1).ToString(),
                 _ => null
             };
-            
+
             var request = new SpeakRequest(_selectionManager.GetSelectedFriendCodes(), Message, ChannelSelect, extra);
             var response = await _networkService.InvokeAsync<ActionResponse>(HubMethod.Speak, request);
             if (response.Result is ActionResponseEc.Success)
             {
                 Message = string.Empty;
-                
+
                 if (request.ChatChannel is ChatChannel.Echo)
                     foreach (var friend in _selectionManager.Selected)
                         Plugin.ChatGui.Print($">>{friend.NoteOrFriendCode}: {request.Message}");
             }
-            
+
             ActionResponseParser.Parse("Speak", response);
         }
         catch (Exception e)
@@ -131,7 +131,7 @@ public class SpeakViewUiController
             if ((selected.PermissionsGrantedByFriend.Speak & permissions) != permissions)
                 thoseWhoYouLackPermissionsFor.Add(selected.NoteOrFriendCode);
         }
-        
+
         return thoseWhoYouLackPermissionsFor;
     }
 

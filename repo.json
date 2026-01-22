@@ -6,10 +6,13 @@
         "AssemblyVersion": "2.8.6.3",
         "Description": "This plugin allows you and your friends to control each other, and optionally allows even more control utilizing glamourer & mare",
         "ApplicableVersion": "any",
-        "RepoUrl": "https://github.com/aetherremote/AetherRemote",
+        "RepoUrl": "https://github.com/kinklink/kinklink",
         "Tags": [
             "chat",
-            "customization"
+            "customization",
+            "bdsm",
+            "community",
+            "18+"
         ],
         "DalamudApiLevel": 14,
         "LoadPriority": 0,

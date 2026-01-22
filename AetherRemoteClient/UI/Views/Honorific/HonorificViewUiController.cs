@@ -20,16 +20,16 @@ public class HonorificViewUiController : IDisposable
     private readonly NetworkService _network;
     private readonly WorldService _world;
     private readonly SelectionManager _selection;
-    
+
     public string SearchTerm = string.Empty;
-    
+
     public HonorificInfo? SelectedTitle;
-    
+
     private Dictionary<string, List<HonorificInfo>> _titles = [];
     public Dictionary<string, List<HonorificInfo>> FilteredTitles => SearchTerm == string.Empty
         ? _titles.ToDictionary()
         : FilterTitles();
-    
+
     public HonorificViewUiController(CommandLockoutService commandLockout, HonorificService honorific, NetworkService network, WorldService world, SelectionManager selection)
     {
         _commandLockout = commandLockout;
@@ -48,7 +48,7 @@ public class HonorificViewUiController : IDisposable
         try
         {
             SelectedTitle = null;
-            
+
             var titles = await HonorificService.GetCharacterTitleList().ConfigureAwait(false);
 
             var final = new Dictionary<string, List<HonorificInfo>>();
@@ -68,13 +68,13 @@ public class HonorificViewUiController : IDisposable
             // Ignored
         }
     }
-    
+
     public bool MissingPermissionsForATarget()
     {
         foreach (var friend in _selection.Selected)
             if ((friend.PermissionsGrantedByFriend.Primary & PrimaryPermissions2.Honorific) is not PrimaryPermissions2.Honorific)
                 return true;
-        
+
         return false;
     }
 
@@ -84,9 +84,9 @@ public class HonorificViewUiController : IDisposable
         {
             if (SelectedTitle == null)
                 return;
-            
+
             _commandLockout.Lock();
-            
+
             var request = new HonorificRequest(_selection.GetSelectedFriendCodes(), SelectedTitle);
             var response = await _network.InvokeAsync<ActionResponse>(HubMethod.Honorific, request).ConfigureAwait(false);
             ActionResponseParser.Parse("Honorific", response);
@@ -96,7 +96,7 @@ public class HonorificViewUiController : IDisposable
             // Ignore
         }
     }
-    
+
     private void OnIpcReady(object? sender, EventArgs e)
     {
         RefreshTitles();
@@ -107,7 +107,7 @@ public class HonorificViewUiController : IDisposable
         _honorific.IpcReady -= OnIpcReady;
         GC.SuppressFinalize(this);
     }
-    
+
     /// <summary>
     ///     Function to filter out the original dictionary to retrieve only the 
     /// </summary>
@@ -121,7 +121,7 @@ public class HonorificViewUiController : IDisposable
             foreach (var title in titles)
                 if (title.Title?.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ?? false)
                     list.Add(title);
-            
+
             if (list.Count > 0)
                 result.Add(character, list);
         }

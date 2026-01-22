@@ -20,7 +20,7 @@ public class ViewService
     {
         if (CurrentView is View.Settings or View.Login)
             return;
-        
+
         CurrentView = View.Login;
     }
 }

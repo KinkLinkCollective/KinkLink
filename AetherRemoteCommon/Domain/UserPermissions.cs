@@ -18,7 +18,7 @@ public record UserPermissions
     ///     Speak permissions
     /// </summary>
     public SpeakPermissions2 Speak { get; set; }
-    
+
     /// <summary>
     ///     Elevated permissions
     /// </summary>

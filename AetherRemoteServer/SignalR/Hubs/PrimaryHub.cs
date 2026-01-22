@@ -10,7 +10,7 @@ namespace AetherRemoteServer.SignalR.Hubs;
 public partial class PrimaryHub(
     // Services
     IRequestLoggingService requestLoggingService,
-    
+
     // Managers
     OnlineStatusUpdateHandler onlineStatusUpdateHandler,
 
@@ -63,7 +63,7 @@ public partial class PrimaryHub(
     {
         if ((mode & LogMode.Console) == LogMode.Console)
             logger.LogInformation("{Message}", message);
-        
+
         if ((mode & LogMode.Disk) == LogMode.Disk)
             requestLoggingService.Log(message);
     }

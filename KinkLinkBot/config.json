@@ -1,0 +1,8 @@
+{
+    "bot": {
+        "token": "YOUR_DISCORD_BOT_TOKEN",
+        "guild_id": 0,
+        "admin_role_id": 0
+    },
+    "server": "YOUR_POSTSQL_CONNECTION_STRING"
+}
