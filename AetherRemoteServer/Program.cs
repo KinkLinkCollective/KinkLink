@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using AetherRemoteCommon.Database;
 using AetherRemoteServer.Domain;
 using AetherRemoteServer.Domain.Interfaces;
 using AetherRemoteServer.Managers;
@@ -9,6 +10,8 @@ using AetherRemoteServer.SignalR.Hubs;
 using MessagePack;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace AetherRemoteServer;
 
@@ -37,8 +40,21 @@ public class Program
             .AddMessagePackProtocol(options => options.SerializerOptions = MessagePackSerializerOptions.Standard.WithSecurity(MessagePackSecurity.UntrustedData));
         builder.Services.AddSingleton(configuration);
 
-        // Services
+        // Run migrations on startup
+        builder.Services.AddSingleton<MigrationManager>();
+        builder.Services.AddHostedService(sp =>
+        {
+            var migrator = sp.GetRequiredService<MigrationManager>();
+            var logger = sp.GetRequiredService<ILogger<MigrationManager>>();
+            var connection = new NpgsqlConnection(configuration.DatabaseConnectionString);
+            connection.Open();
+            return new MigrationHostedService(migrator, connection, logger);
+        });
+
+        // Register database service - DatabaseService handles its own QueriesSql creation
         builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
+
+        // Services
         builder.Services.AddSingleton<IPresenceService, PresenceService>();
         builder.Services.AddSingleton<IRequestLoggingService, RequestLoggingService>();
 
@@ -48,15 +64,13 @@ public class Program
         // Handles
         builder.Services.AddSingleton<OnlineStatusUpdateHandler>();
         builder.Services.AddSingleton<AddFriendHandler>();
-        // builder.Services.AddSingleton<CustomizePlusHandler>();
+        builder.Services.AddSingleton<CustomizePlusHandler>();
         builder.Services.AddSingleton<EmoteHandler>();
         builder.Services.AddSingleton<GetAccountDataHandler>();
         builder.Services.AddSingleton<HonorificHandler>();
         builder.Services.AddSingleton<MoodlesHandler>();
         builder.Services.AddSingleton<RemoveFriendHandler>();
         builder.Services.AddSingleton<SpeakHandler>();
-        builder.Services.AddSingleton<TransformHandler>();
-        builder.Services.AddSingleton<TwinningHandler>();
         builder.Services.AddSingleton<UpdateFriendHandler>();
 
         builder.WebHost.UseUrls("https://localhost:5006");
@@ -94,5 +108,45 @@ public class Program
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration.SigningKey)),
             };
         });
+    }
+}
+
+/// <summary>
+/// Background service that runs database migrations on startup
+/// </summary>
+public class MigrationHostedService : BackgroundService
+{
+    private readonly MigrationManager _migrator;
+    private readonly NpgsqlConnection _connection;
+    private readonly ILogger<MigrationManager> _logger;
+
+    public MigrationHostedService(
+        MigrationManager migrator,
+        NpgsqlConnection connection,
+        ILogger<MigrationManager> logger)
+    {
+        _migrator = migrator;
+        _connection = connection;
+        _logger = logger;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        try
+        {
+            var migrationsPath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "..",
+                "AetherRemoteDatabase",
+                "migrations");
+
+            var migrationFiles = MigrationManager.GetMigrationFiles(migrationsPath);
+            await _migrator.RunMigrationsAsync(migrationFiles);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to run database migrations");
+            throw;
+        }
     }
 }

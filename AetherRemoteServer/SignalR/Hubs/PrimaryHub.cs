@@ -16,18 +16,13 @@ public partial class PrimaryHub(
 
     // Handlers
     AddFriendHandler addFriendHandler,
-    BodySwapHandler bodySwapHandler,
     CustomizePlusHandler customizePlusHandler,
     EmoteHandler emoteHandler,
     GetAccountDataHandler getAccountDataHandler,
     HonorificHandler honorificHandler,
-    HypnosisHandler hypnosisHandler,
-    HypnosisStopHandler hypnosisStopHandler,
     MoodlesHandler moodlesHandler,
     RemoveFriendHandler removeFriendHandler,
     SpeakHandler speakHandler,
-    TransformHandler transformHandler,
-    TwinningHandler twinningHandler,
     UpdateFriendHandler updateFriendHandler,
 
     // Logger

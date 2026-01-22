@@ -15,7 +15,6 @@ using AetherRemoteClient.UI.Views.Pause;
 using AetherRemoteClient.UI.Views.Settings;
 using AetherRemoteClient.UI.Views.Speak;
 using AetherRemoteClient.UI.Views.Status;
-using AetherRemoteClient.UI.Views.Transformation;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 
@@ -45,7 +44,6 @@ public class MainWindow : Window
     private readonly SettingsViewUi _settingsView;
     private readonly SpeakViewUi _speakView;
     private readonly StatusViewUi _statusView;
-    private readonly TransformationViewUi _transformationView;
 
     public MainWindow(
         ViewService viewService,
@@ -61,8 +59,7 @@ public class MainWindow : Window
         PauseViewUi pauseView,
         SettingsViewUi settingsView,
         SpeakViewUi speakView,
-        StatusViewUi statusView,
-        TransformationViewUi transformationView) : base(MainWindowTitle)
+        StatusViewUi statusView) : base(MainWindowTitle)
     {
         SizeConstraints = new WindowSizeConstraints
         {
@@ -86,7 +83,6 @@ public class MainWindow : Window
         _settingsView = settingsView;
         _speakView = speakView;
         _statusView = statusView;
-        _transformationView = transformationView;
     }
 
     public override void Draw()
@@ -109,7 +105,6 @@ public class MainWindow : Window
             View.Settings => _settingsView,
             View.Speak => _speakView,
             View.Status => _statusView,
-            View.Transformation => _transformationView,
             _ => _loginView
         };
 

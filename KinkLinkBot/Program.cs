@@ -1,8 +1,11 @@
 using KinkLinkBot.Configuration;
 using KinkLinkBot.Services;
+using AetherRemoteCommon.Database;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Npgsql;
 
 namespace KinkLinkBot;
 
@@ -22,6 +25,13 @@ public class Program
             return;
         }
 
+        // Validate database connection string
+        if (string.IsNullOrEmpty(config.DbConnectionString))
+        {
+            Console.WriteLine("[KinkLinkBot] Database connection string not configured. Exiting.");
+            return;
+        }
+
         // Set up Discord client
         var discordConfig = new DiscordSocketConfig
         {
@@ -35,7 +45,32 @@ public class Program
         var services = new ServiceCollection();
         services.AddSingleton(client);
         services.AddSingleton(_ => config);
-        services.AddSingleton<RegistrationService>();
+
+        // Open database connection
+        var dbConnection = new NpgsqlConnection(config.DbConnectionString);
+        dbConnection.Open();
+        Console.WriteLine("[KinkLinkBot] Database connection established");
+
+        // Run migrations synchronously before starting
+        var migratorLogger = new LoggerFactory().CreateLogger<MigrationManager>();
+        var migrator = new MigrationManager(dbConnection, migratorLogger);
+
+        var migrationsPath = Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "..",
+            "AetherRemoteDatabase",
+            "migrations");
+
+        var migrationFiles = MigrationManager.GetMigrationFiles(migrationsPath);
+        migrator.RunMigrationsAsync(migrationFiles).GetAwaiter().GetResult();
+
+        // Register application services
+        // RegistrationService creates its own QueriesSql with connection string
+        services.AddSingleton<RegistrationService>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<RegistrationService>>();
+            return new RegistrationService(config.DbConnectionString, logger);
+        });
         services.AddSingleton<DiscordInteractionHandler>();
 
         var serviceProvider = services.BuildServiceProvider();

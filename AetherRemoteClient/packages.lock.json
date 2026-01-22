@@ -178,6 +178,14 @@
         "resolved": "17.6.3",
         "contentHash": "N0ZIanl1QCgvUumEL1laasU0a7sOE5ZwLZVTn0pAePnfhq8P7SvTjF8Axq+CnavuQkmdQpGNXQ1efZtu5kDFbA=="
       },
+      "Npgsql": {
+        "type": "Transitive",
+        "resolved": "9.0.2",
+        "contentHash": "hCbO8box7i/XXiTFqCJ3GoowyLqx3JXxyrbOJ6om7dr+eAknvBNhhUHeJVGAQo44sySZTfdVffp4BrtPeLZOAA==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
+        }
+      },
       "ShimSkiaSharp": {
         "type": "Transitive",
         "resolved": "3.2.1",
@@ -222,7 +230,9 @@
       "aetherremotecommon": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.SignalR.Protocols.MessagePack": "[10.0.1, )"
+          "Microsoft.AspNetCore.SignalR.Protocols.MessagePack": "[10.0.1, )",
+          "Microsoft.Extensions.Logging": "[8.0.0, )",
+          "Npgsql": "[9.0.2, )"
         }
       }
     }
