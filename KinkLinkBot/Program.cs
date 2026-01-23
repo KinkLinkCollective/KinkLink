@@ -1,6 +1,6 @@
 using KinkLinkBot.Configuration;
 using KinkLinkBot.Services;
-using AetherRemoteCommon.Database;
+using KinkLinkCommon.Database;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,7 +58,7 @@ public class Program
         var migrationsPath = Path.Combine(
             Directory.GetCurrentDirectory(),
             "..",
-            "AetherRemoteDatabase",
+            "KinkLinkDatabase",
             "migrations");
 
         var migrationFiles = MigrationManager.GetMigrationFiles(migrationsPath);

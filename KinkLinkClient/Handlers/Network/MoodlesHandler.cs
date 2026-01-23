@@ -1,0 +1,72 @@
+using System;
+using System.Threading.Tasks;
+using KinkLinkClient.Dependencies.Moodles.Services;
+using KinkLinkClient.Handlers.Network.Base;
+using KinkLinkClient.Services;
+using KinkLinkCommon.Domain;
+using KinkLinkCommon.Domain.Enums;
+using KinkLinkCommon.Domain.Enums.Permissions;
+using KinkLinkCommon.Domain.Network;
+using KinkLinkCommon.Domain.Network.Moodles;
+using Microsoft.AspNetCore.SignalR.Client;
+
+namespace KinkLinkClient.Handlers.Network;
+
+/// <summary>
+///     Handles a <see cref="MoodlesCommand"/>
+/// </summary>
+public class MoodlesHandler : AbstractNetworkHandler, IDisposable
+{
+    // Const
+    private const string Operation = "Moodles";
+    private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Moodles, SpeakPermissions2.None, ElevatedPermissions.None);
+
+    // Injected
+    private readonly LogService _log;
+    private readonly MoodlesService _moodles;
+
+    // Instantiated
+    private readonly IDisposable _handler;
+
+    /// <summary>
+    ///     <inheritdoc cref="MoodlesHandler"/>
+    /// </summary>
+    public MoodlesHandler(FriendsListService friends, LogService log, MoodlesService moodles, NetworkService network, PauseService pause) : base(friends, log, pause)
+    {
+        _log = log;
+        _moodles = moodles;
+
+        _handler = network.Connection.On<MoodlesCommand, ActionResult<Unit>>(HubMethod.Moodles, Handle);
+    }
+
+    /// <summary>
+    ///     <inheritdoc cref="MoodlesHandler"/>
+    /// </summary>
+    private async Task<ActionResult<Unit>> Handle(MoodlesCommand request)
+    {
+        Plugin.Log.Verbose($"{request}");
+
+        var sender = TryGetFriendWithCorrectPermissions(Operation, request.SenderFriendCode, Permissions);
+        if (sender.Result is not ActionResultEc.Success)
+            return ActionResultBuilder.Fail(sender.Result);
+
+        if (sender.Value is not { } friend)
+            return ActionResultBuilder.Fail(ActionResultEc.ValueNotSet);
+
+        // Attempt to apply the Moodle
+        if (await _moodles.ApplyMoodle(request.Info).ConfigureAwait(false))
+        {
+            _log.Custom($"{friend.NoteOrFriendCode} applied {MoodlesService.RemoveTagsFromTitle(request.Info.Title)} to you");
+            return ActionResultBuilder.Ok();
+        }
+
+        _log.Custom($"{friend.NoteOrFriendCode} tried to apply a Moodle to you but an error occurred");
+        return ActionResultBuilder.Fail(ActionResultEc.Unknown);
+    }
+
+    public void Dispose()
+    {
+        _handler.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}

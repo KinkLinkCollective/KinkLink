@@ -1,6 +1,6 @@
 using KinkLinkBot.Configuration;
 using KinkLinkBot.Domain.Models;
-using AetherRemoteCommon.Database;
+using KinkLinkCommon.Database;
 using Microsoft.Extensions.Logging;
 
 namespace KinkLinkBot.Services;

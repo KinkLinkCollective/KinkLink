@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AetherRemoteCommon\AetherRemoteCommon.csproj" />
+    <ProjectReference Include="..\KinkLinkCommon\KinkLinkCommon.csproj" />
   </ItemGroup>
 
 </Project>

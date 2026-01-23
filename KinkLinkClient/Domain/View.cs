@@ -1,0 +1,24 @@
+namespace KinkLinkClient.Domain;
+
+/// <summary>
+///     Enum listing all the views available to be drawn
+/// </summary>
+public enum View
+{
+    BodySwap,
+    CustomizePlus,
+    Debug,
+    Emote,
+    Friends,
+    History,
+    Honorific,
+    Hypnosis,
+    Login,
+    Moodles,
+    Pause,
+    Settings,
+    Speak,
+    Status,
+    Transformation,
+    Twinning
+}

@@ -1,0 +1,37 @@
+using KinkLinkCommon;
+using KinkLinkCommon.Domain.Enums;
+using KinkLinkCommon.Domain.Network.GetAccountData;
+using KinkLinkServer.Domain.Interfaces;
+using KinkLinkServer.Services;
+
+namespace KinkLinkServer.SignalR.Handlers;
+
+/// <summary>
+///     Handles the logic for fulfilling a <see cref="GetAccountDataRequest"/>
+/// </summary>
+public class GetAccountDataHandler(IDatabaseService database, IPresenceService presenceService)
+{
+    /// <summary>
+    ///     Handles the request
+    /// </summary>
+    public async Task<GetAccountDataResponse> Handle(string friendCode, string connectionId, GetAccountDataRequest request)
+    {
+        var presence = new Presence(connectionId, request.CharacterName, request.CharacterWorld);
+        presenceService.Add(friendCode, presence);
+
+        var results = new List<FriendRelationship>();
+        var permissions = await database.GetAllPermissions(friendCode);
+        foreach (var permission in permissions)
+        {
+            var online = permission.PermissionsGrantedBy is null
+                ? FriendOnlineStatus.Pending
+                : presenceService.TryGet(permission.TargetFriendCode) is null
+                    ? FriendOnlineStatus.Offline
+                    : FriendOnlineStatus.Online;
+
+            results.Add(new FriendRelationship(permission.TargetFriendCode, online, permission.PermissionsGrantedTo, permission.PermissionsGrantedBy));
+        }
+
+        return new GetAccountDataResponse(GetAccountDataEc.Success, friendCode, results);
+    }
+}
