@@ -51,9 +51,7 @@ public class ForwardedRequestManager(IDatabaseService database, IPresenceService
 
     private static bool HasRequiredPermissions(UserPermissions granted, UserPermissions required)
     {
-        return (granted.Primary & required.Primary) == required.Primary
-               && (granted.Speak & required.Speak) == required.Speak
-               && (granted.Elevated & required.Elevated) == required.Elevated;
+        return false;
     }
 
     /// <summary>

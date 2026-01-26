@@ -71,11 +71,7 @@ public class HonorificViewUiController : IDisposable
 
     public bool MissingPermissionsForATarget()
     {
-        foreach (var friend in _selection.Selected)
-            if ((friend.PermissionsGrantedByFriend.Primary & PrimaryPermissions2.Honorific) is not PrimaryPermissions2.Honorific)
-                return true;
-
-        return false;
+        return true;
     }
 
     public async void SendHonorific()

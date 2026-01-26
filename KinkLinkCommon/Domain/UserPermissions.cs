@@ -1,5 +1,6 @@
 using KinkLinkCommon.Domain.Enums.Permissions;
 using MessagePack;
+using static KinkLinkCommon.Database.QueriesSql;
 
 namespace KinkLinkCommon.Domain;
 
@@ -9,35 +10,11 @@ namespace KinkLinkCommon.Domain;
 [MessagePackObject(keyAsPropertyName: true)]
 public record UserPermissions
 {
-    /// <summary>
-    ///     Primary permissions
-    /// </summary>
-    public PrimaryPermissions2 Primary { get; set; }
-
-    /// <summary>
-    ///     Speak permissions
-    /// </summary>
-    public SpeakPermissions2 Speak { get; set; }
-
-    /// <summary>
-    ///     Elevated permissions
-    /// </summary>
-    public ElevatedPermissions Elevated { get; set; }
-
+    public UpdatePairPermissionsArgs Permissions;
     /// <summary>
     ///     <inheritdoc cref="UserPermissions"/>
     /// </summary>
     public UserPermissions()
     {
-    }
-
-    /// <summary>
-    ///     <inheritdoc cref="UserPermissions"/>
-    /// </summary>
-    public UserPermissions(PrimaryPermissions2 primary, SpeakPermissions2 speak, ElevatedPermissions elevated)
-    {
-        Primary = primary;
-        Speak = speak;
-        Elevated = elevated;
     }
 }

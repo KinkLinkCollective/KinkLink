@@ -17,7 +17,7 @@ public partial class PrimaryHub
     }
 
     [HubMethodName(HubMethod.RemoveFriend)]
-    public async Task<RemoveFriendResponse> RemoveFriend(RemoveFriendRequest request)
+    public async Task<RemovePair> RemoveFriend(RemoveFriendRequest request)
     {
         var friendCode = FriendCode;
         LogWithBehavior($"[RemoveFriendRequest] Sender = {friendCode}, Target = {request.TargetFriendCode}", LogMode.Both);

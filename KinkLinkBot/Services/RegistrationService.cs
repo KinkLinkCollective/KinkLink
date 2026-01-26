@@ -31,97 +31,6 @@ public class RegistrationService
         _config = config;
     }
 
-    public async Task<RegistrationResponse> CreatePrompt()
-    {
-        try
-        {
-            // Get the guild from the client
-            var guild = _client.GetGuild(_config.Bot.GuildId);
-            if (guild == null)
-            {
-                _logger.LogError($"Guild {_config.Bot.GuildId} not found");
-                return new RegistrationResponse
-                {
-                    Success = false,
-                    ErrorMessage = "Guild not found"
-                };
-            }
-
-            // Get the specific channel from configuration
-            var channel = guild.GetTextChannel(_config.Bot.ChannelId);
-            if (channel == null)
-            {
-                _logger.LogError($"Channel {_config.Bot.ChannelId} not found in guild {_config.Bot.GuildId}");
-                return new RegistrationResponse
-                {
-                    Success = false,
-                    ErrorMessage = "Registration channel not found"
-                };
-            }
-            if (channel == null)
-            {
-                _logger.LogError($"No text channel {_config.Bot.ChannelId} found in guild {_config.Bot.GuildId}");
-                return new RegistrationResponse
-                {
-                    Success = false,
-                    ErrorMessage = "No text channel available"
-                };
-            }
-
-            // Create an embed for the registration prompt
-            var embed = new EmbedBuilder
-            {
-                Title = "🔗 KinkLink Registration",
-                Description = "Welcome to KinkLink! To get started, please register your account.",
-                Color = Color.Blue,
-            };
-
-            embed.AddField("📝 Registration Steps",
-                "1. Click the button below to start registration\n" +
-                "2. Follow the prompts to create your unique UID\n" +
-                "3. Use your UID to connect with the FFXIV plugin",
-                inline: false);
-
-            embed.AddField("🔐 Privacy & Security",
-                "• Your Discord ID is kept private\n" +
-                "• UIDs provide anonymity in-game\n" +
-                "• You can delete your account at any time",
-                inline: false);
-
-            embed.AddField("❓ Need Help?",
-                "Contact an administrator if you need assistance with registration.",
-                inline: false);
-
-            embed.WithFooter("KinkLink Bot • Secure Registration System");
-            embed.WithCurrentTimestamp();
-
-            // Create a button for user interaction
-            var buttonBuilder = new ComponentBuilder()
-                .WithButton("🚀 Start Registration", "register_start", ButtonStyle.Primary);
-
-            // Send the embed message to the channel
-            var message = await channel.SendMessageAsync(
-                embed: embed.Build(),
-                components: buttonBuilder.Build());
-
-            _logger.LogInformation($"Registration prompt sent to channel {channel.Id} in guild {guild.Id}");
-
-            return new RegistrationResponse
-            {
-                Success = true,
-                ErrorMessage = null
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating registration prompt");
-            return new RegistrationResponse
-            {
-                Success = false,
-                ErrorMessage = $"Failed to create registration prompt: {ex.Message}"
-            };
-        }
-    }
     /// <summary>
     ///     Registers a new user account or returns existing if already registered
     /// </summary>
@@ -148,7 +57,6 @@ public class RegistrationService
                 return new RegistrationResponse
                 {
                     Success = true,
-                    UID = GenerateUID(), // Generate a new UID for this session
                     Secret = existingUser.Value.SecretKey
                 };
             }
@@ -169,7 +77,6 @@ public class RegistrationService
                 return new RegistrationResponse
                 {
                     Success = true,
-                    UID = GenerateUID(),
                     Secret = newUser.Value.SecretKey
                 };
             }
@@ -314,7 +221,6 @@ public class RegistrationService
                 return new RegistrationResponse
                 {
                     Success = true,
-                    UID = newProfile.Value.Uid,
                     Secret = existingUser.Value.SecretKey
                 };
             }

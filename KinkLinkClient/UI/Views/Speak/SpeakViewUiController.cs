@@ -128,8 +128,7 @@ public class SpeakViewUiController
         var thoseWhoYouLackPermissionsFor = new List<string>();
         foreach (var selected in _selectionManager.Selected)
         {
-            if ((selected.PermissionsGrantedByFriend.Speak & permissions) != permissions)
-                thoseWhoYouLackPermissionsFor.Add(selected.NoteOrFriendCode);
+            thoseWhoYouLackPermissionsFor.Add(selected.NoteOrFriendCode);
         }
 
         return thoseWhoYouLackPermissionsFor;

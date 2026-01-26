@@ -31,7 +31,7 @@ public class SpeakHandler(IPresenceService presenceService, IForwardedRequestMan
         if (speak is SpeakPermissions2.None)
             logger.LogWarning("{Sender} tried to request with empty permissions {Request}", senderFriendCode, request);
 
-        var permissions = new UserPermissions(PrimaryPermissions2.None, speak, ElevatedPermissions.None);
+        var permissions = new UserPermissions();
         var command = new SpeakCommand(senderFriendCode, request.Message, request.ChatChannel, request.Extra);
         return await forwardedRequestManager.CheckPermissionsAndSend(senderFriendCode, request.TargetFriendCodes, HubMethod.Speak, permissions, command, clients);
     }

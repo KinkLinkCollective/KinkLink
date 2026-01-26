@@ -24,17 +24,17 @@ public class AddFriendHandler(IPresenceService presenceService, IDatabaseService
         // Map the result
         var code = result switch
         {
-            DatabaseResultEc.Success => AddFriendEc.Success,
-            DatabaseResultEc.Pending => AddFriendEc.Pending,
-            DatabaseResultEc.AlreadyFriends => AddFriendEc.AlreadyFriends,
-            DatabaseResultEc.NoSuchFriendCode => AddFriendEc.NoSuchFriendCode,
-            _ => AddFriendEc.Unknown
+            DBPairResult.Success => PairRequestResult.Success,
+            DBPairResult.OnesidedPairExists => PairRequestResult.Pending,
+            DBPairResult.Paired => PairRequestResult.AlreadyFriends,
+            DBPairResult.PairUIDDoesNotExist => PairRequestResult.NoSuchFriendCode,
+            _ => PairRequestResult.Unknown
         };
 
         // Only update other person if it is a success
-        if (code is not AddFriendEc.Success)
+        if (code is not PairRequestResult.Success)
         {
-            return code is AddFriendEc.Pending
+            return code is PairRequestResult.Pending
                 ? new AddFriendResponse(code, FriendOnlineStatus.Pending)
                 : new AddFriendResponse(code, FriendOnlineStatus.Offline);
         }

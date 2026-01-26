@@ -20,7 +20,7 @@ public class HonorificHandler : AbstractNetworkHandler, IDisposable
 {
     // Const
     private const string Operation = "Honorific";
-    private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Honorific, SpeakPermissions2.None, ElevatedPermissions.None);
+    private static readonly UserPermissions Permissions = new();
 
     // Injected
     private readonly HonorificService _honorific;

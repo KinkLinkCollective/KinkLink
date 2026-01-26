@@ -71,8 +71,8 @@ public class FriendsListComponentUiController : IDisposable
         var response = await _networkService.InvokeAsync<AddFriendResponse>(HubMethod.AddFriend, request).ConfigureAwait(false);
         switch (response.Result)
         {
-            case AddFriendEc.Success:
-            case AddFriendEc.Pending:
+            case PairRequestResult.Success:
+            case PairRequestResult.Pending:
 
                 // Try to get the name from our notes just in case they are a previous friend
                 Plugin.Configuration.Notes.TryGetValue(request.TargetFriendCode, out var note);
@@ -89,13 +89,13 @@ public class FriendsListComponentUiController : IDisposable
                 NotificationHelper.Success("Successfully Added Friend", $"Successfully added {FriendCodeToAdd} as a friend");
                 break;
 
-            case AddFriendEc.AlreadyFriends:
+            case PairRequestResult.AlreadyFriends:
                 NotificationHelper.Info("You are already friends", string.Empty);
                 break;
 
-            case AddFriendEc.Uninitialized:
-            case AddFriendEc.NoSuchFriendCode:
-            case AddFriendEc.Unknown:
+            case PairRequestResult.Uninitialized:
+            case PairRequestResult.NoSuchFriendCode:
+            case PairRequestResult.Unknown:
             default:
                 NotificationHelper.Error("Failed to Add Friend", $"{response.Result}");
                 break;

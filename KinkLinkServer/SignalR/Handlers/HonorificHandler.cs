@@ -15,7 +15,7 @@ namespace KinkLinkServer.SignalR.Handlers;
 public class HonorificHandler(IPresenceService presenceService, IForwardedRequestManager forwardedRequest, ILogger<MoodlesHandler> logger)
 {
     private const string Method = HubMethod.Honorific;
-    private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Honorific, SpeakPermissions2.None, ElevatedPermissions.None);
+    private static readonly UserPermissions Permissions = new();
 
     public async Task<ActionResponse> Handle(string senderFriendCode, HonorificRequest request, IHubCallerClients clients)
     {

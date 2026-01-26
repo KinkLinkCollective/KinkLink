@@ -106,8 +106,8 @@ public class FriendsViewUiController : IDisposable
                 return;
 
             var request = new RemoveFriendRequest(FriendCode);
-            var response = await _networkService.InvokeAsync<RemoveFriendResponse>(HubMethod.RemoveFriend, request);
-            if (response.Result is RemoveFriendEc.Success)
+            var response = await _networkService.InvokeAsync<RemovePair>(HubMethod.RemoveFriend, request);
+            if (response.Result is RemovePairEc.Success)
             {
                 _friendsListService.Delete(_friendBeingEdited);
                 _friendBeingEdited = null;

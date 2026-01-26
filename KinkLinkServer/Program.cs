@@ -52,7 +52,7 @@ public class Program
         });
 
         // Register database service - DatabaseService handles its own QueriesSql creation
-        builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
+        builder.Services.AddSingleton<DatabaseService>();
 
         // Services
         builder.Services.AddSingleton<IPresenceService, PresenceService>();

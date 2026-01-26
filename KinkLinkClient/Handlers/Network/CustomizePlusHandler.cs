@@ -20,7 +20,7 @@ public class CustomizePlusHandler : AbstractNetworkHandler, IDisposable
 {
     // Const
     private const string Operation = "Customize+";
-    private static readonly UserPermissions Permissions = new(PrimaryPermissions2.CustomizePlus, SpeakPermissions2.None, ElevatedPermissions.None);
+    private static readonly UserPermissions Permissions = new();
 
     // Injected
     private readonly CustomizePlusService _customize;

@@ -15,26 +15,26 @@ public class RemoveFriendHandler(IPresenceService presenceService, IDatabaseServ
     /// <summary>
     ///     Handles the request
     /// </summary>
-    public async Task<RemoveFriendResponse> Handle(string senderFriendCode, RemoveFriendRequest request, IHubCallerClients clients)
+    public async Task<RemovePair> Handle(string senderFriendCode, RemoveFriendRequest request, IHubCallerClients clients)
     {
         var result = await databaseService.DeletePermissions(senderFriendCode, request.TargetFriendCode) switch
         {
-            DatabaseResultEc.NoOp => RemoveFriendEc.NotFriends,
-            DatabaseResultEc.Success => RemoveFriendEc.Success,
-            _ => RemoveFriendEc.Unknown
+            DBPairResult.NoOp => RemovePairEc.NotFriends,
+            DBPairResult.Success => RemovePairEc.Success,
+            _ => RemovePairEc.Unknown
         };
 
         // If the request wasn't meaningful
-        if (result is not RemoveFriendEc.Success)
-            return new RemoveFriendResponse(result);
+        if (result is not RemovePairEc.Success)
+            return new RemovePair(result);
 
         // If the target isn't online
         if (presenceService.TryGet(request.TargetFriendCode) is not { } friend)
-            return new RemoveFriendResponse(result);
+            return new RemovePair(result);
 
         // If the target is online, but they don't have us added
         if (await databaseService.GetPermissions(request.TargetFriendCode, senderFriendCode) is null)
-            return new RemoveFriendResponse(result);
+            return new RemovePair(result);
 
         try
         {
@@ -48,6 +48,6 @@ public class RemoveFriendHandler(IPresenceService presenceService, IDatabaseServ
         }
 
         // Return always
-        return new RemoveFriendResponse(result);
+        return new RemovePair(result);
     }
 }

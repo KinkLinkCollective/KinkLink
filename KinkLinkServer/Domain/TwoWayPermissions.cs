@@ -35,7 +35,7 @@ public record TwoWayPermissions
     {
         FriendCode = friendCode;
         TargetFriendCode = targetFriendCode;
-        PermissionsGrantedTo = new UserPermissions(primary, speak, elevated);
+        PermissionsGrantedTo = new UserPermissions();
         PermissionsGrantedBy = null;
     }
 
@@ -46,7 +46,7 @@ public record TwoWayPermissions
     {
         FriendCode = friendCode;
         TargetFriendCode = targetFriendCode;
-        PermissionsGrantedTo = new UserPermissions(primary, speak, elevated);
-        PermissionsGrantedBy = new UserPermissions(primary2, speak2, elevated2);
+        PermissionsGrantedTo = new UserPermissions();
+        PermissionsGrantedBy = new UserPermissions();
     }
 }

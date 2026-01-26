@@ -9,9 +9,6 @@ public class RegistrationRequest
 {
     [JsonPropertyName("discord_id")]
     public ulong DiscordId { get; init; }
-
-    [JsonPropertyName("friend_code")]
-    public string UID { get; init; } = string.Empty;
 }
 
 /// <summary>
@@ -22,11 +19,23 @@ public class RegistrationResponse
     [JsonPropertyName("success")]
     public bool Success { get; init; }
 
-    [JsonPropertyName("UID")]
-    public string? UID { get; init; }
-
     [JsonPropertyName("secret")]
     public string? Secret { get; init; }
+
+    [JsonPropertyName("error_message")]
+    public string? ErrorMessage { get; init; }
+}
+
+///     <summary>
+///     Response from profile regiration endpoint
+/// </summary>
+public class ProfileResponse
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; init; }
+
+    [JsonPropertyName("uid")]
+    public string? UID { get; init; }
 
     [JsonPropertyName("error_message")]
     public string? ErrorMessage { get; init; }

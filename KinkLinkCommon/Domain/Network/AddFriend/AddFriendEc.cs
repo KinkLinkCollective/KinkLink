@@ -1,6 +1,6 @@
 namespace KinkLinkCommon.Domain.Network.AddFriend;
 
-public enum AddFriendEc
+public enum PairRequestResult
 {
     /// <summary>
     ///     Default value, never should be encountered

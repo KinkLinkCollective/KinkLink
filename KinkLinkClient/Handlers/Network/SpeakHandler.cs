@@ -46,7 +46,7 @@ public class SpeakHandler : AbstractNetworkHandler, IDisposable
         Plugin.Log.Verbose($"{request}");
 
         var speakPermissions = request.ChatChannel.ToSpeakPermissions(request.Extra);
-        var permissions = new UserPermissions(PrimaryPermissions2.None, speakPermissions, ElevatedPermissions.None);
+        var permissions = new UserPermissions();
 
         var sender = TryGetFriendWithCorrectPermissions(Operation, request.SenderFriendCode, permissions);
         if (sender.Result is not ActionResultEc.Success)

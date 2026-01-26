@@ -14,8 +14,8 @@ public class UpdateFriendHandler(IPresenceService presenceService, IDatabaseServ
         var databaseResult = await database.UpdatePermissions(friendCode, request.TargetFriendCode, request.Permissions);
         var result = databaseResult switch
         {
-            DatabaseResultEc.Success => UpdateFriendEc.Success,
-            DatabaseResultEc.NoOp => UpdateFriendEc.NoOp,
+            DBPairResult.Success => UpdateFriendEc.Success,
+            DBPairResult.NoOp => UpdateFriendEc.NoOp,
             _ => UpdateFriendEc.Unknown
         };
 

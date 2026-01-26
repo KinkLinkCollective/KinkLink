@@ -16,7 +16,7 @@ namespace KinkLinkServer.SignalR.Handlers;
 public class MoodlesHandler(IPresenceService presenceService, IForwardedRequestManager forwardedRequestManager, ILogger<MoodlesHandler> logger)
 {
     private const string Method = HubMethod.Moodles;
-    private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Moodles, SpeakPermissions2.None, ElevatedPermissions.None);
+    private static readonly UserPermissions Permissions = new();
 
     /// <summary>
     ///     Handles the request

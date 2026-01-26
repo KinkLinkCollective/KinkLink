@@ -17,12 +17,12 @@ public interface IDatabaseService
     /// <summary>
     ///     Creates a new blank permission set between two users
     /// </summary>
-    public Task<DatabaseResultEc> CreatePermissions(string senderFriendCode, string targetFriendCode);
+    public Task<DBPairResult> CreatePermissions(string senderFriendCode, string targetFriendCode);
 
     /// <summary>
     ///     Updates a permission set between two users
     /// </summary>
-    public Task<DatabaseResultEc> UpdatePermissions(string senderFriendCode, string targetFriendCode, UserPermissions permissions);
+    public Task<DBPairResult> UpdatePermissions(string senderFriendCode, string targetFriendCode, UserPermissions permissions);
 
     /// <summary>
     ///     Returns the permissions a friend has granted another, if they exists
@@ -37,13 +37,13 @@ public interface IDatabaseService
     /// <summary>
     ///     Deletes a permission set between two users
     /// </summary>
-    public Task<DatabaseResultEc> DeletePermissions(string senderFriendCode, string targetFriendCode);
+    public Task<DBPairResult> DeletePermissions(string senderFriendCode, string targetFriendCode);
 
     /// <summary>
     ///     Admin function to add a new account to the database
     /// </summary>
     /// <returns></returns>
-    public Task<DatabaseResultEc> AdminCreateAccount(ulong discord, string friendCode, string secret);
+    public Task<DBPairResult> AdminCreateAccount(ulong discord, string friendCode, string secret);
 
     /// <summary>
     ///     Attempts to get all the friend codes associated with provided discord id
@@ -54,10 +54,10 @@ public interface IDatabaseService
     /// <summary>
     ///     Attempts to update an existing account's friend code, and all the relationships associated with them
     /// </summary>
-    public Task<DatabaseResultEc> AdminUpdateAccount(ulong discord, string oldFriendCode, string newFriendCode);
+    public Task<DBPairResult> AdminUpdateAccount(ulong discord, string oldFriendCode, string newFriendCode);
 
     /// <summary>
     ///     Attempts to delete an existing account, and all associated relationships.
     /// </summary>
-    public Task<DatabaseResultEc> AdminDeleteAccount(ulong discord, string friendCode);
+    public Task<DBPairResult> AdminDeleteAccount(ulong discord, string friendCode);
 }

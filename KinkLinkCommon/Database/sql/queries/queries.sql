@@ -2,7 +2,11 @@
 -- If it doesn't exist, register a new user.
 INSERT INTO Users (discord_id, secret_key, verified, banned)
 VALUES ($1, $2, $3, $4)
-ON CONFLICT (discord_id) DO NOTHING
+ON CONFLICT (discord_id) DO UPDATE SET
+    secret_key = EXCLUDED.secret_key,
+    verified = EXCLUDED.verified,
+    banned = EXCLUDED.banned,
+    updatedAt = CURRENT_TIMESTAMP
 RETURNING *;
 
 -- name: DeleteUserAccount :one
@@ -50,7 +54,7 @@ UPDATE Profiles
 SET title = $1, description = $2, updatedAt = CURRENT_TIMESTAMP
 WHERE UID = $3 AND user_id = $4
 RETURNING *;
--- name: GetAllPairsForProfile :one
+-- name: GetAllPairsForProfile :many
 SELECT p.*, 
        p1.UID as profile_uid,
        p2.UID as pair_uid
@@ -60,12 +64,14 @@ JOIN Profiles p2 ON p.pair_id = p2.id
 WHERE p1.UID = $1 OR p2.UID = $1;
 
 -- name: ConfirmTwoWayPair :one
--- Checks both `id`, `pair_id` and `id` and `pair_id` are found in the database.
+-- Checks if both directions of a pair exist in the database.
 SELECT EXISTS(
-    SELECT 1 FROM Pairs p1
-    JOIN Pairs p2 ON p1.id = p2.pair_id AND p1.pair_id = p2.id
-    WHERE p1.id = $1 AND p1.pair_id = $2
-);
+    SELECT 1 FROM Pairs 
+    WHERE Pairs.id = $1 AND Pairs.pair_id = $2
+) AND EXISTS(
+    SELECT 1 FROM Pairs 
+    WHERE Pairs.id = $2 AND Pairs.pair_id = $1
+) as TwoWayPair;
 
 -- name: AddPair :one
 INSERT INTO Pairs (id, pair_id, expires, apply_gag, lock_gag, unlock_gag, remove_gag, apply_wardrobe, lock_wardrobe, unlock_wardrobe, remove_wardrobe)

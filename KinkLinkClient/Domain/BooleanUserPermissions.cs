@@ -83,49 +83,6 @@ public class BooleanUserPermissions
         return new BooleanUserPermissions
         {
             // Primary
-            Emote = (permissions.Primary & PrimaryPermissions2.Emote) == PrimaryPermissions2.Emote,
-            Customization = (permissions.Primary & PrimaryPermissions2.GlamourerCustomization) == PrimaryPermissions2.GlamourerCustomization,
-            Equipment = (permissions.Primary & PrimaryPermissions2.GlamourerEquipment) == PrimaryPermissions2.GlamourerEquipment,
-            Mods = (permissions.Primary & PrimaryPermissions2.Mods) == PrimaryPermissions2.Mods,
-            BodySwap = (permissions.Primary & PrimaryPermissions2.BodySwap) == PrimaryPermissions2.BodySwap,
-            Twinning = (permissions.Primary & PrimaryPermissions2.Twinning) == PrimaryPermissions2.Twinning,
-            CustomizePlus = (permissions.Primary & PrimaryPermissions2.CustomizePlus) == PrimaryPermissions2.CustomizePlus,
-            Moodles = (permissions.Primary & PrimaryPermissions2.Moodles) == PrimaryPermissions2.Moodles,
-            Hypnosis = (permissions.Primary & PrimaryPermissions2.Hypnosis) == PrimaryPermissions2.Hypnosis,
-            Honorific = (permissions.Primary & PrimaryPermissions2.Honorific) == PrimaryPermissions2.Honorific,
-
-            // Speak Permissions
-            Say = (permissions.Speak & SpeakPermissions2.Say) == SpeakPermissions2.Say,
-            Yell = (permissions.Speak & SpeakPermissions2.Yell) == SpeakPermissions2.Yell,
-            Shout = (permissions.Speak & SpeakPermissions2.Shout) == SpeakPermissions2.Shout,
-            Tell = (permissions.Speak & SpeakPermissions2.Tell) == SpeakPermissions2.Tell,
-            Party = (permissions.Speak & SpeakPermissions2.Party) == SpeakPermissions2.Party,
-            Alliance = (permissions.Speak & SpeakPermissions2.Alliance) == SpeakPermissions2.Alliance,
-            FreeCompany = (permissions.Speak & SpeakPermissions2.FreeCompany) == SpeakPermissions2.FreeCompany,
-            PvPTeam = (permissions.Speak & SpeakPermissions2.PvPTeam) == SpeakPermissions2.PvPTeam,
-            Echo = (permissions.Speak & SpeakPermissions2.Echo) == SpeakPermissions2.Echo,
-            Roleplay = (permissions.Speak & SpeakPermissions2.Roleplay) == SpeakPermissions2.Roleplay,
-
-            // Linkshell Permissions
-            Ls1 = (permissions.Speak & SpeakPermissions2.Ls1) == SpeakPermissions2.Ls1,
-            Ls2 = (permissions.Speak & SpeakPermissions2.Ls2) == SpeakPermissions2.Ls2,
-            Ls3 = (permissions.Speak & SpeakPermissions2.Ls3) == SpeakPermissions2.Ls3,
-            Ls4 = (permissions.Speak & SpeakPermissions2.Ls4) == SpeakPermissions2.Ls4,
-            Ls5 = (permissions.Speak & SpeakPermissions2.Ls5) == SpeakPermissions2.Ls5,
-            Ls6 = (permissions.Speak & SpeakPermissions2.Ls6) == SpeakPermissions2.Ls6,
-            Ls7 = (permissions.Speak & SpeakPermissions2.Ls7) == SpeakPermissions2.Ls7,
-            Ls8 = (permissions.Speak & SpeakPermissions2.Ls8) == SpeakPermissions2.Ls8,
-            Cwl1 = (permissions.Speak & SpeakPermissions2.Cwl1) == SpeakPermissions2.Cwl1,
-            Cwl2 = (permissions.Speak & SpeakPermissions2.Cwl2) == SpeakPermissions2.Cwl2,
-            Cwl3 = (permissions.Speak & SpeakPermissions2.Cwl3) == SpeakPermissions2.Cwl3,
-            Cwl4 = (permissions.Speak & SpeakPermissions2.Cwl4) == SpeakPermissions2.Cwl4,
-            Cwl5 = (permissions.Speak & SpeakPermissions2.Cwl5) == SpeakPermissions2.Cwl5,
-            Cwl6 = (permissions.Speak & SpeakPermissions2.Cwl6) == SpeakPermissions2.Cwl6,
-            Cwl7 = (permissions.Speak & SpeakPermissions2.Cwl7) == SpeakPermissions2.Cwl7,
-            Cwl8 = (permissions.Speak & SpeakPermissions2.Cwl8) == SpeakPermissions2.Cwl8,
-
-            // Elevated Permissions
-            PermanentTransformation = (permissions.Elevated & ElevatedPermissions.PermanentTransformation) == ElevatedPermissions.PermanentTransformation
         };
     }
 
@@ -184,6 +141,6 @@ public class BooleanUserPermissions
         // Elevated Permissions
         if (permissions.PermanentTransformation) elevated |= ElevatedPermissions.PermanentTransformation;
 
-        return new UserPermissions(primary, speak, elevated);
+        return new UserPermissions();
     }
 }

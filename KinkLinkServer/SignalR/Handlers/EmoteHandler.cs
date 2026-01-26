@@ -16,7 +16,7 @@ namespace KinkLinkServer.SignalR.Handlers;
 public class EmoteHandler(IPresenceService presenceService, IForwardedRequestManager forwardedRequestManager, ILogger<EmoteHandler> logger)
 {
     private const string Method = HubMethod.Emote;
-    private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Emote, SpeakPermissions2.None, ElevatedPermissions.None);
+    private static readonly UserPermissions Permissions = new();
 
     /// <summary>
     ///     Handles the request

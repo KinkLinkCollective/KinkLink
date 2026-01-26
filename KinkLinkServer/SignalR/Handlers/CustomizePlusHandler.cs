@@ -12,7 +12,7 @@ namespace KinkLinkServer.SignalR.Handlers;
 public class CustomizePlusHandler(IPresenceService presenceService, IForwardedRequestManager forwardedRequestManager, ILogger<CustomizePlusHandler> logger)
 {
     private const string Method = HubMethod.CustomizePlus;
-    private static readonly UserPermissions Permissions = new(PrimaryPermissions2.CustomizePlus, SpeakPermissions2.None, ElevatedPermissions.None);
+    private static readonly UserPermissions Permissions = new();
 
     /// <summary>
     ///     Handles the request

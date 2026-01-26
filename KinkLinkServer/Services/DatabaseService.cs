@@ -13,7 +13,7 @@ namespace KinkLinkServer.Services;
 /// <summary>
 ///     Provides methods for interacting with the underlying PostgreSQL database
 /// </summary>
-public class DatabaseService : IDatabaseService
+public class DatabaseService
 {
     // Injected
     private readonly ILogger<DatabaseService> _logger;
@@ -37,29 +37,32 @@ public class DatabaseService : IDatabaseService
     /// <summary>
     ///     Gets a user entry from the accounts table by secret
     /// </summary>
-    public async Task<string?> GetFriendCodeBySecret(string secret)
+    public async Task<string?> AuthenticateUser(string secret)
     {
-        // TODO: 
+        // TODO: Implement the authentication for this function.
+        // Hash the user secret
+        // Check against the database for the user existing.
         throw new NotImplementedException();
     }
+
     /// <summary>
     ///     Creates an empty set of permissions between sender and target friend codes
     /// </summary>
-    public async Task<DatabaseResultEc> CreatePermissions(string senderFriendCode, string targetFriendCode)
+    public async Task<DBPairResult> CreatePairRequest(string senderUID, string targetUID)
     {
-        // TODO: 
+        // TODO: If there is not already a one way pair, create a new pair request 
         throw new NotImplementedException();
     }
 
     /// <summary>
     ///     Updates a set of permissions between sender and target friend codes
     /// </summary>
-    public async Task<DatabaseResultEc> UpdatePermissions(
+    public async Task<DBPairResult> UpdatePermissions(
         string senderFriendCode,
         string targetFriendCode,
         UserPermissions permissions)
     {
-        // TODO: 
+        // TODO: If there there is a two way pair, update the permissions with the data from UserPermissions
         throw new NotImplementedException();
     }
 
@@ -85,7 +88,7 @@ public class DatabaseService : IDatabaseService
     /// <summary>
     ///     Deletes a permissions relationship
     /// </summary>
-    public async Task<DatabaseResultEc> DeletePermissions(string senderFriendCode, string targetFriendCode)
+    public async Task<DBPairResult> DeletePermissions(string senderFriendCode, string targetFriendCode)
     {
         // TODO: 
         throw new NotImplementedException();
@@ -94,7 +97,7 @@ public class DatabaseService : IDatabaseService
     /// <summary>
     ///     Admin function to create an account
     /// </summary>
-    public async Task<DatabaseResultEc> AdminCreateAccount(ulong discord, string friendCode, string secret)
+    public async Task<DBPairResult> AdminCreateAccount(ulong discord, string friendCode, string secret)
     {
         // TODO: 
         throw new NotImplementedException();
@@ -112,7 +115,7 @@ public class DatabaseService : IDatabaseService
     /// <summary>
     ///     Updates an account's friend code
     /// </summary>
-    public async Task<DatabaseResultEc> AdminUpdateAccount(ulong discord, string oldFriendCode, string newFriendCode)
+    public async Task<DBPairResult> AdminUpdateAccount(ulong discord, string oldFriendCode, string newFriendCode)
     {
         // TODO: 
         throw new NotImplementedException();
@@ -121,7 +124,7 @@ public class DatabaseService : IDatabaseService
     /// <summary>
     ///     Deletes an account
     /// </summary>
-    public async Task<DatabaseResultEc> AdminDeleteAccount(ulong discord, string friendCode)
+    public async Task<DBPairResult> AdminDeleteAccount(ulong discord, string friendCode)
     {
         // TODO: 
         throw new NotImplementedException();

@@ -28,29 +28,41 @@ CREATE TABLE IF NOT EXISTS Profiles (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
     UID VARCHAR(10) NOT NULL,
-    chat_role VARCHAR(20),
-    alias VARCHAR(20),
-    title VARCHAR(20),
+    chat_role VARCHAR(20) DEFAULT '',
+    alias VARCHAR(20) DEFAULT '',
+    title VARCHAR(20) DEFAULT 'Kinkster',
     description TEXT
 );
 
 -- This is the pairs table used to link UUIDs
 -- The pair permissions can expire to facilitate temporary pairings
--- Each individual permission is just a boolean value
+-- Each individual permission is just a boolean value for simplicity
 CREATE TABLE IF NOT EXISTS Pairs (
-    id SERIAL PRIMARY KEY,
-    pair_id INTEGER NOT NULL,
+    id SERIAL NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+    pair_id INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+    PRIMARY KEY (id, pair_id),
     expires TIMESTAMP,
-    apply_gag BOOL,
-    lock_gag BOOL,
-    unlock_gag BOOL,
-    remove_gag BOOL,
-    apply_wardrobe BOOL,
-    lock_wardrobe BOOL,
-    unlock_wardrobe BOOL,
-    remove_wardrobe BOOL
+
+    toggle_timer_locks BOOL DEFAULT false,
+    toggle_permanent_locks BOOL DEFAULT false,
+
+    toggle_garbler BOOL DEFAULT false,
+    lock_garbler BOOL DEFAULT false,
+    toggle_channels BOOL DEFAULT false,
+    lock_channels BOOL DEFAULT false,
+    
+    apply_gag BOOL DEFAULT false,
+    lock_gag BOOL DEFAULT false,
+    unlock_gag BOOL DEFAULT false,
+    remove_gag BOOL DEFAULT false,
+
+    apply_wardrobe BOOL DEFAULT false,
+    lock_wardrobe BOOL DEFAULT false,
+    unlock_wardrobe BOOL DEFAULT false,
+    remove_wardrobe BOOL DEFAULT false,
+
+    apply_moodles BOOL DEFAULT false,
+    lock_moodles BOOL DEFAULT false,
+    unlock_moodles BOOL DEFAULT false,
+    remove_moodles BOOL DEFAULT false
 );
-
--- Create index for foreign key performance
-CREATE INDEX IF NOT EXISTS idx_profiles_userId ON Profiles(userId);
-

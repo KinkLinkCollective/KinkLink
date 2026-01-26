@@ -18,7 +18,7 @@ public class EmoteHandler : AbstractNetworkHandler, IDisposable
 {
     // Const
     private const string Operation = "Emote";
-    private static readonly UserPermissions Permissions = new(PrimaryPermissions2.Emote, SpeakPermissions2.None, ElevatedPermissions.None);
+    private static readonly UserPermissions Permissions = new();
 
     // Injected
     private readonly EmoteService _emote;

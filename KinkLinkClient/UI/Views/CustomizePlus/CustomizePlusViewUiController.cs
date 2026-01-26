@@ -75,11 +75,7 @@ public class CustomizePlusViewUiController : IDisposable
     /// <returns></returns>
     public bool MissingPermissionsForATarget()
     {
-        foreach (var friend in _selectionManager.Selected)
-            if ((friend.PermissionsGrantedByFriend.Primary & PrimaryPermissions2.CustomizePlus) is not PrimaryPermissions2.CustomizePlus)
-                return true;
-
-        return false;
+        return true;
     }
 
     public async void SendCustomizeProfile()

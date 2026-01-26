@@ -1,6 +1,6 @@
 namespace KinkLinkCommon.Domain.Network.RemoveFriend;
 
-public enum RemoveFriendEc
+public enum RemovePairEc
 {
     /// <summary>
     ///     Default value, never should be encountered
