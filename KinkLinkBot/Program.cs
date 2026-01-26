@@ -69,7 +69,8 @@ public class Program
         services.AddSingleton<RegistrationService>(sp =>
         {
             var logger = sp.GetRequiredService<ILogger<RegistrationService>>();
-            return new RegistrationService(config.DbConnectionString, logger);
+            var discordClient = sp.GetRequiredService<DiscordSocketClient>();
+            return new RegistrationService(config.DbConnectionString, logger, discordClient, config);
         });
         services.AddSingleton<DiscordInteractionHandler>();
 

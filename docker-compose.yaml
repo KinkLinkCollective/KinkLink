@@ -51,6 +51,24 @@ services:
     networks:
       - kinklink-network
 
+  kinklink-bot:
+    build:
+      context: .
+      dockerfile: KinkLinkBot/Dockerfile
+    container_name: kl-bot
+    restart: unless-stopped
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DB_CONNECTION_STRING=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+    volumes:
+      - ./KinkLinkBot/config.json:/app/config.json:ro
+      - ./KinkLinkDatabase/migrations:/app/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kinklink-network
+
   # Postgres DB image
   postgres:
     image: postgres:18-bookworm

@@ -1,78 +1,101 @@
--- name: GetFriendCodeBySecret :one
--- Retrieves a friend code by secret for initial connection
-SELECT FriendCode FROM Accounts WHERE Secret = sqlc.arg('secret');
+-- name: RegisterNewUser :one
+-- If it doesn't exist, register a new user.
+INSERT INTO Users (discord_id, secret_key, verified, banned)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (discord_id) DO NOTHING
+RETURNING *;
 
--- name: GetAccountByFriendCode :one
--- Retrieves full account by friend code
-SELECT DiscordId, FriendCode, Secret, Admin, CreatedAt, UpdatedAt
-FROM Accounts WHERE FriendCode = sqlc.arg('friendCode') LIMIT 1;
+-- name: DeleteUserAccount :one
+-- Deletes a user account and cascades to all data referencing the user.
+DELETE FROM Users
+WHERE discord_id = $1
+RETURNING *;
 
--- name: GetAccountsByDiscordId :many
--- Retrieves all accounts for a discord user (supports multiple UIDs)
-SELECT FriendCode, Secret, Admin, CreatedAt, UpdatedAt
-FROM Accounts WHERE DiscordId = sqlc.arg('discordId');
+-- name: SelectUserbyDiscordId :one
+SELECT * FROM Users
+WHERE discord_id = $1;
 
--- name: CreateAccount :exec
--- Creates a new account
-INSERT INTO Accounts (DiscordId, FriendCode, Secret, Admin)
-VALUES (sqlc.arg('discordId'), sqlc.arg('friendCode'), sqlc.arg('secret'), FALSE)
-ON CONFLICT (FriendCode) DO NOTHING;
+-- name: UserExists :one
+SELECT EXISTS(
+    SELECT 1 FROM Users 
+    WHERE discord_id = $1
+);
 
--- name: AccountExistsAfterCreate :one
--- Checks if account was created (returns FriendCode if exists, null if just created)
-SELECT FriendCode FROM Accounts WHERE DiscordId = sqlc.arg('discordId') AND FriendCode = sqlc.arg('friendCode') LIMIT 1;
+-- name: CreateNewUIDForUser :one
+-- If the provided user exists, create a new UID for them.
+INSERT INTO Profiles (user_id, UID, chat_role, alias, title, description)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING *;
 
--- name: UpdateFriendCode :execrows
--- Updates a friend code for an existing account
-UPDATE Accounts
-SET FriendCode = sqlc.arg('newFriendCode'), UpdatedAt = CURRENT_TIMESTAMP
-WHERE DiscordId = sqlc.arg('discordId') AND FriendCode = sqlc.arg('oldFriendCode');
+-- name: DeleteProfile :one
+-- Should cascade on deletion for any foreign keys
+DELETE FROM Profiles
+WHERE UID = $1 AND user_id = $2
+RETURNING *;
 
--- name: DeleteAccount :execrows
--- Deletes an account and all associated permissions
-DELETE FROM Accounts WHERE DiscordId = sqlc.arg('discordId') AND FriendCode = sqlc.arg('friendCode');
+-- name: ProfileExists :one
+SELECT EXISTS(
+    SELECT 1 FROM Profiles 
+    WHERE UID = $1
+);
 
--- name: CheckFriendCodeExists :one
--- Checks if a friend code exists
-SELECT 1 AS Exists FROM Accounts WHERE FriendCode = sqlc.arg('friendCode') LIMIT 1;
+-- name: UpdateAliasForProfile :one
+UPDATE Profiles 
+SET alias = $1, updatedAt = CURRENT_TIMESTAMP
+WHERE UID = $2 AND user_id = $3
+RETURNING *;
 
--- name: CreatePermissions :execrows
--- Creates permissions between two users if target exists, returns affected rows
-INSERT INTO Permissions (FriendCode, TargetFriendCode, PrimaryPermissions, SpeakPermissions, ElevatedPermissions)
-SELECT sqlc.arg('friendCode'), sqlc.arg('targetFriendCode'), 0, 0, 0
-WHERE EXISTS (SELECT 1 FROM Accounts WHERE FriendCode = sqlc.arg('targetFriendCode'))
-ON CONFLICT DO NOTHING;
+-- name: UpdateDetailsForProfile :one
+UPDATE Profiles 
+SET title = $1, description = $2, updatedAt = CURRENT_TIMESTAMP
+WHERE UID = $3 AND user_id = $4
+RETURNING *;
+-- name: GetAllPairsForProfile :one
+SELECT p.*, 
+       p1.UID as profile_uid,
+       p2.UID as pair_uid
+FROM Pairs p
+JOIN Profiles p1 ON p.id = p1.id
+JOIN Profiles p2 ON p.pair_id = p2.id
+WHERE p1.UID = $1 OR p2.UID = $1;
 
--- name: UpdatePermissions :execrows
--- Updates permissions for a relationship
-UPDATE Permissions
-SET PrimaryPermissions = sqlc.arg('primaryPermissions'),
-    SpeakPermissions = sqlc.arg('speakPermissions'),
-    ElevatedPermissions = sqlc.arg('elevatedPermissions'),
-    UpdatedAt = CURRENT_TIMESTAMP
-WHERE FriendCode = sqlc.arg('friendCode') AND TargetFriendCode = sqlc.arg('targetFriendCode');
+-- name: ConfirmTwoWayPair :one
+-- Checks both `id`, `pair_id` and `id` and `pair_id` are found in the database.
+SELECT EXISTS(
+    SELECT 1 FROM Pairs p1
+    JOIN Pairs p2 ON p1.id = p2.pair_id AND p1.pair_id = p2.id
+    WHERE p1.id = $1 AND p1.pair_id = $2
+);
 
--- name: GetPermissions :one
--- Gets permissions for a single relationship
-SELECT PrimaryPermissions, SpeakPermissions, ElevatedPermissions
-FROM Permissions
-WHERE FriendCode = sqlc.arg('friendCode') AND TargetFriendCode = sqlc.arg('targetFriendCode')
-LIMIT 1;
+-- name: AddPair :one
+INSERT INTO Pairs (id, pair_id, expires, apply_gag, lock_gag, unlock_gag, remove_gag, apply_wardrobe, lock_wardrobe, unlock_wardrobe, remove_wardrobe)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+RETURNING *;
 
--- name: GetAllPermissions :many
--- Gets all permissions for a user (both directions)
-SELECT
-    p.TargetFriendCode,
-    p.PrimaryPermissions AS PrimaryPermissionsTo, p.SpeakPermissions AS SpeakPermissionsTo, p.ElevatedPermissions AS ElevatedPermissionsTo,
-    r.PrimaryPermissions AS PrimaryPermissionsFrom, r.SpeakPermissions AS SpeakPermissionsFrom, r.ElevatedPermissions AS ElevatedPermissionsFrom
-FROM Permissions AS p
-LEFT JOIN Permissions AS r ON r.FriendCode = p.TargetFriendCode AND r.TargetFriendCode = p.FriendCode
-WHERE p.FriendCode = sqlc.arg('friendCode');
+-- name: RemovePair :one
+DELETE FROM Pairs
+WHERE (id = $1 AND pair_id = $2) OR (id = $2 AND pair_id = $1)
+RETURNING *;
+-- name: UpdatePairPermissions :one
+UPDATE Pairs 
+SET apply_gag = $1,
+    lock_gag = $2,
+    unlock_gag = $3,
+    remove_gag = $4,
+    apply_wardrobe = $5,
+    lock_wardrobe = $6,
+    unlock_wardrobe = $7,
+    remove_wardrobe = $8
+WHERE (id = $9 AND pair_id = $10) OR (id = $10 AND pair_id = $9)
+RETURNING *;
 
--- name: DeletePermissions :execrows
--- Deletes a permissions relationship
-DELETE FROM Permissions WHERE FriendCode = sqlc.arg('friendCode') AND TargetFriendCode = sqlc.arg('targetFriendCode');
+-- name: PurgeExpiredPairs :one
+DELETE FROM Pairs
+WHERE expires IS NOT NULL AND expires < CURRENT_TIMESTAMP
+RETURNING *;
 
--- name: DeleteAllPermissionsForFriendCode :execrows
--- Deletes all permissions where this friend code is either party
-DELETE FROM Permissions WHERE FriendCode = sqlc.arg('friendCode') OR TargetFriendCode = sqlc.arg('friendCode');
+-- name: HasExpiredPairs :one
+SELECT EXISTS(
+    SELECT 1 FROM Pairs 
+    WHERE expires IS NOT NULL AND expires < CURRENT_TIMESTAMP
+);

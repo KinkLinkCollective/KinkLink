@@ -22,6 +22,9 @@ public class BotConfiguration
         [JsonPropertyName("guild_id")]
         public ulong GuildId { get; set; }
 
+        [JsonPropertyName("channel_id")]
+        public ulong ChannelId { get; set; }
+
         [JsonPropertyName("admin_role_id")]
         public ulong AdminRoleId { get; set; }
     }
@@ -59,6 +62,7 @@ public class BotConfiguration
     {
         return !string.IsNullOrEmpty(Bot.Token) &&
                Bot.GuildId != 0 &&
+               Bot.ChannelId != 0 &&
                !string.IsNullOrEmpty(DbConnectionString);
     }
 }

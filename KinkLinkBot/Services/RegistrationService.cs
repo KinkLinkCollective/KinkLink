@@ -1,3 +1,5 @@
+using Discord;
+using Discord.WebSocket;
 using KinkLinkBot.Configuration;
 using KinkLinkBot.Domain.Models;
 using KinkLinkCommon.Database;
@@ -7,77 +9,187 @@ namespace KinkLinkBot.Services;
 
 /// <summary>
 ///     Service for managing user registrations using direct PostgreSQL access
+///     These are all handled by a series of embeded messages that only the users
+///     can see. There is no need for any slash commands to be used.
 /// </summary>
 public class RegistrationService
 {
     private readonly QueriesSql _queries;
     private readonly ILogger<RegistrationService> _logger;
+    private readonly DiscordSocketClient _client;
+    private readonly BotConfiguration _config;
 
     public RegistrationService(
         string connectionString,
-        ILogger<RegistrationService> logger)
+        ILogger<RegistrationService> logger,
+        DiscordSocketClient client,
+        BotConfiguration config)
     {
         _queries = new QueriesSql(connectionString);
         _logger = logger;
+        _client = client;
+        _config = config;
     }
 
-    /// <summary>
-    ///     Registers a new user account or returns existing if already registered
-    /// </summary>
-    public async Task<RegistrationResponse> RegisterUserAsync(ulong discordId)
+    public async Task<RegistrationResponse> CreatePrompt()
     {
         try
         {
-            // Check if user already has accounts
-            var existingAccounts = await _queries.GetAccountsByDiscordIdAsync(
-                new QueriesSql.GetAccountsByDiscordIdArgs((long)discordId));
-
-            if (existingAccounts.Count > 0)
+            // Get the guild from the client
+            var guild = _client.GetGuild(_config.Bot.GuildId);
+            if (guild == null)
             {
-                // Return first existing account
-                var account = existingAccounts[0];
+                _logger.LogError($"Guild {_config.Bot.GuildId} not found");
                 return new RegistrationResponse
                 {
-                    Success = true,
-                    UID = account.Friendcode,
-                    Secret = account.Secret
+                    Success = false,
+                    ErrorMessage = "Guild not found"
                 };
             }
 
-            // Generate new credentials
-            var friendCode = GenerateFriendCode();
-            var secret = GenerateSecret();
-
-            // Create account
-            await _queries.CreateAccountAsync(new QueriesSql.CreateAccountArgs(
-                (long)discordId,
-                friendCode,
-                secret));
-
-            // Check if account was created by verifying it exists
-            var checkResult = await _queries.GetAccountByFriendCodeAsync(
-                new QueriesSql.GetAccountByFriendCodeArgs(friendCode));
-
-            if (checkResult == null)
+            // Get the specific channel from configuration
+            var channel = guild.GetTextChannel(_config.Bot.ChannelId);
+            if (channel == null)
             {
-                // Friend code collision - retry
-                return await RegisterUserAsync(discordId);
+                _logger.LogError($"Channel {_config.Bot.ChannelId} not found in guild {_config.Bot.GuildId}");
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Registration channel not found"
+                };
             }
+            if (channel == null)
+            {
+                _logger.LogError($"No text channel {_config.Bot.ChannelId} found in guild {_config.Bot.GuildId}");
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "No text channel available"
+                };
+            }
+
+            // Create an embed for the registration prompt
+            var embed = new EmbedBuilder
+            {
+                Title = "🔗 KinkLink Registration",
+                Description = "Welcome to KinkLink! To get started, please register your account.",
+                Color = Color.Blue,
+            };
+
+            embed.AddField("📝 Registration Steps",
+                "1. Click the button below to start registration\n" +
+                "2. Follow the prompts to create your unique UID\n" +
+                "3. Use your UID to connect with the FFXIV plugin",
+                inline: false);
+
+            embed.AddField("🔐 Privacy & Security",
+                "• Your Discord ID is kept private\n" +
+                "• UIDs provide anonymity in-game\n" +
+                "• You can delete your account at any time",
+                inline: false);
+
+            embed.AddField("❓ Need Help?",
+                "Contact an administrator if you need assistance with registration.",
+                inline: false);
+
+            embed.WithFooter("KinkLink Bot • Secure Registration System");
+            embed.WithCurrentTimestamp();
+
+            // Create a button for user interaction
+            var buttonBuilder = new ComponentBuilder()
+                .WithButton("🚀 Start Registration", "register_start", ButtonStyle.Primary);
+
+            // Send the embed message to the channel
+            var message = await channel.SendMessageAsync(
+                embed: embed.Build(),
+                components: buttonBuilder.Build());
+
+            _logger.LogInformation($"Registration prompt sent to channel {channel.Id} in guild {guild.Id}");
 
             return new RegistrationResponse
             {
                 Success = true,
-                UID = friendCode,
-                Secret = secret
+                ErrorMessage = null
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to register user {DiscordId}", discordId);
+            _logger.LogError(ex, "Error creating registration prompt");
             return new RegistrationResponse
             {
                 Success = false,
-                ErrorMessage = "Failed to register account"
+                ErrorMessage = $"Failed to create registration prompt: {ex.Message}"
+            };
+        }
+    }
+    /// <summary>
+    ///     Registers a new user account or returns existing if already registered
+    /// </summary>
+    public async Task<RegistrationResponse> RegisterUserAccount(ulong discordId)
+    {
+        try
+        {
+            // Check if user already exists
+            var existingUser = await _queries.SelectUserbyDiscordIdAsync(new((long)discordId));
+
+            if (existingUser.HasValue)
+            {
+                // User already exists, check if they're banned
+                if (existingUser.Value.Banned == true)
+                {
+                    return new RegistrationResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Your account has been banned. Please contact an administrator."
+                    };
+                }
+
+                // Return existing user info
+                return new RegistrationResponse
+                {
+                    Success = true,
+                    UID = GenerateUID(), // Generate a new UID for this session
+                    Secret = existingUser.Value.SecretKey
+                };
+            }
+
+            // Create new user
+            var secret = GenerateSecret();
+            var newUser = await _queries.RegisterNewUserAsync(new(
+                DiscordId: (long)discordId,
+                SecretKey: secret,
+                Verified: false,
+                Banned: false
+            ));
+
+            if (newUser.HasValue)
+            {
+                _logger.LogInformation($"New user registered: Discord ID {discordId}, User ID {newUser.Value.Id}");
+
+                return new RegistrationResponse
+                {
+                    Success = true,
+                    UID = GenerateUID(),
+                    Secret = newUser.Value.SecretKey
+                };
+            }
+            else
+            {
+                _logger.LogError($"Failed to register new user with Discord ID {discordId}");
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Failed to create user account. Please try again later."
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error registering user account for Discord ID {DiscordId}", discordId);
+            return new RegistrationResponse
+            {
+                Success = false,
+                ErrorMessage = "An unexpected error occurred during registration."
             };
         }
     }
@@ -85,92 +197,218 @@ public class RegistrationService
     /// <summary>
     ///     Removes a user's account
     /// </summary>
-    public async Task<RegistrationResponse> RemoveAccount(ulong discordId, string friendCode)
+    public async Task<RegistrationResponse> RemoveAccount(ulong discordId)
     {
         try
         {
-            var rowsAffected = await _queries.DeleteAccountAsync(
-                new QueriesSql.DeleteAccountArgs((long)discordId, friendCode));
+            var existingUser = await _queries.SelectUserbyDiscordIdAsync(new((long)discordId));
 
-            return new RegistrationResponse
+            if (!existingUser.HasValue)
             {
-                Success = rowsAffected == 1
-            };
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "User account not found."
+                };
+            }
+
+            var deletedUser = await _queries.DeleteUserAccountAsync(new((long)discordId));
+
+            if (deletedUser.HasValue)
+            {
+                _logger.LogInformation($"User account deleted: Discord ID {discordId}, User ID {deletedUser.Value.Id}");
+
+                return new RegistrationResponse
+                {
+                    Success = true,
+                    ErrorMessage = null
+                };
+            }
+            else
+            {
+                _logger.LogError($"Failed to delete user account with Discord ID {discordId}");
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Failed to delete user account. Please try again later."
+                };
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to remove account for {DiscordId}", discordId);
+            _logger.LogError(ex, "Error removing user account for Discord ID {DiscordId}", discordId);
             return new RegistrationResponse
             {
                 Success = false,
-                ErrorMessage = "Failed to remove account"
+                ErrorMessage = "An unexpected error occurred while deleting your account."
             };
         }
     }
 
     /// <summary>
-    ///     Creates a secondary UID for an existing user
+    ///     Creates a UID for the  user.
+    ///     UIDs are used to maintain relative anonymity with the user accounts.
     /// </summary>
-    public async Task<RegistrationResponse> CreateSecondaryUID(ulong discordId)
+    public async Task<RegistrationResponse> CreateUID(ulong discordId)
     {
         try
         {
-            // Verify user exists
-            var existingAccounts = await _queries.GetAccountsByDiscordIdAsync(
-                new QueriesSql.GetAccountsByDiscordIdArgs((long)discordId));
+            var existingUser = await _queries.SelectUserbyDiscordIdAsync(new((long)discordId));
 
-            if (existingAccounts.Count == 0)
+            if (!existingUser.HasValue)
             {
-                // User doesn't exist, create new account
-                return await RegisterUserAsync(discordId);
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "User account not found. Please register first."
+                };
             }
 
-            // Generate new credentials
-            var friendCode = GenerateFriendCode();
-            var secret = GenerateSecret();
-
-            // Create secondary account
-            await _queries.CreateAccountAsync(new QueriesSql.CreateAccountArgs(
-                (long)discordId,
-                friendCode,
-                secret));
-
-            // Check if account was created by verifying it exists
-            var checkResult = await _queries.GetAccountByFriendCodeAsync(
-                new QueriesSql.GetAccountByFriendCodeArgs(friendCode));
-
-            if (checkResult == null)
+            if (existingUser.Value.Banned == true)
             {
-                // Collision - retry
-                return await CreateSecondaryUID(discordId);
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Your account has been banned. Please contact an administrator."
+                };
             }
 
-            return new RegistrationResponse
+            var newUID = GenerateUID();
+
+            var profileExists = await _queries.ProfileExistsAsync(new(newUID));
+            if (profileExists?.Exists == true)
             {
-                Success = true,
-                UID = friendCode,
-                Secret = secret
-            };
+                var maxAttempts = 10;
+                var attempts = 0;
+
+                do
+                {
+                    newUID = GenerateUID();
+                    profileExists = await _queries.ProfileExistsAsync(new(newUID));
+                    attempts++;
+                } while (profileExists?.Exists == true && attempts < maxAttempts);
+
+                if (profileExists?.Exists == true)
+                {
+                    return new RegistrationResponse
+                    {
+                        Success = false,
+                        ErrorMessage = "Unable to generate a unique UID. Please try again later."
+                    };
+                }
+            }
+
+            var newProfile = await _queries.CreateNewUIDForUserAsync(new(
+                UserId: existingUser.Value.Id,
+                Uid: newUID,
+                ChatRole: null,
+                Alias: null,
+                Title: null,
+                Description: null
+            ));
+
+            if (newProfile.HasValue)
+            {
+                _logger.LogInformation($"New UID created: {newUID} for Discord ID {discordId}, User ID {existingUser.Value.Id}");
+
+                return new RegistrationResponse
+                {
+                    Success = true,
+                    UID = newProfile.Value.Uid,
+                    Secret = existingUser.Value.SecretKey
+                };
+            }
+            else
+            {
+                _logger.LogError($"Failed to create UID {newUID} for Discord ID {discordId}");
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Failed to create UID. Please try again later."
+                };
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create secondary UID for {DiscordId}", discordId);
+            _logger.LogError(ex, "Error creating UID for Discord ID {DiscordId}", discordId);
             return new RegistrationResponse
             {
                 Success = false,
-                ErrorMessage = "Failed to create secondary UID"
+                ErrorMessage = "An unexpected error occurred while creating your UID."
             };
         }
     }
 
-    private static string GenerateFriendCode()
+    public async Task<RegistrationResponse> DeleteUID(ulong discordId, string UID)
     {
-        // Generate a random 12-character friend code
+        try
+        {
+            var existingUser = await _queries.SelectUserbyDiscordIdAsync(new((long)discordId));
+
+            if (!existingUser.HasValue)
+            {
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "User account not found."
+                };
+            }
+
+            var profileExists = await _queries.ProfileExistsAsync(new(UID));
+            if (!profileExists?.Exists == true)
+            {
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "UID not found."
+                };
+            }
+
+            var deletedProfile = await _queries.DeleteProfileAsync(new(UID, existingUser.Value.Id));
+
+            if (deletedProfile.HasValue)
+            {
+                _logger.LogInformation($"UID {UID} deleted for Discord ID {discordId}, User ID {existingUser.Value.Id}");
+
+                return new RegistrationResponse
+                {
+                    Success = true,
+                    ErrorMessage = null
+                };
+            }
+            else
+            {
+                _logger.LogError($"Failed to delete UID {UID} for Discord ID {discordId}");
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Failed to delete UID. The UID may not belong to your account."
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting UID {UID} for Discord ID {DiscordId}", UID, discordId);
+            return new RegistrationResponse
+            {
+                Success = false,
+                ErrorMessage = "An unexpected error occurred while deleting your UID."
+            };
+        }
+    }
+
+    private static string GenerateUID()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         var random = new Random();
-        const string chars = "0123456789";
-        return new string(Enumerable.Range(0, 12)
-            .Select(_ => chars[random.Next(chars.Length)])
-            .ToArray());
+        var result = new char[10];
+
+        for (int i = 0; i < result.Length; i++)
+        {
+            result[i] = chars[random.Next(chars.Length)];
+        }
+
+        return new string(result);
     }
 
     private static string GenerateSecret()

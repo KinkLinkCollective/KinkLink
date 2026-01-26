@@ -11,7 +11,7 @@ public class Configuration(
     string serverUrl)
 {
     private static readonly string ConfigurationPath = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
-    
+
     public readonly string DatabaseConnectionString = databaseConnectionString;
     public readonly string SigningKey = signingKey;
     public readonly string ServerUrl = serverUrl;
@@ -27,7 +27,7 @@ public class Configuration(
                 Console.WriteLine($"[Configuration] [Load] Configuration file created at {ConfigurationPath}, please edit the values and run the application again.");
                 return null;
             }
-            
+
             var json = File.ReadAllText(ConfigurationPath);
             if (JsonConvert.DeserializeObject<Configuration>(json) is not { } configuration)
             {
@@ -40,7 +40,7 @@ public class Configuration(
                 Console.WriteLine($"[Configuration] [Load] Connection string not set in {ConfigurationPath}, please edit the values and run the application again.");
                 return null;
             }
-            
+
             Console.WriteLine("[Configuration] [Load] Configuration successfully loaded.");
             return configuration;
         }
@@ -53,6 +53,6 @@ public class Configuration(
 
     private bool HasDefaultValues() => DatabaseConnectionString is Empty || SigningKey is Empty || ServerUrl is Empty;
 
-    private const string Empty = "Empty"; 
+    private const string Empty = "Empty";
     private static readonly Configuration Default = new(Empty, Empty, Empty);
 }

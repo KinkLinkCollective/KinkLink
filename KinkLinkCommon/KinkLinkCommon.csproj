@@ -21,5 +21,10 @@
     <Compile Remove="Domain\Network\BodySwapQueryRequest.cs" />
     <Compile Remove="Domain\Network\BodySwapQueryResponse.cs" />
   </ItemGroup>
-
+<!-- SQLC dependency needs to run prior to compiling --> 
+    <Target Name="SqlcGenerate" BeforeTargets="CoreCompile" 
+        Outputs="Database/Generated/*.cs"
+        >
+        <Exec Command="sqlc generate" ContinueOnError="false" WorkingDirectory="$(ProjectDir)" />
+    </Target>
 </Project>

@@ -1,0 +1,60 @@
+# .dockerignore
+
+# .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+
+# Visual Studio
+.vs/
+.vscode/
+*.userosscache
+*.sln.docstates
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Git
+.git/
+.gitignore
+.gitmodules
+
+# Documentation
+*.md
+docs/
+
+# Configuration templates (will be mounted as volumes)
+config.json
+config.json.example
+.env*
+template.env
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+docker-compose*.yaml
+traefik/
+
+# IDE files
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/

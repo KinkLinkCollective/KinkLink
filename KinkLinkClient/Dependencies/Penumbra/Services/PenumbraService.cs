@@ -197,7 +197,7 @@ public class PenumbraService : IExternalPlugin
                     {
                         case PenumbraApiEc.Success:
                             return true;
-                        
+
                         case PenumbraApiEc.InvalidGamePath:
                             NotificationHelper.Error("Invalid Game Files", "The person you are being transformed into contains mods that do not all have valid game file paths. Most commonly, this happens when a mod maker includes two or more assets with the same name, but different punctuation: \"aether_remote.png\" and \"Aether_Remote.png\" as an example.");
                             break;
