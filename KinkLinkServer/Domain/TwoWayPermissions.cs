@@ -1,5 +1,4 @@
-using KinkLinkCommon.Domain;
-using KinkLinkCommon.Domain.Enums.Permissions;
+using KinkLinkCommon.Database;
 
 namespace KinkLinkServer.Domain;
 
@@ -11,42 +10,31 @@ public record TwoWayPermissions
     /// <summary>
     ///     The owner of the permissions
     /// </summary>
-    public readonly string FriendCode;
+    public readonly string UserUID;
 
     /// <summary>
     ///     The target of the permissions
     /// </summary>
-    public readonly string TargetFriendCode;
+    public readonly string TargetUID;
 
     /// <summary>
     ///     The permissions the owner has granted to the target
     /// </summary>
-    public readonly UserPermissions PermissionsGrantedTo;
+    public readonly Pair PermissionsGrantedTo;
 
     /// <summary>
     ///     The permissions the target has granted to the owner
     /// </summary>
-    public readonly UserPermissions? PermissionsGrantedBy;
+    public readonly Pair? PermissionsGrantedBy;
 
     /// <summary>
     ///     <inheritdoc cref="TwoWayPermissions"/>
     /// </summary>
-    public TwoWayPermissions(string friendCode, string targetFriendCode, PrimaryPermissions2 primary, SpeakPermissions2 speak, ElevatedPermissions elevated)
+    public TwoWayPermissions(string friendCode, string targetFriendCode, Pair grantedTo, Pair grantedBy)
     {
-        FriendCode = friendCode;
-        TargetFriendCode = targetFriendCode;
-        PermissionsGrantedTo = new UserPermissions();
-        PermissionsGrantedBy = null;
-    }
-
-    /// <summary>
-    ///     <inheritdoc cref="TwoWayPermissions"/>
-    /// </summary>
-    public TwoWayPermissions(string friendCode, string targetFriendCode, PrimaryPermissions2 primary, SpeakPermissions2 speak, ElevatedPermissions elevated, PrimaryPermissions2 primary2, SpeakPermissions2 speak2, ElevatedPermissions elevated2)
-    {
-        FriendCode = friendCode;
-        TargetFriendCode = targetFriendCode;
-        PermissionsGrantedTo = new UserPermissions();
-        PermissionsGrantedBy = new UserPermissions();
+        UserUID = friendCode;
+        TargetUID = targetFriendCode;
+        PermissionsGrantedTo = grantedTo;
+        PermissionsGrantedBy = grantedBy;
     }
 }

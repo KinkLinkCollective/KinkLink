@@ -5,59 +5,53 @@ using KinkLinkServer.Domain.Shared;
 namespace KinkLinkServer.Domain.Interfaces;
 
 /// <summary>
-///     Provides access to the underlying Sqlite3 database
+///     Provides access to the underlying PostgreSQL database
 /// </summary>
 public interface IDatabaseService
 {
     /// <summary>
-    ///     Retrieves a friend code by secret, for use when first connecting to the server
+    ///     Authenticates a user by secret key
+    /// </summary>
+    public Task<DBAuthenticationResult> AuthenticateUser(string secret);
+
+    /// <summary>
+    ///     Creates an empty set of permissions between sender and target friend codes
+    /// </summary>
+    public Task<DBPairResult> CreatePairRequest(string userUID, string targetUID);
+    
+
+    /// <summary
+    ///     Updates a set of permissions between sender and target friend codes
+    /// </summary>
+    public Task<DBPairResult> UpdatePermissions(
+        string senderFriendCode,
+        string targetFriendCode,
+        UserPermissions permissions);
+    
+
+    /// <summary>
+    ///     Gets permissions for a relationship
+    /// </summary>
+    public Task<UserPermissions?> GetPermissions(string userUID, string targetUID);
+    
+
+    /// <summary>
+    ///     Deletes a permissions relationship
+    /// </summary>
+    public Task<DBPairResult> DeletePermissions(string userUID, string targetUID);
+
+    /// <summary>
+    ///     Gets friend code by secret key
     /// </summary>
     public Task<string?> GetFriendCodeBySecret(string secret);
 
     /// <summary>
-    ///     Creates a new blank permission set between two users
+    ///     Creates permissions entry
     /// </summary>
-    public Task<DBPairResult> CreatePermissions(string senderFriendCode, string targetFriendCode);
+    public Task<DBPermissionsResults> CreatePermissions(string userUID, string targetUID, UserPermissions permissions);
 
     /// <summary>
-    ///     Updates a permission set between two users
+    ///     Gets all permissions for a user
     /// </summary>
-    public Task<DBPairResult> UpdatePermissions(string senderFriendCode, string targetFriendCode, UserPermissions permissions);
-
-    /// <summary>
-    ///     Returns the permissions a friend has granted another, if they exists
-    /// </summary>
-    public Task<UserPermissions?> GetPermissions(string friendCode, string targetFriendCode);
-
-    /// <summary>
-    ///     Returns a list of all the permissions that friend code has granted others, as well as the permissions those friends have granted the friend code
-    /// </summary>
-    public Task<List<TwoWayPermissions>> GetAllPermissions(string friendCode);
-
-    /// <summary>
-    ///     Deletes a permission set between two users
-    /// </summary>
-    public Task<DBPairResult> DeletePermissions(string senderFriendCode, string targetFriendCode);
-
-    /// <summary>
-    ///     Admin function to add a new account to the database
-    /// </summary>
-    /// <returns></returns>
-    public Task<DBPairResult> AdminCreateAccount(ulong discord, string friendCode, string secret);
-
-    /// <summary>
-    ///     Attempts to get all the friend codes associated with provided discord id
-    /// </summary>
-    /// <param name="discord">Discord Id</param>
-    public Task<List<Account>?> AdminGetAccounts(ulong discord);
-
-    /// <summary>
-    ///     Attempts to update an existing account's friend code, and all the relationships associated with them
-    /// </summary>
-    public Task<DBPairResult> AdminUpdateAccount(ulong discord, string oldFriendCode, string newFriendCode);
-
-    /// <summary>
-    ///     Attempts to delete an existing account, and all associated relationships.
-    /// </summary>
-    public Task<DBPairResult> AdminDeleteAccount(ulong discord, string friendCode);
+    public Task<List<TwoWayPermissions>> GetAllPermissions(string userUID);
 }

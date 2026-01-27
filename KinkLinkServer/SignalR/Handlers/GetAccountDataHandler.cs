@@ -9,7 +9,7 @@ namespace KinkLinkServer.SignalR.Handlers;
 /// <summary>
 ///     Handles the logic for fulfilling a <see cref="GetAccountDataRequest"/>
 /// </summary>
-public class GetAccountDataHandler(IDatabaseService database, IPresenceService presenceService)
+public class GetAccountDataHandler(DatabaseService database, IPresenceService presenceService)
 {
     /// <summary>
     ///     Handles the request
@@ -25,11 +25,11 @@ public class GetAccountDataHandler(IDatabaseService database, IPresenceService p
         {
             var online = permission.PermissionsGrantedBy is null
                 ? FriendOnlineStatus.Pending
-                : presenceService.TryGet(permission.TargetFriendCode) is null
+                : presenceService.TryGet(permission.TargetUID) is null
                     ? FriendOnlineStatus.Offline
                     : FriendOnlineStatus.Online;
 
-            results.Add(new FriendRelationship(permission.TargetFriendCode, online, permission.PermissionsGrantedTo, permission.PermissionsGrantedBy));
+            results.Add(new FriendRelationship(permission.TargetUID, online, permission.PermissionsGrantedTo, permission.PermissionsGrantedBy));
         }
 
         return new GetAccountDataResponse(GetAccountDataEc.Success, friendCode, results);

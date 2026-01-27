@@ -3,13 +3,14 @@ using KinkLinkCommon.Domain.Network;
 using KinkLinkCommon.Domain.Network.SyncOnlineStatus;
 using KinkLinkServer.Domain.Interfaces;
 using Microsoft.AspNetCore.SignalR;
+using KinkLinkServer.Services;
 
 namespace KinkLinkServer.SignalR.Handlers;
 
 /// <summary>
 ///     Processes clients connecting and disconnecting from the server
 /// </summary>
-public class OnlineStatusUpdateHandler(IDatabaseService database, IPresenceService presenceService, ILogger<OnlineStatusUpdateHandler> logger)
+public class OnlineStatusUpdateHandler(DatabaseService database, IPresenceService presenceService, ILogger<OnlineStatusUpdateHandler> logger)
 {
     /// <summary>
     ///     Handle the event, removing or adding from the current client list, and updating all the user's friends who are online
@@ -27,7 +28,7 @@ public class OnlineStatusUpdateHandler(IDatabaseService database, IPresenceServi
                 continue;
 
             // Only evaluate online friends
-            if (presenceService.TryGet(permission.TargetFriendCode) is not { } target)
+            if (presenceService.TryGet(permission.TargetUID) is not { } target)
                 continue;
 
             try
@@ -45,7 +46,7 @@ public class OnlineStatusUpdateHandler(IDatabaseService database, IPresenceServi
             }
             catch (Exception e)
             {
-                logger.LogError("Syncing online status {Sender} -> {Target} failed, {Error}", friendCode, permission.TargetFriendCode, e);
+                logger.LogError("Syncing online status {Sender} -> {Target} failed, {Error}", friendCode, permission.TargetUID, e);
             }
         }
     }

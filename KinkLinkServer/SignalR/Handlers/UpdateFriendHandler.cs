@@ -4,10 +4,11 @@ using KinkLinkCommon.Domain.Network.SyncPermissions;
 using KinkLinkCommon.Domain.Network.UpdateFriend;
 using KinkLinkServer.Domain.Interfaces;
 using Microsoft.AspNetCore.SignalR;
+using KinkLinkServer.Services;
 
 namespace KinkLinkServer.SignalR.Handlers;
 
-public class UpdateFriendHandler(IPresenceService presenceService, IDatabaseService database, ILogger<UpdateFriendHandler> logger)
+public class UpdateFriendHandler(IPresenceService presenceService, DatabaseService database, ILogger<UpdateFriendHandler> logger)
 {
     public async Task<UpdateFriendResponse> Handle(string friendCode, UpdateFriendRequest request, IHubCallerClients clients)
     {

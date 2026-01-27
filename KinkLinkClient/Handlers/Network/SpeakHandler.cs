@@ -55,7 +55,7 @@ public class SpeakHandler : AbstractNetworkHandler, IDisposable
         if (sender.Value is not { } friend)
             return ActionResultBuilder.Fail(ActionResultEc.ValueNotSet);
 
-        // Add the action to the action queue to be sent when available
+       // Add the action to the action queue to be sent when available
         _actionQueue.Enqueue(friend, request.Message, request.ChatChannel, request.Extra);
 
         // Build a proper log message with specific formatting

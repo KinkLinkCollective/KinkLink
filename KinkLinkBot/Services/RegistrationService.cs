@@ -65,9 +65,7 @@ public class RegistrationService
             var secret = GenerateSecret();
             var newUser = await _queries.RegisterNewUserAsync(new(
                 DiscordId: (long)discordId,
-                SecretKey: secret,
-                Verified: false,
-                Banned: false
+                SecretKey: secret
             ));
 
             if (newUser.HasValue)

@@ -5,7 +5,7 @@ using KinkLinkCommon.Domain.Enums;
 using KinkLinkCommon.Domain.Network.GetToken;
 using KinkLinkCommon.Domain.Network.LoginAuthentication;
 using KinkLinkServer.Domain;
-using KinkLinkServer.Domain.Interfaces;
+using KinkLinkServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -14,7 +14,7 @@ namespace KinkLinkServer.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(Configuration config, IDatabaseService database) : ControllerBase
+public class AuthController(Configuration config, DatabaseService database) : ControllerBase
 {
     // Const
     private static readonly Version ExpectedVersion = new(2, 8, 6, 0);
@@ -29,10 +29,13 @@ public class AuthController(Configuration config, IDatabaseService database) : C
         if (request.Version < ExpectedVersion)
             return StatusCode(StatusCodes.Status409Conflict, new LoginAuthenticationResult(LoginAuthenticationErrorCode.VersionMismatch, null));
 
-        if (await database.GetFriendCodeBySecret(request.Secret) is not { } friendCode)
+        var authResult = await database.AuthenticateUser(request.Secret);
+        if (authResult.Status != DBAuthenticationStatus.Authorized && authResult.Uids.Count() != 0)
             return StatusCode(StatusCodes.Status401Unauthorized, new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownSecret, null));
 
-        var token = GenerateJwtToken([new Claim(AuthClaimTypes.FriendCode, friendCode)]);
+        // TODO: Separate the login from the UIDs and all the user to pass one in
+
+        var token = GenerateJwtToken([new Claim(AuthClaimTypes.Uid, authResult.Uids[0])]);
 
         return StatusCode(StatusCodes.Status200OK, new LoginAuthenticationResult(LoginAuthenticationErrorCode.Success, token.RawData));
     }

@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS Users (
     secret_key VARCHAR(64) NOT NULL UNIQUE,
     verified bool DEFAULT false,
     banned bool DEFAULT false,
-    createdAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- This is used for separate character profiles.
@@ -43,26 +43,26 @@ CREATE TABLE IF NOT EXISTS Pairs (
     PRIMARY KEY (id, pair_id),
     expires TIMESTAMP,
 
-    toggle_timer_locks BOOL DEFAULT false,
-    toggle_permanent_locks BOOL DEFAULT false,
+    toggle_timer_locks BOOL DEFAULT false NOT NULL,
+    toggle_permanent_locks BOOL DEFAULT false NOT NULL,
 
-    toggle_garbler BOOL DEFAULT false,
-    lock_garbler BOOL DEFAULT false,
-    toggle_channels BOOL DEFAULT false,
-    lock_channels BOOL DEFAULT false,
+    toggle_garbler BOOL DEFAULT false NOT NULL,
+    lock_garbler BOOL DEFAULT false NOT NULL,
+    toggle_channels BOOL DEFAULT false NOT NULL,
+    lock_channels BOOL DEFAULT false NOT NULL,
     
-    apply_gag BOOL DEFAULT false,
-    lock_gag BOOL DEFAULT false,
-    unlock_gag BOOL DEFAULT false,
-    remove_gag BOOL DEFAULT false,
+    apply_gag BOOL DEFAULT false NOT NULL,
+    lock_gag BOOL DEFAULT false NOT NULL,
+    unlock_gag BOOL DEFAULT false NOT NULL,
+    remove_gag BOOL DEFAULT false NOT NULL,
 
-    apply_wardrobe BOOL DEFAULT false,
-    lock_wardrobe BOOL DEFAULT false,
-    unlock_wardrobe BOOL DEFAULT false,
-    remove_wardrobe BOOL DEFAULT false,
+    apply_wardrobe BOOL DEFAULT false NOT NULL,
+    lock_wardrobe BOOL DEFAULT false NOT NULL,
+    unlock_wardrobe BOOL DEFAULT false NOT NULL,
+    remove_wardrobe BOOL DEFAULT false NOT NULL,
 
-    apply_moodles BOOL DEFAULT false,
-    lock_moodles BOOL DEFAULT false,
-    unlock_moodles BOOL DEFAULT false,
-    remove_moodles BOOL DEFAULT false
+    apply_moodles BOOL DEFAULT false NOT NULL,
+    lock_moodles BOOL DEFAULT false NOT NULL,
+    unlock_moodles BOOL DEFAULT false NOT NULL,
+    remove_moodles BOOL DEFAULT false NOT NULL
 );

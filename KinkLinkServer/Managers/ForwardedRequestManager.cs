@@ -2,6 +2,7 @@ using KinkLinkCommon.Domain;
 using KinkLinkCommon.Domain.Enums;
 using KinkLinkCommon.Domain.Network;
 using KinkLinkServer.Domain.Interfaces;
+using KinkLinkServer.Services;
 using Microsoft.AspNetCore.SignalR;
 
 namespace KinkLinkServer.Managers;
@@ -9,7 +10,7 @@ namespace KinkLinkServer.Managers;
 /// <summary>
 ///     <inheritdoc cref="IForwardedRequestManager"/>
 /// </summary>
-public class ForwardedRequestManager(IDatabaseService database, IPresenceService presence, ILogger<ForwardedRequestManager> logger) : IForwardedRequestManager
+public class ForwardedRequestManager(DatabaseService database, IPresenceService presence, ILogger<ForwardedRequestManager> logger) : IForwardedRequestManager
 {
     private static readonly TimeSpan TimeOutDuration = TimeSpan.FromSeconds(8);
 
@@ -35,15 +36,15 @@ public class ForwardedRequestManager(IDatabaseService database, IPresenceService
         return new ActionResponse(ActionResponseEc.Success, results);
     }
 
-    private async Task<(ISingleClientProxy client, ActionResult<Unit>? result)> EvaluateTargetAsync(string senderFriendCode, string targetFriendCode, UserPermissions required, IHubCallerClients clients)
+    private async Task<(ISingleClientProxy client, ActionResult<Unit>? result)> EvaluateTargetAsync(string userUID, string targetUID, UserPermissions required, IHubCallerClients clients)
     {
-        if (presence.TryGet(targetFriendCode) is not { } target)
+        if (presence.TryGet(targetUID) is not { } target)
             return (null!, ActionResultBuilder.Fail(ActionResultEc.TargetOffline));
 
-        if (await database.GetPermissions(senderFriendCode, targetFriendCode) is not { } permissions)
+        if (await database.GetPermissions(userUID, targetUID) is not { } permissions)
             return (null!, ActionResultBuilder.Fail(ActionResultEc.TargetNotFriends));
 
-        if (HasRequiredPermissions(permissions, required) is false)
+        if (HasRequiredPermissions(new UserPermissions(permissions), required) is false)
             return (null!, ActionResultBuilder.Fail(ActionResultEc.TargetHasNotGrantedSenderPermissions));
 
         return (clients.Client(target.ConnectionId), null);

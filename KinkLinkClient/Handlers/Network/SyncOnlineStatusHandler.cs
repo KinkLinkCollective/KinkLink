@@ -53,7 +53,8 @@ public class SyncOnlineStatusHandler : IDisposable
             return;
         }
 
-        friend.PermissionsGrantedByFriend = action.Permissions;
+    // TODO: Fix this
+        // friend.PermissionsGrantedByFriend = action.Permissions;
     }
 
     public void Dispose()

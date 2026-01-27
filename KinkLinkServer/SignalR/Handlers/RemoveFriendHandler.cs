@@ -4,13 +4,14 @@ using KinkLinkCommon.Domain.Network.RemoveFriend;
 using KinkLinkCommon.Domain.Network.SyncOnlineStatus;
 using KinkLinkServer.Domain.Interfaces;
 using Microsoft.AspNetCore.SignalR;
+using KinkLinkServer.Services;
 
 namespace KinkLinkServer.SignalR.Handlers;
 
 /// <summary>
 ///     Handles the logic for fulfilling a <see cref="RemoveFriendRequest"/>
 /// </summary>
-public class RemoveFriendHandler(IPresenceService presenceService, IDatabaseService databaseService, ILogger<RemoveFriendHandler> logger)
+public class RemoveFriendHandler(IPresenceService presenceService, DatabaseService databaseService, ILogger<RemoveFriendHandler> logger)
 {
     /// <summary>
     ///     Handles the request

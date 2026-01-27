@@ -1,13 +1,15 @@
 -- name: RegisterNewUser :one
 -- If it doesn't exist, register a new user.
-INSERT INTO Users (discord_id, secret_key, verified, banned)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (discord_id) DO UPDATE SET
-    secret_key = EXCLUDED.secret_key,
-    verified = EXCLUDED.verified,
-    banned = EXCLUDED.banned,
-    updatedAt = CURRENT_TIMESTAMP
+INSERT INTO Users (discord_id, secret_key)
+VALUES ($1, $2)
+ON CONFLICT (discord_id) DO NOTHING
 RETURNING *;
+
+-- name: RegenerateSecretKey :exec
+-- Allows users to get a new seret key from the service.
+UPDATE Users
+SET secret_key=$2
+WHERE discord_id=$1;
 
 -- name: DeleteUserAccount :one
 -- Deletes a user account and cascades to all data referencing the user.
@@ -45,16 +47,19 @@ SELECT EXISTS(
 
 -- name: UpdateAliasForProfile :one
 UPDATE Profiles 
-SET alias = $1, updatedAt = CURRENT_TIMESTAMP
+SET alias = $1, updated_at = CURRENT_TIMESTAMP
 WHERE UID = $2 AND user_id = $3
 RETURNING *;
 
 -- name: UpdateDetailsForProfile :one
 UPDATE Profiles 
-SET title = $1, description = $2, updatedAt = CURRENT_TIMESTAMP
+SET title = $1, description = $2, updated_at = CURRENT_TIMESTAMP
 WHERE UID = $3 AND user_id = $4
 RETURNING *;
+
 -- name: GetAllPairsForProfile :many
+-- Retreives all currently registered pairs for a Profile
+-- This will return the data from both pairs 
 SELECT p.*, 
        p1.UID as profile_uid,
        p2.UID as pair_uid
@@ -74,25 +79,49 @@ SELECT EXISTS(
 ) as TwoWayPair;
 
 -- name: AddPair :one
-INSERT INTO Pairs (id, pair_id, expires, apply_gag, lock_gag, unlock_gag, remove_gag, apply_wardrobe, lock_wardrobe, unlock_wardrobe, remove_wardrobe)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+-- This will add a pair without an expiry
+INSERT INTO Pairs (id, pair_id)
+VALUES ($1, $2)
+RETURNING *;
+-- name: AddTemporaryPair :one
+-- This will add a pair with an expiry
+INSERT INTO Pairs (id, pair_id, expires)
+VALUES ($1, $2, $3)
 RETURNING *;
 
 -- name: RemovePair :one
 DELETE FROM Pairs
 WHERE (id = $1 AND pair_id = $2) OR (id = $2 AND pair_id = $1)
 RETURNING *;
+
 -- name: UpdatePairPermissions :one
+-- Updates the users permissions granted to the pair.
+-- Note: It is possible to give access to a user that is not paired back.
+-- These pair permissions are considered to be _pending_ until a two way pair can be confirmed
 UPDATE Pairs 
-SET apply_gag = $1,
-    lock_gag = $2,
-    unlock_gag = $3,
-    remove_gag = $4,
-    apply_wardrobe = $5,
-    lock_wardrobe = $6,
-    unlock_wardrobe = $7,
-    remove_wardrobe = $8
-WHERE (id = $9 AND pair_id = $10) OR (id = $10 AND pair_id = $9)
+SET toggle_timer_locks=$1,
+    toggle_permanent_locks=$2,
+
+    toggle_garbler=$3,
+    lock_garbler=$4,
+    toggle_channels=$5,
+    lock_channels=$6,
+    
+    apply_gag=$7,
+    lock_gag=$8,
+    unlock_gag=$9,
+    remove_gag=$10,
+
+    apply_wardrobe=$11,
+    lock_wardrobe=$12,
+    unlock_wardrobe=$13,
+    remove_wardrobe=$14,
+
+    apply_moodles=$15,
+    lock_moodles=$16,
+    unlock_moodles=$17,
+    remove_moodles=$18
+WHERE (id = $19 AND pair_id = $20)
 RETURNING *;
 
 -- name: PurgeExpiredPairs :one

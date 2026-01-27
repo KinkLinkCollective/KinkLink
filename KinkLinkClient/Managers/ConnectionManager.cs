@@ -63,7 +63,8 @@ public class ConnectionManager : IDisposable
             Plugin.Configuration.Notes.TryGetValue(relationship.TargetFriendCode, out var note);
 
             // Add the new friend with all the data required
-            _friendsListService.Add(new Friend(relationship.TargetFriendCode, relationship.Status, note, relationship.PermissionsGrantedTo, relationship.PermissionsGrantedBy));
+            // TODO: Fix this
+            _friendsListService.Add(new Friend(relationship.TargetFriendCode, relationship.Status, note, null, null)); //relationship.PermissionsGrantedTo, relationship.PermissionsGrantedBy));
         }
 
         // Set the view to the 'home screen'

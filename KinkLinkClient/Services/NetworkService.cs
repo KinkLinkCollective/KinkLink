@@ -34,7 +34,7 @@ public class NetworkService : IDisposable
     public event Func<Task>? Disconnected;
 
     private const string HubUrl = "https://localhost:5006/primaryHub";
-    private const string PostUrl = "https://localhost:5006/api/auth/login";
+    private const string AuthUrl = "https://localhost:5006/api/auth/login";
 
     /// <summary>
     ///     Access token required to connect to the SignalR hub
@@ -191,7 +191,7 @@ public class NetworkService : IDisposable
 
         try
         {
-            var response = await client.PostAsync(PostUrl, payload).ConfigureAwait(false);
+            var response = await client.PostAsync(AuthUrl, payload).ConfigureAwait(false);
             var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             if (JsonSerializer.Deserialize<LoginAuthenticationResult>(content) is not { } result)
             {

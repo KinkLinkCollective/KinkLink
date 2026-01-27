@@ -31,7 +31,7 @@ public partial class PrimaryHub(
     /// <summary>
     ///     Friend Code obtained from authenticated token claims
     /// </summary>
-    private string FriendCode => Context.User?.FindFirst(AuthClaimTypes.FriendCode)?.Value ?? throw new Exception("FriendCode not present in claims");
+    private string FriendCode => Context.User?.FindFirst(AuthClaimTypes.Uid)?.Value ?? throw new Exception("FriendCode not present in claims");
 
     /// <summary>
     ///     Handles when a client connects to the hub

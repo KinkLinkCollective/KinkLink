@@ -1,9 +1,14 @@
 namespace KinkLinkCommon.Domain.Enums;
 
+public struct DBAuthenticationResult {
+    public DBAuthenticationStatus Status;
+    public List<string> Uids;
+}
+
 /// <summary>
 ///     Result of Authentication operations
 /// </summary>
-public enum DBAuthenticationResult
+public enum DBAuthenticationStatus
 {
     /// <summary>
     ///     An unknown issue occurred. This can only occur if no other results are provided and the default is.

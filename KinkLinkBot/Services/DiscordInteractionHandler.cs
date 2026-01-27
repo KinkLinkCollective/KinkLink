@@ -35,14 +35,56 @@ public class DiscordInteractionHandler
 
     public void Initialize()
     {
-        // Hook into the button interaction event
         _client.ButtonExecuted += HandleButtonInteractionAsync;
-        // Hook into the modal submission event
         _client.ModalSubmitted += HandleModalSubmissionAsync;
+        _client.Ready += EnsureRegistrationPromptExistsAsync;
+    }
+
+    public async Task EnsureRegistrationPromptExistsAsync()
+    {
+        try
+        {
+            var guild = _client.GetGuild(_guildId);
+            if (guild == null)
+            {
+                _logger.LogError($"Guild {_guildId} not found during startup");
+                return;
+            }
+
+            var channel = guild.GetTextChannel(_channelId);
+            if (channel == null)
+            {
+                _logger.LogError($"Channel {_channelId} not found in guild {_guildId} during startup");
+                return;
+            }
+
+            var existingPinnedMessages = await channel.GetPinnedMessagesAsync();
+            var hasRegistrationPrompt = existingPinnedMessages.Any(IsRegistrationPromptMessage);
+
+            if (!hasRegistrationPrompt)
+            {
+                _logger.LogInformation($"No registration prompt found in channel {channel.Id}, creating new one");
+                await CreatePrompt();
+            }
+            else
+            {
+                _logger.LogInformation($"Registration prompt already exists in channel {channel.Id}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error ensuring registration prompt exists during startup");
+        }
+    }
+
+    private bool IsRegistrationPromptMessage(IMessage message)
+    {
+        return message.Embeds?.Any(embed => 
+            embed.Title?.Contains("KinkLink Registration", StringComparison.OrdinalIgnoreCase) == true) == true;
     }
 
 
-    private async Task<RegistrationResponse> CreatePrompt()
+    public async Task<RegistrationResponse> CreatePrompt()
     {
         try
         {
@@ -69,15 +111,6 @@ public class DiscordInteractionHandler
                     ErrorMessage = "Registration channel not found"
                 };
             }
-            if (channel == null)
-            {
-                _logger.LogError($"No text channel {_channelId} found in guild {_guildId}");
-                return new RegistrationResponse
-                {
-                    Success = false,
-                    ErrorMessage = "No text channel available"
-                };
-            }
 
             // Create an embed for the registration prompt
             var embed = new EmbedBuilder
@@ -89,12 +122,20 @@ public class DiscordInteractionHandler
 
             embed.AddField("📝 Registration Steps",
                 "1. Click the button below to start registration\n" +
-                "2. Follow the prompts to create your unique UID\n" +
-                "3. Use your UID to connect with the FFXIV plugin",
+                "2. Follow the prompts to create your unique secret key and first UID\n" +
+                "3. Use the provided secret key to connect with KinkLink in game",
+                inline: false);
+
+            embed.AddField("📋 Community Rules",
+                "• **18+ Player Only**: This is a legal thing, minors cannot consent, therefore they are not allowed\n" +
+                "• **18+ Characters Only**: This is a values thing, even if you are 18+ IRL, using child avatars is uncomfortable so please don't when using this service\n" +
+                "• **Safe Space**: Zero tolerance for harassment, bullying, or stalking behavior\n" +
+                "• **Understand Consent**: The core of BDSM is consent, be sure you understand what it means for you and your partner(s). Respect boundaries and limits\n" +
+                "• **Be Respectful**: We're all people, do give common courtesy and respect",
                 inline: false);
 
             embed.AddField("🔐 Privacy & Security",
-                "• Your Discord ID is kept private\n" +
+                "• Your Discord ID number (not your username or anything like that) will be stored on the server for *account management purposes only*." +
                 "• UIDs provide anonymity in-game\n" +
                 "• You can delete your account at any time",
                 inline: false);
@@ -115,12 +156,20 @@ public class DiscordInteractionHandler
                 embed: embed.Build(),
                 components: buttonBuilder.Build());
 
-            _logger.LogInformation($"Registration prompt sent to channel {channel.Id} in guild {guild.Id}");
+            try
+            {
+                await message.PinAsync();
+                _logger.LogInformation($"Registration prompt sent and pinned to channel {channel.Id} in guild {guild.Id}");
+            }
+            catch (Exception pinEx)
+            {
+                _logger.LogWarning(pinEx, $"Failed to pin registration message to channel {channel.Id} in guild {guild.Id}");
+            }
 
             return new RegistrationResponse
             {
                 Success = true,
-                ErrorMessage = null
+                ErrorMessage = null,
             };
         }
         catch (Exception ex)

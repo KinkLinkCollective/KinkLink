@@ -1,17 +1,14 @@
 using KinkLinkCommon.Database;
 using KinkLinkCommon.Domain;
 using KinkLinkCommon.Domain.Enums;
-using KinkLinkCommon.Domain.Enums.Permissions;
 using KinkLinkServer.Domain;
-using KinkLinkServer.Domain.Interfaces;
-using KinkLinkServer.Domain.Shared;
-using Microsoft.Extensions.Logging;
-using Npgsql;
 
 namespace KinkLinkServer.Services;
 
 /// <summary>
-///     Provides methods for interacting with the underlying PostgreSQL database
+///     Provides methods for interacting with the underlying PostgreSQL database from the server perspective.
+///     While this covers authentication, the user functionality is currently integrated directly with a discord bot,
+///     as a result, no direct account management should be included on the server
 /// </summary>
 public class DatabaseService
 {
@@ -35,23 +32,148 @@ public class DatabaseService
     }
 
     /// <summary>
+    ///     Gets the user UIDs associated with the user account.
+    /// </summary>
+    public async Task<DBAuthenticationResult> AuthenticateUser(string secret) {
+        // TODO: Implement the proper confirmation that the UID is associated with this secret key.
+        throw new NotImplementedException();
+        try
+        {
+            if (string.IsNullOrWhiteSpace(secret))
+            {
+                _logger.LogWarning("Authentication attempted with null or empty secret");
+                return new DBAuthenticationResult {
+                    Status = DBAuthenticationStatus.Unauthorized,
+                    Uids = new() };
+            }
+
+            // TODO: Read all the UIDs associated with the user (provided that they are not banned).
+
+            _logger.LogWarning("Authentication failed: invalid secret format");
+            return new DBAuthenticationResult {
+                Status = DBAuthenticationStatus.Unauthorized,
+                Uids = new() };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Authentication failed with unexpected error");
+            return new DBAuthenticationResult {
+                Status = DBAuthenticationStatus.UnknownError,
+                Uids = new() };
+        }
+    }
+
+    /// <summary>
     ///     Gets a user entry from the accounts table by secret
     /// </summary>
-    public async Task<string?> AuthenticateUser(string secret)
+    public async Task<DBAuthenticationResult> LoginUser(string secret, string uid)
     {
-        // TODO: Implement the authentication for this function.
-        // Hash the user secret
-        // Check against the database for the user existing.
-        throw new NotImplementedException();
+        try
+        {
+            if (string.IsNullOrWhiteSpace(secret) || string.IsNullOrWhiteSpace(uid))
+            {
+                _logger.LogWarning("Authentication attempted with null or empty secret");
+                return new DBAuthenticationResult {
+                    Status = DBAuthenticationStatus.Unauthorized,
+                    Uids = new() };
+            }
+
+            // TODO: Implement the proper confirmation that the UID is associated with this secret key.
+            // Essentially read the database to confirm that the UID is associated with the account with the particular secret key.
+
+            _logger.LogWarning("Authentication failed: invalid secret format");
+            return new DBAuthenticationResult {
+                Status = DBAuthenticationStatus.Unauthorized,
+                Uids = new() };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Authentication failed with unexpected error");
+            return new DBAuthenticationResult {
+                Status = DBAuthenticationStatus.UnknownError,
+                Uids = new() };
+        }
     }
 
     /// <summary>
     ///     Creates an empty set of permissions between sender and target friend codes
     /// </summary>
-    public async Task<DBPairResult> CreatePairRequest(string senderUID, string targetUID)
+    public async Task<DBPairResult> CreatePermissions(string userUID, string targetUID)
     {
-        // TODO: If there is not already a one way pair, create a new pair request 
-        throw new NotImplementedException();
+        try
+        {
+            if (string.IsNullOrWhiteSpace(userUID) || string.IsNullOrWhiteSpace(targetUID))
+            {
+                _logger.LogWarning("CreatePairRequest failed: invalid UIDs provided");
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            if (userUID == targetUID)
+            {
+                _logger.LogWarning("CreatePairRequest failed: user cannot pair with themselves");
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            // Get user IDs from UIDs using Profiles table
+            var userProfiles = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var targetProfiles = await _queries.GetAllPairsForProfileAsync(new(targetUID));
+            
+            if (!userProfiles.Any())
+            {
+                _logger.LogWarning("CreatePairRequest failed: user UID {UserUID} not found", userUID);
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+            
+            if (!targetProfiles.Any())
+            {
+                _logger.LogWarning("CreatePairRequest failed: target UID {TargetUID} not found", targetUID);
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            var userId = userProfiles.First().Id;
+            var targetId = targetProfiles.First().Id;
+
+            // Check if pair already exists
+            var existingPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var existingPair = existingPairs.FirstOrDefault(p => 
+                (p.Id == userId && p.PairId == targetId) || 
+                (p.Id == targetId && p.PairId == userId));
+
+            if (existingPair != default)
+            {
+                if (existingPair.Id == userId && existingPair.PairId == targetId)
+                {
+                    _logger.LogInformation("CreatePairRequest: onesided pair already exists from {UserUID} to {TargetUID}", userUID, targetUID);
+                    return DBPairResult.OnesidedPairExists;
+                }
+                else
+                {
+                    _logger.LogInformation("CreatePairRequest: users already paired {UserUID} <-> {TargetUID}", userUID, targetUID);
+                    return DBPairResult.Paired;
+                }
+            }
+
+            // Create new pair with no permissions (all false)
+            var newPair = await _queries.AddPairAsync(new()
+            {
+                Id = userId,
+                PairId = targetId,
+            });
+
+            if (newPair != null)
+            {
+                _logger.LogInformation("CreatePairRequest: successfully created pair from {UserUID} to {TargetUID}", userUID, targetUID);
+                return DBPairResult.PairCreated;
+            }
+
+            _logger.LogError("CreatePairRequest: failed to create pair from {UserUID} to {TargetUID}", userUID, targetUID);
+            return DBPairResult.UnknownError;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "CreatePairRequest failed with unexpected error");
+            return DBPairResult.UnknownError;
+        }
     }
 
     /// <summary>
@@ -62,71 +184,313 @@ public class DatabaseService
         string targetFriendCode,
         UserPermissions permissions)
     {
-        // TODO: If there there is a two way pair, update the permissions with the data from UserPermissions
-        throw new NotImplementedException();
+        try
+        {
+            if (string.IsNullOrWhiteSpace(senderFriendCode) || string.IsNullOrWhiteSpace(targetFriendCode))
+            {
+                _logger.LogWarning("UpdatePermissions failed: invalid friend codes provided");
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            if (senderFriendCode == targetFriendCode)
+            {
+                _logger.LogWarning("UpdatePermissions failed: cannot update permissions with self");
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            // Get user IDs from UIDs using existing pairs
+            var senderPairs = await _queries.GetAllPairsForProfileAsync(new(senderFriendCode));
+            var targetPairs = await _queries.GetAllPairsForProfileAsync(new(targetFriendCode));
+            
+            if (!senderPairs.Any())
+            {
+                _logger.LogWarning("UpdatePermissions failed: sender UID {SenderUID} not found", senderFriendCode);
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+            
+            if (!targetPairs.Any())
+            {
+                _logger.LogWarning("UpdatePermissions failed: target UID {TargetUID} not found", targetFriendCode);
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            var senderId = senderPairs.First().Id;
+            var targetId = targetPairs.First().Id;
+
+            // Check if pair exists in sender->target direction
+            var existingPairs = await _queries.GetAllPairsForProfileAsync(new(senderFriendCode));
+            var existingPair = existingPairs.FirstOrDefault(p => 
+                p.Id == senderId && p.PairId == targetId);
+
+            if (existingPair == default)
+            {
+                _logger.LogWarning("UpdatePermissions failed: no existing pair from {SenderUID} to {TargetUID}", senderFriendCode, targetFriendCode);
+                return DBPairResult.NoOp;
+            }
+
+            // Update permissions using the provided permissions
+            var updateResult = await _queries.UpdatePairPermissionsAsync(new()
+            {
+                ToggleTimerLocks=permissions.ToggleTimerLocks,
+                TogglePermanentLocks=permissions.TogglePermanentLocks,
+                ToggleGarbler=permissions.ToggleGarbler,
+                LockGarbler=permissions.LockGarbler,
+                ToggleChannels=permissions.ToggleChannels,
+                LockChannels=permissions.LockChannels,
+
+                ApplyGag=permissions.ApplyGag,
+                LockGag=permissions.LockGag,
+                UnlockGag=permissions.UnlockGag,
+                RemoveGag=permissions.RemoveGag,
+
+                ApplyWardrobe=permissions.ApplyWardrobe,
+                LockWardrobe=permissions.LockWardrobe,
+                UnlockWardrobe=permissions.UnlockWardrobe,
+                RemoveWardrobe=permissions.RemoveWardrobe,
+
+                ApplyMoodles=permissions.ApplyMoodles,
+                LockMoodles=permissions.LockMoodles,
+                UnlockMoodles=permissions.UnlockMoodles,
+                RemoveMoodles=permissions.RemoveMoodles,
+                Id = senderId,
+                PairId = targetId
+            });
+
+            if (updateResult != null)
+            {
+                _logger.LogInformation("UpdatePermissions: successfully updated permissions from {SenderUID} to {TargetUID}", senderFriendCode, targetFriendCode);
+                return DBPairResult.Success;
+            }
+
+            _logger.LogError("UpdatePermissions: failed to update permissions from {SenderUID} to {TargetUID}", senderFriendCode, targetFriendCode);
+            return DBPairResult.UnknownError;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpdatePermissions failed with unexpected error");
+            return DBPairResult.UnknownError;
+        }
     }
 
     /// <summary>
     ///     Gets permissions for a relationship
     /// </summary>
-    public async Task<UserPermissions?> GetPermissions(string friendCode, string targetFriendCode)
+    public async Task<Pair?> GetPermissions(string userUID, string targetUID)
     {
-        // TODO: 
-        throw new NotImplementedException();
-    }
+        try
+        {
+            if (string.IsNullOrWhiteSpace(userUID) || string.IsNullOrWhiteSpace(targetUID))
+            {
+                _logger.LogWarning("GetPermissions failed: invalid UIDs provided");
+                return null;
+            }
 
-    /// <summary>
-    ///     Gets all permissions for a user
-    /// </summary>
-    public async Task<List<TwoWayPermissions>> GetAllPermissions(string friendCode)
-    {
-        //
-        // TODO: 
-        throw new NotImplementedException();
+            if (userUID == targetUID)
+            {
+                _logger.LogWarning("GetPermissions failed: cannot get permissions with self");
+                return null;
+            }
+
+            // Get all pairs for the user
+            var userPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            
+            if (!userPairs.Any())
+            {
+                _logger.LogWarning("GetPermissions failed: user UID {UserUID} not found", userUID);
+                return null;
+            }
+
+            // Find the specific pair relationship
+            var targetPair = userPairs.FirstOrDefault(p => p.PairUid == targetUID);
+            
+            if (targetPair == default)
+            {
+                _logger.LogInformation("GetPermissions: no permissions found from {UserUID} to {TargetUID}", userUID, targetUID);
+                return null;
+            }
+
+            // Create UserPermissions from the pair data
+            var userPermissions = new Pair
+            {
+                    ApplyGag = targetPair.ApplyGag,
+                    LockGag = targetPair.LockGag,
+                    UnlockGag = targetPair.UnlockGag,
+                    RemoveGag = targetPair.RemoveGag,
+                    ApplyWardrobe = targetPair.ApplyWardrobe,
+                    LockWardrobe = targetPair.LockWardrobe,
+                    UnlockWardrobe = targetPair.UnlockWardrobe,
+                    RemoveWardrobe = targetPair.RemoveWardrobe
+            };
+
+            _logger.LogDebug("GetPermissions: retrieved permissions from {UserUID} to {TargetUID}", userUID, targetUID);
+            return userPermissions;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetPermissions failed with unexpected error");
+            return null;
+        }
     }
 
     /// <summary>
     ///     Deletes a permissions relationship
     /// </summary>
-    public async Task<DBPairResult> DeletePermissions(string senderFriendCode, string targetFriendCode)
+    public async Task<DBPairResult> DeletePermissions(string userUID, string targetUID)
     {
-        // TODO: 
-        throw new NotImplementedException();
+        try
+        {
+            if (string.IsNullOrWhiteSpace(userUID) || string.IsNullOrWhiteSpace(targetUID))
+            {
+                _logger.LogWarning("DeletePermissions failed: invalid UIDs provided");
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            if (userUID == targetUID)
+            {
+                _logger.LogWarning("DeletePermissions failed: cannot delete permissions with self");
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            // Get user IDs from UIDs using existing pairs
+            var userPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var targetPairs = await _queries.GetAllPairsForProfileAsync(new(targetUID));
+            
+            if (!userPairs.Any())
+            {
+                _logger.LogWarning("DeletePermissions failed: user UID {UserUID} not found", userUID);
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+            
+            if (!targetPairs.Any())
+            {
+                _logger.LogWarning("DeletePermissions failed: target UID {TargetUID} not found", targetUID);
+                return DBPairResult.PairUIDDoesNotExist;
+            }
+
+            var userId = userPairs.First().Id;
+            var targetId = targetPairs.First().Id;
+
+            // Check if pair exists before attempting deletion
+            var existingPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var existingPair = existingPairs.FirstOrDefault(p => 
+                p.Id == userId && p.PairId == targetId);
+
+            if (existingPair == default)
+            {
+                _logger.LogWarning("DeletePermissions failed: no existing pair from {UserUID} to {TargetUID}", userUID, targetUID);
+                return DBPairResult.NoOp;
+            }
+
+            // Delete the pair
+            var deleteResult = await _queries.RemovePairAsync(new()
+            {
+                Id = userId,
+                PairId = targetId
+            });
+
+            if (deleteResult != null)
+            {
+                _logger.LogInformation("DeletePermissions: successfully deleted pair from {UserUID} to {TargetUID}", userUID, targetUID);
+                return DBPairResult.Success;
+            }
+
+            _logger.LogError("DeletePermissions: failed to delete pair from {UserUID} to {TargetUID}", userUID, targetUID);
+            return DBPairResult.UnknownError;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "DeletePermissions failed with unexpected error");
+            return DBPairResult.UnknownError;
+        }
     }
 
     /// <summary>
-    ///     Admin function to create an account
+    ///     Helper method to get user ID from UID (friend code)
     /// </summary>
-    public async Task<DBPairResult> AdminCreateAccount(ulong discord, string friendCode, string secret)
+    private async Task<int?> GetUserIdFromUid(string uid)
     {
-        // TODO: 
-        throw new NotImplementedException();
+        try
+        {
+            var profiles = await _queries.GetAllPairsForProfileAsync(new(uid));
+            return profiles.Any() ? profiles.First().Id : null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetUserIdFromUid failed for UID {UID}", uid);
+            return null;
+        }
     }
 
     /// <summary>
-    ///     Gets accounts for a discord user
+    ///     Helper method to validate UID format
     /// </summary>
-    public async Task<List<KinkLinkServer.Domain.Shared.Account>?> AdminGetAccounts(ulong discord)
+    private bool IsValidUid(string uid)
     {
-        // TODO: 
-        throw new NotImplementedException();
+        return !string.IsNullOrWhiteSpace(uid) && uid.Length >= 3 && uid.Length <= 10;
     }
 
     /// <summary>
-    ///     Updates an account's friend code
+    ///     Helper method to validate secret format
     /// </summary>
-    public async Task<DBPairResult> AdminUpdateAccount(ulong discord, string oldFriendCode, string newFriendCode)
+    private bool IsValidSecret(string secret)
     {
-        // TODO: 
-        throw new NotImplementedException();
+        return !string.IsNullOrWhiteSpace(secret) && secret.Length >= 10 && secret.Length <= 100;
     }
 
     /// <summary>
-    ///     Deletes an account
+    ///     Gets all permissions for a user
     /// </summary>
-    public async Task<DBPairResult> AdminDeleteAccount(ulong discord, string friendCode)
+    public async Task<List<TwoWayPermissions>> GetAllPermissions(string userUID)
     {
-        // TODO: 
-        throw new NotImplementedException();
+        try
+        {
+            if (string.IsNullOrWhiteSpace(userUID))
+            {
+                _logger.LogWarning("GetAllPermissions failed: invalid UID provided");
+                return new List<TwoWayPermissions>();
+            }
+
+            var allPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var result = new List<TwoWayPermissions>();
+
+            foreach (var pair in allPairs)
+            {
+                // Convert from GetAllPairsForProfileRow to Pair model
+                var pairModel = new Pair(
+                    pair.Id,
+                    pair.PairId,
+                    pair.Expires,
+                    pair.ToggleTimerLocks,
+                    pair.TogglePermanentLocks,
+                    pair.ToggleGarbler,
+                    pair.LockGarbler,
+                    pair.ToggleChannels,
+                    pair.LockChannels,
+                    pair.ApplyGag,
+                    pair.LockGag,
+                    pair.UnlockGag,
+                    pair.RemoveGag,
+                    pair.ApplyWardrobe,
+                    pair.LockWardrobe,
+                    pair.UnlockWardrobe,
+                    pair.RemoveWardrobe,
+                    pair.ApplyMoodles,
+                    pair.LockMoodles,
+                    pair.UnlockMoodles,
+                    pair.RemoveMoodles
+                );
+                
+                var permission = new TwoWayPermissions(userUID, pair.PairUid, pairModel, new());
+                result.Add(permission);
+            }
+
+            _logger.LogDebug("GetAllPermissions: retrieved {Count} permissions for UID {UserUID}", result.Count, userUID);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetAllPermissions failed with unexpected error");
+            return new List<TwoWayPermissions>();
+        }
     }
 }
