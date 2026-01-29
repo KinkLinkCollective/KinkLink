@@ -149,7 +149,7 @@ public class DiscordInteractionHandler
 
             // Create a button for user interaction
             var buttonBuilder = new ComponentBuilder()
-                .WithButton("🚀 Start Registration", "register_start", ButtonStyle.Primary);
+                .WithButton("🚀 Start Account Management", "register_start", ButtonStyle.Primary);
 
             // Send the embed message to the channel
             var message = await channel.SendMessageAsync(

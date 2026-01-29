@@ -1,4 +1,3 @@
-using Discord;
 using Discord.WebSocket;
 using KinkLinkBot.Configuration;
 using KinkLinkBot.Domain.Models;
@@ -154,7 +153,7 @@ public class RegistrationService
     ///     Creates a UID for the  user.
     ///     UIDs are used to maintain relative anonymity with the user accounts.
     /// </summary>
-    public async Task<RegistrationResponse> CreateUID(ulong discordId)
+    public async Task<ProfileResponse> CreateUID(ulong discordId)
     {
         try
         {
@@ -162,7 +161,7 @@ public class RegistrationService
 
             if (!existingUser.HasValue)
             {
-                return new RegistrationResponse
+                return new ProfileResponse
                 {
                     Success = false,
                     ErrorMessage = "User account not found. Please register first."
@@ -171,7 +170,7 @@ public class RegistrationService
 
             if (existingUser.Value.Banned == true)
             {
-                return new RegistrationResponse
+                return new ProfileResponse
                 {
                     Success = false,
                     ErrorMessage = "Your account has been banned. Please contact an administrator."
@@ -181,31 +180,21 @@ public class RegistrationService
             var newUID = GenerateUID();
 
             var profileExists = await _queries.ProfileExistsAsync(new(newUID));
+            // This is _exceedingly unlikely_ but I'm paranoid, so just in case.
+            // (Odds of this occurring are 1/3,656,158,440,062,976)
             if (profileExists?.Exists == true)
             {
-                var maxAttempts = 10;
-                var attempts = 0;
-
-                do
+                return new ProfileResponse
                 {
-                    newUID = GenerateUID();
-                    profileExists = await _queries.ProfileExistsAsync(new(newUID));
-                    attempts++;
-                } while (profileExists?.Exists == true && attempts < maxAttempts);
-
-                if (profileExists?.Exists == true)
-                {
-                    return new RegistrationResponse
-                    {
-                        Success = false,
-                        ErrorMessage = "Unable to generate a unique UID. Please try again later."
-                    };
-                }
+                    Success = false,
+                    ErrorMessage = "We currently have Unable to generate a unique UID. Please try again later."
+                };
             }
 
             var newProfile = await _queries.CreateNewUIDForUserAsync(new(
                 UserId: existingUser.Value.Id,
                 Uid: newUID,
+                // TODO: Clean this up (allow for alias to be set during creation)
                 ChatRole: null,
                 Alias: null,
                 Title: null,
@@ -216,16 +205,16 @@ public class RegistrationService
             {
                 _logger.LogInformation($"New UID created: {newUID} for Discord ID {discordId}, User ID {existingUser.Value.Id}");
 
-                return new RegistrationResponse
+                return new ProfileResponse
                 {
                     Success = true,
-                    Secret = existingUser.Value.SecretKey
+                    UID = existingUser.Value.SecretKey
                 };
             }
             else
             {
                 _logger.LogError($"Failed to create UID {newUID} for Discord ID {discordId}");
-                return new RegistrationResponse
+                return new ProfileResponse
                 {
                     Success = false,
                     ErrorMessage = "Failed to create UID. Please try again later."
@@ -235,7 +224,7 @@ public class RegistrationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating UID for Discord ID {DiscordId}", discordId);
-            return new RegistrationResponse
+            return new ProfileResponse
             {
                 Success = false,
                 ErrorMessage = "An unexpected error occurred while creating your UID."
@@ -243,7 +232,7 @@ public class RegistrationService
         }
     }
 
-    public async Task<RegistrationResponse> DeleteUID(ulong discordId, string UID)
+    public async Task<ProfileResponse> DeleteUID(ulong discordId, string UID)
     {
         try
         {
@@ -251,7 +240,7 @@ public class RegistrationService
 
             if (!existingUser.HasValue)
             {
-                return new RegistrationResponse
+                return new ProfileResponse
                 {
                     Success = false,
                     ErrorMessage = "User account not found."
@@ -261,7 +250,7 @@ public class RegistrationService
             var profileExists = await _queries.ProfileExistsAsync(new(UID));
             if (!profileExists?.Exists == true)
             {
-                return new RegistrationResponse
+                return new ProfileResponse
                 {
                     Success = false,
                     ErrorMessage = "UID not found."
@@ -274,7 +263,7 @@ public class RegistrationService
             {
                 _logger.LogInformation($"UID {UID} deleted for Discord ID {discordId}, User ID {existingUser.Value.Id}");
 
-                return new RegistrationResponse
+                return new ProfileResponse
                 {
                     Success = true,
                     ErrorMessage = null
@@ -283,7 +272,7 @@ public class RegistrationService
             else
             {
                 _logger.LogError($"Failed to delete UID {UID} for Discord ID {discordId}");
-                return new RegistrationResponse
+                return new ProfileResponse
                 {
                     Success = false,
                     ErrorMessage = "Failed to delete UID. The UID may not belong to your account."
@@ -293,7 +282,7 @@ public class RegistrationService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting UID {UID} for Discord ID {DiscordId}", UID, discordId);
-            return new RegistrationResponse
+            return new ProfileResponse
             {
                 Success = false,
                 ErrorMessage = "An unexpected error occurred while deleting your UID."
