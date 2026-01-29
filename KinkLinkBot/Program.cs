@@ -14,7 +14,7 @@ public class Program
         Console.WriteLine("[KinkLinkBot] Starting...");
 
         // Load configuration
-        var configPath = args.Length > 0 ? args[0] : "config.yaml";
+        var configPath = args.Length > 0 ? args[0] : "/app/config.json";
         var config = BotConfiguration.Load(configPath);
 
         if (config == null)
@@ -41,6 +41,14 @@ public class Program
 
         // Set up services
         var services = new ServiceCollection();
+        
+        // Add logging
+        services.AddLogging(builder =>
+        {
+            builder.AddConsole();
+            builder.SetMinimumLevel(LogLevel.Information);
+        });
+        
         services.AddSingleton(client);
         services.AddSingleton(_ => config);
 

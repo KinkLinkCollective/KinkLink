@@ -21,7 +21,7 @@ services:
   kinklink:
     build:
       context: .
-      target: server
+      dockerfile: ./KinkLinkServer/Dockerfile
     # Identifies the container's name on the host network
     container_name: kl-app
     # Traefik routing labels
@@ -38,11 +38,9 @@ services:
     # Docker volumes are where the data gets mounted in the image.
     # This docker volume contains all the persistent data used by kinklink
     volumes:
-      - ./AetherRemoteServer/appsettings.json:/app/appsettings.json:ro
-      - ./config.json:/app/config.json:ro
+      - ./KinkLinkServer/appsettings.json:/app/appsettings.json:ro
+      - ./KinkLinkServer/config.json:/app/config.json:ro
       - kl-data:/data
-    environment:
-      - ./.env
     # kinklink itself depends on both the postgres and the redis instances being up
     depends_on:
       postgres:
@@ -57,12 +55,8 @@ services:
       dockerfile: KinkLinkBot/Dockerfile
     container_name: kl-bot
     restart: unless-stopped
-    environment:
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - DB_CONNECTION_STRING=Host=postgres;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
     volumes:
       - ./KinkLinkBot/config.json:/app/config.json:ro
-      - ./KinkLinkDatabase/migrations:/app/migrations:ro
     depends_on:
       postgres:
         condition: service_healthy

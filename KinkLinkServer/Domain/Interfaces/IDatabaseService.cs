@@ -18,7 +18,7 @@ public interface IDatabaseService
     ///     Creates an empty set of permissions between sender and target friend codes
     /// </summary>
     public Task<DBPairResult> CreatePairRequest(string userUID, string targetUID);
-    
+
 
     /// <summary
     ///     Updates a set of permissions between sender and target friend codes
@@ -27,13 +27,13 @@ public interface IDatabaseService
         string senderFriendCode,
         string targetFriendCode,
         UserPermissions permissions);
-    
+
 
     /// <summary>
     ///     Gets permissions for a relationship
     /// </summary>
     public Task<UserPermissions?> GetPermissions(string userUID, string targetUID);
-    
+
 
     /// <summary>
     ///     Deletes a permissions relationship

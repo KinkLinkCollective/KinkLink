@@ -79,7 +79,7 @@ public class DiscordInteractionHandler
 
     private bool IsRegistrationPromptMessage(IMessage message)
     {
-        return message.Embeds?.Any(embed => 
+        return message.Embeds?.Any(embed =>
             embed.Title?.Contains("KinkLink Registration", StringComparison.OrdinalIgnoreCase) == true) == true;
     }
 

@@ -1,4 +1,3 @@
--- Initial schema for KinkLink database
 -- Admin accounts are stored in a separate table for security purposes.
 -- There is no overlap in this and the other accounts with separate
 -- Needs admin table to check for Admins
@@ -13,7 +12,7 @@ CREATE TABLE IF NOT EXISTS Admin (
 -- Verified/banned are used to track and purge accounts based on settings
 CREATE TABLE IF NOT EXISTS Users (
     id SERIAL PRIMARY KEY,
-    discord_id BIGINT NOT NULL,
+    discord_id BIGINT NOT NULL UNIQUE,
     secret_key VARCHAR(64) NOT NULL UNIQUE,
     verified bool DEFAULT false,
     banned bool DEFAULT false,

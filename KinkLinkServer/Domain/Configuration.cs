@@ -10,7 +10,7 @@ public class Configuration(
     string signingKey,
     string serverUrl)
 {
-    private static readonly string ConfigurationPath = Path.Combine(Directory.GetCurrentDirectory(), "config.json");
+    public static readonly string ConfigurationPath = "/app/config.json";
 
     public readonly string DatabaseConnectionString = databaseConnectionString;
     public readonly string SigningKey = signingKey;
@@ -22,9 +22,7 @@ public class Configuration(
         {
             if (!File.Exists(ConfigurationPath))
             {
-                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Configuration"));
-                File.WriteAllText(ConfigurationPath, JsonConvert.SerializeObject(Default, Formatting.Indented));
-                Console.WriteLine($"[Configuration] [Load] Configuration file created at {ConfigurationPath}, please edit the values and run the application again.");
+                Console.WriteLine($"[Configuration] [Load] Configuration file does not exist at {ConfigurationPath}, the image configuration is incorrect, please fix.");
                 return null;
             }
 

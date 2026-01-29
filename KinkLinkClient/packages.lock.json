@@ -41,6 +41,11 @@
           "Svg.Model": "3.2.1"
         }
       },
+      "Dapper": {
+        "type": "Transitive",
+        "resolved": "2.1.42",
+        "contentHash": "TbG2vxnVMSjVLj+OCeZQTVJWe4l41noZti1JhwUKd9E+s7nXQacxZKpOm4X0otHeTkqpvKXl4TEx5e8jHWbyeA=="
+      },
       "ExCSS": {
         "type": "Transitive",
         "resolved": "4.3.1",
@@ -230,9 +235,11 @@
       "kinklinkcommon": {
         "type": "Project",
         "dependencies": {
+          "Dapper": "[2.1.39, )",
           "Microsoft.AspNetCore.SignalR.Protocols.MessagePack": "[10.0.1, )",
           "Microsoft.Extensions.Logging": "[8.0.0, )",
-          "Npgsql": "[9.0.2, )"
+          "Npgsql": "[9.0.2, )",
+          "Npgsql.Dapper": "[9.0.2, )"
         }
       }
     }

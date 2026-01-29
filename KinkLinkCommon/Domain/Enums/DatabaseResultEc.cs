@@ -1,6 +1,7 @@
 namespace KinkLinkCommon.Domain.Enums;
 
-public struct DBAuthenticationResult {
+public struct DBAuthenticationResult
+{
     public DBAuthenticationStatus Status;
     public List<string> Uids;
 }

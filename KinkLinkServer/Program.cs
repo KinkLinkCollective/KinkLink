@@ -1,5 +1,5 @@
-using System.Net;
 using System.Text;
+using System.Reflection;
 using KinkLinkCommon.Database;
 using KinkLinkServer.Domain;
 using KinkLinkServer.Domain.Interfaces;
@@ -9,9 +9,12 @@ using KinkLinkServer.SignalR.Handlers;
 using KinkLinkServer.SignalR.Hubs;
 using MessagePack;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using DbUp;
 
 namespace KinkLinkServer;
 
@@ -24,8 +27,27 @@ public class Program
         // Attempt to load configuration values
         if (Configuration.Load() is not { } configuration)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
+            System.Console.WriteLine("Error cannot load Configuiration at {Configuration.ConfigurationPath}");
+            Console.ResetColor();
             Environment.Exit(1);
             return;
+        }
+
+        // Migrate the database prior to building the WebApplication
+        EnsureDatabase.For.PostgresqlDatabase(configuration.DatabaseConnectionString);
+
+        var upgrader = DeployChanges.To.PostgresqlDatabase(configuration.DatabaseConnectionString)
+            .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
+            .LogToConsole()
+            .Build();
+        var result = upgrader.PerformUpgrade();
+        if (!result.Successful)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            System.Console.WriteLine(result.Error);
+            Console.ResetColor();
+            Environment.Exit(1);
         }
 
         // Create service builder
@@ -34,23 +56,14 @@ public class Program
         // Configuration Authentication and Authorization
         ConfigureJwtAuthentication(builder.Services, configuration);
 
+        // Configure migration settings
+        var configJson = File.ReadAllText(Configuration.ConfigurationPath);
+
         // Add services to the container
         builder.Services.AddControllers();
         builder.Services.AddSignalR(options => options.EnableDetailedErrors = true)
             .AddMessagePackProtocol(options => options.SerializerOptions = MessagePackSerializerOptions.Standard.WithSecurity(MessagePackSecurity.UntrustedData));
         builder.Services.AddSingleton(configuration);
-
-        // Run migrations on startup
-        builder.Services.AddSingleton<MigrationManager>();
-        builder.Services.AddHostedService(sp =>
-        {
-            var migrator = sp.GetRequiredService<MigrationManager>();
-            var logger = sp.GetRequiredService<ILogger<MigrationManager>>();
-            var connection = new NpgsqlConnection(configuration.DatabaseConnectionString);
-            connection.Open();
-            return new MigrationHostedService(migrator, connection, logger);
-        });
-
         // Register database service - DatabaseService handles its own QueriesSql creation
         builder.Services.AddSingleton<DatabaseService>();
 
@@ -72,8 +85,9 @@ public class Program
         builder.Services.AddSingleton<RemoveFriendHandler>();
         builder.Services.AddSingleton<SpeakHandler>();
         builder.Services.AddSingleton<UpdateFriendHandler>();
-
-        builder.WebHost.UseUrls("https://localhost:5006");
+        // NOTE: HTTP endpoint is configured as traefik will be used as a reverse proxy
+        // with TLS termination. This will never be exposed to the open internet.
+        builder.WebHost.UseUrls("http://localhost:5006");
         var app = builder.Build();
 
         // Configure the HTTP request pipeline
@@ -84,7 +98,6 @@ public class Program
         }
 
         app.UseRouting();
-        // app.UseHttpsRedirection(); // Disabled for Traefik development setup
 
         app.UseAuthentication();
         app.UseAuthorization();
@@ -108,47 +121,5 @@ public class Program
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration.SigningKey)),
             };
         });
-    }
-}
-
-/// <summary>
-/// Background service that runs database migrations on startup
-/// </summary>
-public class MigrationHostedService : BackgroundService
-{
-    private readonly MigrationManager _migrator;
-    private readonly NpgsqlConnection _connection;
-    private readonly ILogger<MigrationManager> _logger;
-
-    public MigrationHostedService(
-        MigrationManager migrator,
-        NpgsqlConnection connection,
-        ILogger<MigrationManager> logger)
-    {
-        _migrator = migrator;
-        _connection = connection;
-        _logger = logger;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        try
-        {
-            var migrationsPath = Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "..",
-                "KinkLinkCommon",
-                "Database",
-                "sql",
-                "migrations");
-
-            var migrationFiles = MigrationManager.GetMigrationFiles(migrationsPath);
-            await _migrator.RunMigrationsAsync(migrationFiles);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to run database migrations");
-            throw;
-        }
     }
 }

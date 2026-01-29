@@ -37,6 +37,6 @@ ENV ASPNETCORE_URLS=https://+:5006
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f https://localhost:5006/health || exit 1
+    CMD curl -f https://localhost:5006/health || exit 1
 
 ENTRYPOINT ["dotnet", "KinkLinkServer.dll"]

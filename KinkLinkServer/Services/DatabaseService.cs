@@ -34,7 +34,8 @@ public class DatabaseService
     /// <summary>
     ///     Gets the user UIDs associated with the user account.
     /// </summary>
-    public async Task<DBAuthenticationResult> AuthenticateUser(string secret) {
+    public async Task<DBAuthenticationResult> AuthenticateUser(string secret)
+    {
         // TODO: Implement the proper confirmation that the UID is associated with this secret key.
         throw new NotImplementedException();
         try
@@ -42,24 +43,30 @@ public class DatabaseService
             if (string.IsNullOrWhiteSpace(secret))
             {
                 _logger.LogWarning("Authentication attempted with null or empty secret");
-                return new DBAuthenticationResult {
+                return new DBAuthenticationResult
+                {
                     Status = DBAuthenticationStatus.Unauthorized,
-                    Uids = new() };
+                    Uids = new()
+                };
             }
 
             // TODO: Read all the UIDs associated with the user (provided that they are not banned).
 
             _logger.LogWarning("Authentication failed: invalid secret format");
-            return new DBAuthenticationResult {
+            return new DBAuthenticationResult
+            {
                 Status = DBAuthenticationStatus.Unauthorized,
-                Uids = new() };
+                Uids = new()
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Authentication failed with unexpected error");
-            return new DBAuthenticationResult {
+            return new DBAuthenticationResult
+            {
                 Status = DBAuthenticationStatus.UnknownError,
-                Uids = new() };
+                Uids = new()
+            };
         }
     }
 
@@ -73,25 +80,31 @@ public class DatabaseService
             if (string.IsNullOrWhiteSpace(secret) || string.IsNullOrWhiteSpace(uid))
             {
                 _logger.LogWarning("Authentication attempted with null or empty secret");
-                return new DBAuthenticationResult {
+                return new DBAuthenticationResult
+                {
                     Status = DBAuthenticationStatus.Unauthorized,
-                    Uids = new() };
+                    Uids = new()
+                };
             }
 
             // TODO: Implement the proper confirmation that the UID is associated with this secret key.
             // Essentially read the database to confirm that the UID is associated with the account with the particular secret key.
 
             _logger.LogWarning("Authentication failed: invalid secret format");
-            return new DBAuthenticationResult {
+            return new DBAuthenticationResult
+            {
                 Status = DBAuthenticationStatus.Unauthorized,
-                Uids = new() };
+                Uids = new()
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Authentication failed with unexpected error");
-            return new DBAuthenticationResult {
+            return new DBAuthenticationResult
+            {
                 Status = DBAuthenticationStatus.UnknownError,
-                Uids = new() };
+                Uids = new()
+            };
         }
     }
 
@@ -117,13 +130,13 @@ public class DatabaseService
             // Get user IDs from UIDs using Profiles table
             var userProfiles = await _queries.GetAllPairsForProfileAsync(new(userUID));
             var targetProfiles = await _queries.GetAllPairsForProfileAsync(new(targetUID));
-            
+
             if (!userProfiles.Any())
             {
                 _logger.LogWarning("CreatePairRequest failed: user UID {UserUID} not found", userUID);
                 return DBPairResult.PairUIDDoesNotExist;
             }
-            
+
             if (!targetProfiles.Any())
             {
                 _logger.LogWarning("CreatePairRequest failed: target UID {TargetUID} not found", targetUID);
@@ -135,8 +148,8 @@ public class DatabaseService
 
             // Check if pair already exists
             var existingPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
-            var existingPair = existingPairs.FirstOrDefault(p => 
-                (p.Id == userId && p.PairId == targetId) || 
+            var existingPair = existingPairs.FirstOrDefault(p =>
+                (p.Id == userId && p.PairId == targetId) ||
                 (p.Id == targetId && p.PairId == userId));
 
             if (existingPair != default)
@@ -201,13 +214,13 @@ public class DatabaseService
             // Get user IDs from UIDs using existing pairs
             var senderPairs = await _queries.GetAllPairsForProfileAsync(new(senderFriendCode));
             var targetPairs = await _queries.GetAllPairsForProfileAsync(new(targetFriendCode));
-            
+
             if (!senderPairs.Any())
             {
                 _logger.LogWarning("UpdatePermissions failed: sender UID {SenderUID} not found", senderFriendCode);
                 return DBPairResult.PairUIDDoesNotExist;
             }
-            
+
             if (!targetPairs.Any())
             {
                 _logger.LogWarning("UpdatePermissions failed: target UID {TargetUID} not found", targetFriendCode);
@@ -219,7 +232,7 @@ public class DatabaseService
 
             // Check if pair exists in sender->target direction
             var existingPairs = await _queries.GetAllPairsForProfileAsync(new(senderFriendCode));
-            var existingPair = existingPairs.FirstOrDefault(p => 
+            var existingPair = existingPairs.FirstOrDefault(p =>
                 p.Id == senderId && p.PairId == targetId);
 
             if (existingPair == default)
@@ -231,27 +244,27 @@ public class DatabaseService
             // Update permissions using the provided permissions
             var updateResult = await _queries.UpdatePairPermissionsAsync(new()
             {
-                ToggleTimerLocks=permissions.ToggleTimerLocks,
-                TogglePermanentLocks=permissions.TogglePermanentLocks,
-                ToggleGarbler=permissions.ToggleGarbler,
-                LockGarbler=permissions.LockGarbler,
-                ToggleChannels=permissions.ToggleChannels,
-                LockChannels=permissions.LockChannels,
+                ToggleTimerLocks = permissions.ToggleTimerLocks,
+                TogglePermanentLocks = permissions.TogglePermanentLocks,
+                ToggleGarbler = permissions.ToggleGarbler,
+                LockGarbler = permissions.LockGarbler,
+                ToggleChannels = permissions.ToggleChannels,
+                LockChannels = permissions.LockChannels,
 
-                ApplyGag=permissions.ApplyGag,
-                LockGag=permissions.LockGag,
-                UnlockGag=permissions.UnlockGag,
-                RemoveGag=permissions.RemoveGag,
+                ApplyGag = permissions.ApplyGag,
+                LockGag = permissions.LockGag,
+                UnlockGag = permissions.UnlockGag,
+                RemoveGag = permissions.RemoveGag,
 
-                ApplyWardrobe=permissions.ApplyWardrobe,
-                LockWardrobe=permissions.LockWardrobe,
-                UnlockWardrobe=permissions.UnlockWardrobe,
-                RemoveWardrobe=permissions.RemoveWardrobe,
+                ApplyWardrobe = permissions.ApplyWardrobe,
+                LockWardrobe = permissions.LockWardrobe,
+                UnlockWardrobe = permissions.UnlockWardrobe,
+                RemoveWardrobe = permissions.RemoveWardrobe,
 
-                ApplyMoodles=permissions.ApplyMoodles,
-                LockMoodles=permissions.LockMoodles,
-                UnlockMoodles=permissions.UnlockMoodles,
-                RemoveMoodles=permissions.RemoveMoodles,
+                ApplyMoodles = permissions.ApplyMoodles,
+                LockMoodles = permissions.LockMoodles,
+                UnlockMoodles = permissions.UnlockMoodles,
+                RemoveMoodles = permissions.RemoveMoodles,
                 Id = senderId,
                 PairId = targetId
             });
@@ -293,7 +306,7 @@ public class DatabaseService
 
             // Get all pairs for the user
             var userPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
-            
+
             if (!userPairs.Any())
             {
                 _logger.LogWarning("GetPermissions failed: user UID {UserUID} not found", userUID);
@@ -302,7 +315,7 @@ public class DatabaseService
 
             // Find the specific pair relationship
             var targetPair = userPairs.FirstOrDefault(p => p.PairUid == targetUID);
-            
+
             if (targetPair == default)
             {
                 _logger.LogInformation("GetPermissions: no permissions found from {UserUID} to {TargetUID}", userUID, targetUID);
@@ -312,14 +325,14 @@ public class DatabaseService
             // Create UserPermissions from the pair data
             var userPermissions = new Pair
             {
-                    ApplyGag = targetPair.ApplyGag,
-                    LockGag = targetPair.LockGag,
-                    UnlockGag = targetPair.UnlockGag,
-                    RemoveGag = targetPair.RemoveGag,
-                    ApplyWardrobe = targetPair.ApplyWardrobe,
-                    LockWardrobe = targetPair.LockWardrobe,
-                    UnlockWardrobe = targetPair.UnlockWardrobe,
-                    RemoveWardrobe = targetPair.RemoveWardrobe
+                ApplyGag = targetPair.ApplyGag,
+                LockGag = targetPair.LockGag,
+                UnlockGag = targetPair.UnlockGag,
+                RemoveGag = targetPair.RemoveGag,
+                ApplyWardrobe = targetPair.ApplyWardrobe,
+                LockWardrobe = targetPair.LockWardrobe,
+                UnlockWardrobe = targetPair.UnlockWardrobe,
+                RemoveWardrobe = targetPair.RemoveWardrobe
             };
 
             _logger.LogDebug("GetPermissions: retrieved permissions from {UserUID} to {TargetUID}", userUID, targetUID);
@@ -354,13 +367,13 @@ public class DatabaseService
             // Get user IDs from UIDs using existing pairs
             var userPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
             var targetPairs = await _queries.GetAllPairsForProfileAsync(new(targetUID));
-            
+
             if (!userPairs.Any())
             {
                 _logger.LogWarning("DeletePermissions failed: user UID {UserUID} not found", userUID);
                 return DBPairResult.PairUIDDoesNotExist;
             }
-            
+
             if (!targetPairs.Any())
             {
                 _logger.LogWarning("DeletePermissions failed: target UID {TargetUID} not found", targetUID);
@@ -372,7 +385,7 @@ public class DatabaseService
 
             // Check if pair exists before attempting deletion
             var existingPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
-            var existingPair = existingPairs.FirstOrDefault(p => 
+            var existingPair = existingPairs.FirstOrDefault(p =>
                 p.Id == userId && p.PairId == targetId);
 
             if (existingPair == default)
@@ -479,7 +492,7 @@ public class DatabaseService
                     pair.UnlockMoodles,
                     pair.RemoveMoodles
                 );
-                
+
                 var permission = new TwoWayPermissions(userUID, pair.PairUid, pairModel, new());
                 result.Add(permission);
             }
