@@ -7,5 +7,6 @@ public enum LoginAuthenticationErrorCode
     Success,
     VersionMismatch,
     UnknownSecret,
+    UnknownProfileUID,
     Unknown
 }

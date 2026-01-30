@@ -8,11 +8,12 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 
 namespace KinkLinkClient.Handlers;
-
+// TODO: Evaluate and ensure to collision with common commands
 public class ChatCommandHandler : IDisposable
 {
-    private const string CommandNameShort = "/ar";
-    private const string CommandNameFull = "/aetherremote";
+    private const string CommandNameShort = "/kl";
+    private const string CommandNameFull = "/kinklink";
+    //TODO: Remove this
     private const string CommandNameOld = "/remote";
 
     private const string StopArg = "stop";
@@ -37,9 +38,9 @@ public class ChatCommandHandler : IDisposable
         {
             HelpMessage = $"""
                            Opens the primary plugin window
-                           /ar {StopArg} - Stops all current spirals
-                           /ar {SafeMode} - Put the plugin into safe mode
-                           /ar {SafeWord} - Put the plugin into safe mode
+                           /kl {StopArg} - Stops all current spirals
+                           /kl {SafeMode} - Put the plugin into safe mode
+                           /kl {SafeWord} - Put the plugin into safe mode
                            """
         });
 

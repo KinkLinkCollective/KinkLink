@@ -17,14 +17,14 @@ namespace KinkLinkServer.Api.Controllers;
 public class AuthController(Configuration config, DatabaseService database) : ControllerBase
 {
     // Const
-    private static readonly Version ExpectedVersion = new(2, 8, 6, 0);
+    private static readonly Version ExpectedVersion = new(0, 0, 0, 1);
 
     // Instantiated
     private readonly SymmetricSecurityKey _key = new(Encoding.UTF8.GetBytes(config.SigningKey));
 
     [AllowAnonymous]
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] GetTokenRequest request)
+    [HttpPost("profiles")]
+    public async Task<IActionResult> Profiles([FromBody] GetTokenRequest request)
     {
         if (request.Version < ExpectedVersion)
             return StatusCode(StatusCodes.Status409Conflict, new LoginAuthenticationResult(LoginAuthenticationErrorCode.VersionMismatch, null));
@@ -33,10 +33,25 @@ public class AuthController(Configuration config, DatabaseService database) : Co
         if (authResult.Status != DBAuthenticationStatus.Authorized && authResult.Uids.Count() != 0)
             return StatusCode(StatusCodes.Status401Unauthorized, new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownSecret, null));
 
-        // TODO: Separate the login from the UIDs and all the user to pass one in
+        // TODO: Fix this up to return a list of the profiles for a given secret key
+        //     return StatusCode(StatusCodes.Status401Unauthorized, new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownError, null));
+        throw new NotImplementedException();
+    }
 
-        var token = GenerateJwtToken([new Claim(AuthClaimTypes.Uid, authResult.Uids[0])]);
+    [AllowAnonymous]
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] GetTokenRequest request)
+    {
+        if (request.Version < ExpectedVersion)
+            return StatusCode(StatusCodes.Status409Conflict, new LoginAuthenticationResult(LoginAuthenticationErrorCode.VersionMismatch, ""));
 
+        var authStatus = await database.LoginUser(request.Secret, request.ProfileUID);
+        if (authStatus != DBAuthenticationStatus.Authorized)
+        {
+            return StatusCode(StatusCodes.Status401Unauthorized, new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownSecret, ""));
+        }
+
+        var token = GenerateJwtToken([new Claim(AuthClaimTypes.Uid, request.ProfileUID)]);
         return StatusCode(StatusCodes.Status200OK, new LoginAuthenticationResult(LoginAuthenticationErrorCode.Success, token.RawData));
     }
 

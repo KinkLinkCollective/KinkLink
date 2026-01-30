@@ -18,10 +18,14 @@ public class Configuration
     public int Version = 1;
 
     /// <summary>
-    ///     Is the plugin in safe mode
+    ///     Used as a global toggle to ensure that all modules are disabled regardless of their settings.
     /// </summary>
     public bool SafeMode = false;
 
+    /// <summary>
+    ///     This is the authentication secret key provided by the disord bot for authorization
+    /// </summary>
+    public string SecretKey = "";
     /// <summary>
     ///     Map of friend code to note
     /// </summary>

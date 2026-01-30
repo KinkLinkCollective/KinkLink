@@ -5,5 +5,6 @@ namespace KinkLinkCommon.Domain.Network.GetToken;
 /// </summary>
 public record GetTokenRequest(
     string Secret,
+    string ProfileUID,
     Version Version
 );

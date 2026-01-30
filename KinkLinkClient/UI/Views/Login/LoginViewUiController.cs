@@ -5,6 +5,7 @@ using KinkLinkClient.Services;
 using KinkLinkClient.Utils;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Utility;
+using System.Collections.Generic;
 
 namespace KinkLinkClient.UI.Views.Login;
 
@@ -18,6 +19,7 @@ public class LoginViewUiController : IDisposable
     ///     User inputted secret
     /// </summary>
     public string Secret = string.Empty;
+    public string ProfileUID = string.Empty;
 
     public LoginViewUiController(NetworkService networkService, LoginManager loginManager)
     {
@@ -31,7 +33,7 @@ public class LoginViewUiController : IDisposable
         try
         {
             // Only save if the configuration is set
-            if (Plugin.CharacterConfiguration is null)
+            if (Plugin.Configuration is null || Plugin.CharacterConfiguration is null)
                 return;
 
             // Don't save if the string is empty
@@ -39,11 +41,13 @@ public class LoginViewUiController : IDisposable
                 return;
 
             // Set the secret
-            Plugin.CharacterConfiguration.Secret = Secret;
+            Plugin.Configuration.SecretKey = this.Secret;
+            Plugin.CharacterConfiguration.ProfileUID = this.ProfileUID;
 
             // Save the configuration
+            await Plugin.Configuration.Save().ConfigureAwait(false);
             await Plugin.CharacterConfiguration.Save().ConfigureAwait(false);
-
+            Plugin.Log.Error($"{Plugin.Configuration.SecretKey} {Plugin.CharacterConfiguration.ProfileUID}");
             // Try to connect to the server
             await _networkService.StartAsync();
         }
@@ -53,34 +57,7 @@ public class LoginViewUiController : IDisposable
         }
     }
 
-    public static void CopyOriginalSecret()
-    {
-        // Check if the legacy configuration isn't null
-        if (Plugin.LegacyConfiguration?.Secret is not { } secret)
-            return;
-
-        // Copy to clipboard
-        ImGui.SetClipboardText(secret);
-
-        // Notify the client
-        NotificationHelper.Success("Copied secret to clipboard", string.Empty);
-
-        // Try to remove the old configuration file
-        try
-        {
-            // Create the file path
-            var legacyConfigurationFilePath = Plugin.PluginInterface.GetPluginConfigDirectory() + ".json";
-
-            // Delete the file if it exists
-            if (File.Exists(legacyConfigurationFilePath))
-                File.Delete(legacyConfigurationFilePath);
-        }
-        catch (Exception e)
-        {
-            Plugin.Log.Error($"[LoginViewUiController] Error while attempting to delete old configuration files, {e}");
-        }
-    }
-
+    // TODO: This needs to redirect to the actual server. Actually, IDK if I will make it public?
     public static void OpenDiscordLink() => Util.OpenLink("https://discord.com/invite/aetherremote");
 
     private void OnLoginFinished()
@@ -88,7 +65,7 @@ public class LoginViewUiController : IDisposable
         if (Plugin.CharacterConfiguration is null)
             return;
 
-        Secret = Plugin.CharacterConfiguration.Secret;
+        ProfileUID = Plugin.CharacterConfiguration.ProfileUID;
     }
 
     public void Dispose()

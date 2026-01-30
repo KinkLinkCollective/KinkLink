@@ -6,8 +6,7 @@
         <Company>KinkLink</Company>
         <Version>0.0.0.1</Version>
         <Description>XIV Plugin</Description>
-        <Copyright>(C)Mora 2024 - 25</Copyright>
-        <PackageProjectUrl>https://github.com/aetherremote/KinkLink</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/kinklink/KinkLink</PackageProjectUrl>
     </PropertyGroup>
 
     <PropertyGroup>

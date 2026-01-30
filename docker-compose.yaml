@@ -1,40 +1,17 @@
 version: "3"
 services:
-  # Traefik reverse proxy for development
-  traefik:
-    image: traefik:v3
-    container_name: kl-traefik
-    command:
-      - "--configFile=/etc/traefik/traefik.yaml"
-    ports:
-      - "8080:5006" # HTTP + HTTP/3
-    volumes:
-      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
-      - ./traefik/dynamic.yaml:/etc/traefik/dynamic.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - kinklink-network
-    depends_on:
-      - kinklink
-
   # This is the kinklink main service instance
   kinklink:
     build:
       context: .
       dockerfile: ./KinkLinkServer/Dockerfile
-    # Identifies the container's name on the host network
-    container_name: kl-app
+    container_name: kinklink
     # Traefik routing labels
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.kinklink.rule=Host(`localhost`)"
-      - "traefik.http.routers.kinklink.entrypoints=web"
-      - "traefik.http.services.kinklink.loadbalancer.server.port=5006"
     # While the actual host should be behind some kind of reverse proxy,
     # For testing we can expose the port directly on port 80 on the host (your PC)
     # Then this with send all traffic to port 8080 which kinklink actually listens on.
-    expose:
-      - 5006
+    ports:
+      - 5006:5006
     # Docker volumes are where the data gets mounted in the image.
     # This docker volume contains all the persistent data used by kinklink
     volumes:
@@ -42,6 +19,11 @@ services:
       - ./KinkLinkServer/config.json:/app/config.json:ro
       - kl-data:/data
     # kinklink itself depends on both the postgres and the redis instances being up
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 250M
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,10 +35,15 @@ services:
     build:
       context: .
       dockerfile: KinkLinkBot/Dockerfile
-    container_name: kl-bot
+    container_name: kinklink-bot
     restart: unless-stopped
     volumes:
       - ./KinkLinkBot/config.json:/app/config.json:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 250M
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,8 +53,13 @@ services:
   # Postgres DB image
   postgres:
     image: postgres:18-bookworm
-    restart: always
     container_name: postgres
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 500M
     env_file:
       - ./.env
     environment:
@@ -89,7 +81,6 @@ services:
 
 volumes:
   pg-data:
-  redis-data:
   kl-data:
 
 networks:

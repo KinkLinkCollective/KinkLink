@@ -32,10 +32,12 @@ public class NetworkService : IDisposable
     ///     Event fired when the server connection is lost, either by disruption or manual intervention
     /// </summary>
     public event Func<Task>? Disconnected;
-
-    private const string HubUrl = "https://localhost:5006/primaryHub";
-    private const string AuthUrl = "https://localhost:5006/api/auth/login";
-
+    // TODO: Make this configurable with a main endpoint and the urls being routes
+    private const string HubUrl = "http://localhost:5006/primaryHub";
+    private const string ProfilesUrl = "http://localhost:5006/api/auth/profiles";
+    private const string AuthUrl = "http://localhost:5006/api/auth/login";
+    // To fix deserialization issues because c# cannot deserialize it's own classes after it serializes them without it.
+    private static readonly JsonSerializerOptions DeserializationOptions = new() { PropertyNameCaseInsensitive = true };
     /// <summary>
     ///     Access token required to connect to the SignalR hub
     /// </summary>
@@ -179,21 +181,33 @@ public class NetworkService : IDisposable
 
     private static async Task<string?> TryAuthenticateSecret()
     {
-        if (Plugin.CharacterConfiguration?.Secret is null)
+
+        if (Plugin.Configuration is null || Plugin.CharacterConfiguration is null)
         {
-            Plugin.Log.Warning("[NetworkService.TryAuthenticateSecret] You do not have a secret to provide for authentication");
+            Plugin.Log.Warning("[NetworkService.TryAuthenticateSecret] No configuration available to attempt to authenticate with");
             return null;
         }
 
+        if (string.IsNullOrWhiteSpace(Plugin.Configuration.SecretKey) || string.IsNullOrWhiteSpace(Plugin.CharacterConfiguration.ProfileUID))
+        {
+            Plugin.Log.Warning("[NetworkService.TryAuthenticateSecret] Secret Key or UID is missing for authentication");
+            return null;
+        }
         using var client = new HttpClient();
-        var request = new GetTokenRequest(Plugin.CharacterConfiguration.Secret, Plugin.Version);
+        Plugin.Log.Info($"[NetworkService.TryAuthenticateSecret] {Plugin.Configuration.SecretKey} {Plugin.CharacterConfiguration.ProfileUID}");
+        var request = new GetTokenRequest(
+                Plugin.Configuration.SecretKey,
+                Plugin.CharacterConfiguration.ProfileUID,
+                Plugin.Version
+        );
+
         var payload = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
         try
         {
             var response = await client.PostAsync(AuthUrl, payload).ConfigureAwait(false);
             var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            if (JsonSerializer.Deserialize<LoginAuthenticationResult>(content) is not { } result)
+            if (JsonSerializer.Deserialize<LoginAuthenticationResult>(content, DeserializationOptions) is not { } result)
             {
                 Plugin.Log.Warning("[NetworkService.TryAuthenticateSecret] A deserialization error occurred");
                 return null;
@@ -202,31 +216,41 @@ public class NetworkService : IDisposable
             switch (result.ErrorCode)
             {
                 case LoginAuthenticationErrorCode.Success:
-                    return result.Secret;
+                    return result.Token;
 
                 case LoginAuthenticationErrorCode.VersionMismatch:
+                    Plugin.Log.Warning($"[NetworkService] [LoginAuthenticationError] Client Outdated]");
                     NotificationHelper.Error("Aether Remote - Client Outdated", "You will need to update the plugin before connecting to the servers.");
                     return null;
 
                 case LoginAuthenticationErrorCode.UnknownSecret:
+                    Plugin.Log.Warning($"[NetworkService] [LoginAuthenticationError] Invalid secret");
                     NotificationHelper.Error("Aether Remote - Invalid Secret", "The secret you provided is either empty, or invalid. If you believe this is a mistake, please reach out to the developer.");
+                    return null;
+
+                case LoginAuthenticationErrorCode.UnknownProfileUID:
+                    Plugin.Log.Warning($"[NetworkService] [LoginAuthenticationError] Invalid ProfileUID]");
+                    NotificationHelper.Error("Aether Remote - Invalid ProfileUID", "The secret you provided is either empty, or invalid. If you believe this is a mistake, please reach out to the developer.");
                     return null;
 
                 case LoginAuthenticationErrorCode.Uninitialized:
                 case LoginAuthenticationErrorCode.Unknown:
                 default:
+                    Plugin.Log.Warning($"[NetworkService] [LoginAuthenticationError] Unable to connect for some reason");
                     NotificationHelper.Error("Aether Remote - Unable to Connect", $"Something went wrong while connecting to the server, {result.ErrorCode}");
                     return null;
             }
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException e)
         {
+            Plugin.Log.Error($"[NetworkService] [HttpRequestException] {e.Message}]");
             NotificationHelper.Warning("Authentication Server Down", "Please wait and try again later. You can monitor or report this problem in the discord if it persists");
             return null;
         }
         catch (Exception e)
         {
             Plugin.Log.Error(e.ToString());
+
             return null;
         }
     }

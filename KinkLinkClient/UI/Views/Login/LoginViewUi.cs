@@ -29,12 +29,18 @@ public class LoginViewUi(LoginViewUiController controller, NetworkService networ
 
         SharedUserInterfaces.ContentBox("LoginSecret", KinkLinkStyle.PanelBackground, true, () =>
         {
-            var shouldConnect = false;
+            var has_uid = false;
+            var has_secret = false;
+
+            SharedUserInterfaces.MediumText("Enter UID");
+            if (ImGui.InputTextWithHint("##UidInput", "Uid", ref controller.ProfileUID, 10))
+                has_uid = true;
 
             SharedUserInterfaces.MediumText("Enter Secret");
             if (ImGui.InputTextWithHint("##SecretInput", "Secret", ref controller.Secret, 120, SecretInputFlags))
-                shouldConnect = true;
+                has_secret = true;
 
+            var shouldConnect = has_uid && has_secret;
             ImGui.SameLine();
             if (networkService.Connecting)
             {
@@ -50,7 +56,6 @@ public class LoginViewUi(LoginViewUiController controller, NetworkService networ
 
             if (shouldConnect)
                 controller.Connect();
-
             ImGui.Spacing();
 
             ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 0));
@@ -68,31 +73,6 @@ public class LoginViewUi(LoginViewUiController controller, NetworkService networ
 
             ImGui.PopStyleVar();
         });
-
-        SharedUserInterfaces.ContentBox("CharacterConfiguration", KinkLinkStyle.PanelBackground, true, () =>
-        {
-            SharedUserInterfaces.Icon(FontAwesomeIcon.ExclamationTriangle, ImGuiColors.DalamudYellow);
-            ImGui.SameLine();
-            ImGui.TextWrapped("Aether Remote now operates on a per-character configuration system.");
-        });
-
-        if (Plugin.LegacyConfiguration is not null)
-        {
-            SharedUserInterfaces.ContentBox("LegacyConfiguration", KinkLinkStyle.PanelBackground, true, () =>
-            {
-                SharedUserInterfaces.MediumText("Legacy Configuration");
-                ImGui.TextUnformatted("Click");
-                ImGui.SameLine();
-                ImGui.PushStyleColor(ImGuiCol.Text, KinkLinkStyle.DiscordBlue);
-                var size = ImGui.CalcTextSize("here");
-                if (ImGui.Selectable("here", false, ImGuiSelectableFlags.None, size))
-                    LoginViewUiController.CopyOriginalSecret();
-
-                ImGui.PopStyleColor();
-                ImGui.SameLine();
-                ImGui.TextUnformatted("to copy your original secret to the clipboard.");
-            });
-        }
 
         ImGui.EndChild();
     }

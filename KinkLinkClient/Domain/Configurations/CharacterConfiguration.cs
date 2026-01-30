@@ -31,9 +31,10 @@ public class CharacterConfiguration
     public bool AutoLogin;
 
     /// <summary>
-    ///     The secret to use for this character
+    ///     This is the UID that should be associated with this character for login. 
+    ///     This is the last UID that was used by default, but can be changed at the login screen.
     /// </summary>
-    public string Secret = string.Empty;
+    public string ProfileUID = string.Empty;
 
     /// <summary>
     ///     Save the configuration

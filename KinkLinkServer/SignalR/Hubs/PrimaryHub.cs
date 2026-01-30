@@ -47,8 +47,7 @@ public partial class PrimaryHub(
     /// </summary>
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        await onlineStatusUpdateHandler.Handle(FriendCode, false, Clients);
-        await base.OnDisconnectedAsync(exception);
+        await onlineStatusUpdateHandler.Handle(FriendCode, false, Clients); await base.OnDisconnectedAsync(exception);
     }
 
     /// <summary>

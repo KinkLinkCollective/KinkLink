@@ -21,11 +21,11 @@ public class RegistrationService
     private readonly BotConfiguration _config;
 
     public RegistrationService(
-        string connectionString,
         ILogger<RegistrationService> logger,
         DiscordSocketClient client,
         BotConfiguration config)
     {
+        var connectionString = config.DbConnectionString;
         _auth = new AuthSql(connectionString);
         _users = new UsersSql(connectionString);
         _profiles = new ProfilesSql(connectionString);
@@ -212,7 +212,7 @@ public class RegistrationService
                 return new ProfileResponse
                 {
                     Success = true,
-                    UID = existingUser.Value.SecretKey
+                    UID = newUID
                 };
             }
             else

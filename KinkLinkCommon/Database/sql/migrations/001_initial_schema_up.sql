@@ -1,3 +1,4 @@
+-- TODO: Add cryptography module to postgres migrations for security
 -- Admin accounts are stored in a separate table for security purposes.
 -- There is no overlap in this and the other accounts with separate
 -- Needs admin table to check for Admins

@@ -25,15 +25,15 @@ public class DatabaseService
     ///     Creates a new DatabaseService with the provided connection string and logger
     /// </summary>
     public DatabaseService(
-        string connectionString,
+        Configuration config,
         ILogger<DatabaseService> logger)
     {
-        _connectionString = connectionString;
+        _connectionString = config.DatabaseConnectionString;
         _logger = logger;
 
-        _auth = new AuthSql(connectionString);
-        _pairs = new PairsSql(connectionString);
-        _users = new UsersSql(connectionString);
+        _auth = new AuthSql(_connectionString);
+        _pairs = new PairsSql(_connectionString);
+        _users = new UsersSql(_connectionString);
     }
 
     /// <summary>
@@ -52,7 +52,6 @@ public class DatabaseService
                     Uids = new()
                 };
             }
-
 
             var profiles = await _auth.ListUIDsForSecretAsync(new(secret));
             var uidList = profiles.Select(row => row.Uid).ToList();
@@ -94,11 +93,13 @@ public class DatabaseService
                 return DBAuthenticationStatus.Unauthorized;
             }
 
-            // TODO: Implement the proper confirmation that the UID is associated with this secret key.
-            // Essentially read the database to confirm that the UID is associated with the account with the particular secret key.
+            var result = await _auth.LoginAsync(new(uid, secret));
+            if (result == null) {
+                _logger.LogWarning("Authentication failed: Unauthorized sercret and UID doesn't match");
+                return DBAuthenticationStatus.Unauthorized;
+            }
+            return DBAuthenticationStatus.Authorized;
             
-            _logger.LogWarning("Authentication failed: invalid secret format");
-            return DBAuthenticationStatus.Unauthorized;
         }
         catch (Exception ex)
         {

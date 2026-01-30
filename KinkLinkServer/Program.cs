@@ -87,7 +87,7 @@ public class Program
         builder.Services.AddSingleton<UpdateFriendHandler>();
         // NOTE: HTTP endpoint is configured as traefik will be used as a reverse proxy
         // with TLS termination. This will never be exposed to the open internet.
-        builder.WebHost.UseUrls("http://localhost:5006");
+        builder.WebHost.UseUrls("http://*:5006");
         var app = builder.Build();
 
         // Configure the HTTP request pipeline
