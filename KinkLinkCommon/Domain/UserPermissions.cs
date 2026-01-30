@@ -1,6 +1,5 @@
 using KinkLinkCommon.Database;
 using MessagePack;
-using static KinkLinkCommon.Database.QueriesSql;
 
 namespace KinkLinkCommon.Domain;
 

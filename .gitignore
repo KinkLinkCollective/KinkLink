@@ -4,10 +4,6 @@
 obj/
 bin/
 *.user
-KinkLinkInterface/
-KinkLinkDiscordBot/
-KinkLinkAdminConsole/
-KinkLinkServer/Data/
-/KinkLinkServer/Properties/PublishProfiles
+KinkLinkBot/config.json
 KinkLinkServer/.config/dotnet-tools.json
 Generated/

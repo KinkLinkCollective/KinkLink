@@ -2,6 +2,7 @@ using KinkLinkCommon.Database;
 using KinkLinkCommon.Domain;
 using KinkLinkCommon.Domain.Enums;
 using KinkLinkServer.Domain;
+using System.Linq;
 
 namespace KinkLinkServer.Services;
 
@@ -17,8 +18,9 @@ public class DatabaseService
     private readonly string _connectionString;
 
     // Generated queries from sqlc
-    private QueriesSql _queries = null!;
-
+    private AuthSql _auth = null!;
+    private PairsSql _pairs = null!;
+    private UsersSql _users = null!;
     /// <summary>
     ///     Creates a new DatabaseService with the provided connection string and logger
     /// </summary>
@@ -28,41 +30,50 @@ public class DatabaseService
     {
         _connectionString = connectionString;
         _logger = logger;
-        _queries = new QueriesSql(connectionString);
+
+        _auth = new AuthSql(connectionString);
+        _pairs = new PairsSql(connectionString);
+        _users = new UsersSql(connectionString);
     }
 
     /// <summary>
     ///     Gets the user UIDs associated with the user account.
     /// </summary>
-    public async Task<DBAuthenticationResult> AuthenticateUser(string secret)
+    public async Task<DBSecretAuthResult> AuthenticateUser(string secret)
     {
-        // TODO: Implement the proper confirmation that the UID is associated with this secret key.
-        throw new NotImplementedException();
         try
         {
             if (string.IsNullOrWhiteSpace(secret))
             {
                 _logger.LogWarning("Authentication attempted with null or empty secret");
-                return new DBAuthenticationResult
+                return new DBSecretAuthResult
                 {
                     Status = DBAuthenticationStatus.Unauthorized,
                     Uids = new()
                 };
             }
 
-            // TODO: Read all the UIDs associated with the user (provided that they are not banned).
 
+            var profiles = await _auth.ListUIDsForSecretAsync(new(secret));
+            var uidList = profiles.Select(row => row.Uid).ToList();
+            if (uidList.Count > 0) {
+                return new DBSecretAuthResult {
+                Status = DBAuthenticationStatus.Authorized,
+                    Uids = uidList
+                };
+            } else {
             _logger.LogWarning("Authentication failed: invalid secret format");
-            return new DBAuthenticationResult
+            return new DBSecretAuthResult
             {
-                Status = DBAuthenticationStatus.Unauthorized,
+                    Status = DBAuthenticationStatus.Unauthorized,
                 Uids = new()
             };
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Authentication failed with unexpected error");
-            return new DBAuthenticationResult
+            return new DBSecretAuthResult
             {
                 Status = DBAuthenticationStatus.UnknownError,
                 Uids = new()
@@ -73,38 +84,26 @@ public class DatabaseService
     /// <summary>
     ///     Gets a user entry from the accounts table by secret
     /// </summary>
-    public async Task<DBAuthenticationResult> LoginUser(string secret, string uid)
+    public async Task<DBAuthenticationStatus> LoginUser(string secret, string uid)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(secret) || string.IsNullOrWhiteSpace(uid))
             {
                 _logger.LogWarning("Authentication attempted with null or empty secret");
-                return new DBAuthenticationResult
-                {
-                    Status = DBAuthenticationStatus.Unauthorized,
-                    Uids = new()
-                };
+                return DBAuthenticationStatus.Unauthorized;
             }
 
             // TODO: Implement the proper confirmation that the UID is associated with this secret key.
             // Essentially read the database to confirm that the UID is associated with the account with the particular secret key.
-
+            
             _logger.LogWarning("Authentication failed: invalid secret format");
-            return new DBAuthenticationResult
-            {
-                Status = DBAuthenticationStatus.Unauthorized,
-                Uids = new()
-            };
+            return DBAuthenticationStatus.Unauthorized;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Authentication failed with unexpected error");
-            return new DBAuthenticationResult
-            {
-                Status = DBAuthenticationStatus.UnknownError,
-                Uids = new()
-            };
+            return DBAuthenticationStatus.UnknownError;
         }
     }
 
@@ -128,8 +127,8 @@ public class DatabaseService
             }
 
             // Get user IDs from UIDs using Profiles table
-            var userProfiles = await _queries.GetAllPairsForProfileAsync(new(userUID));
-            var targetProfiles = await _queries.GetAllPairsForProfileAsync(new(targetUID));
+            var userProfiles = await _pairs.GetAllPairsForProfileAsync(new(userUID));
+            var targetProfiles = await _pairs.GetAllPairsForProfileAsync(new(targetUID));
 
             if (!userProfiles.Any())
             {
@@ -147,7 +146,7 @@ public class DatabaseService
             var targetId = targetProfiles.First().Id;
 
             // Check if pair already exists
-            var existingPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var existingPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
             var existingPair = existingPairs.FirstOrDefault(p =>
                 (p.Id == userId && p.PairId == targetId) ||
                 (p.Id == targetId && p.PairId == userId));
@@ -167,7 +166,7 @@ public class DatabaseService
             }
 
             // Create new pair with no permissions (all false)
-            var newPair = await _queries.AddPairAsync(new()
+            var newPair = await _pairs.AddPairAsync(new()
             {
                 Id = userId,
                 PairId = targetId,
@@ -212,8 +211,8 @@ public class DatabaseService
             }
 
             // Get user IDs from UIDs using existing pairs
-            var senderPairs = await _queries.GetAllPairsForProfileAsync(new(senderFriendCode));
-            var targetPairs = await _queries.GetAllPairsForProfileAsync(new(targetFriendCode));
+            var senderPairs = await _pairs.GetAllPairsForProfileAsync(new(senderFriendCode));
+            var targetPairs = await _pairs.GetAllPairsForProfileAsync(new(targetFriendCode));
 
             if (!senderPairs.Any())
             {
@@ -231,7 +230,7 @@ public class DatabaseService
             var targetId = targetPairs.First().Id;
 
             // Check if pair exists in sender->target direction
-            var existingPairs = await _queries.GetAllPairsForProfileAsync(new(senderFriendCode));
+            var existingPairs = await _pairs.GetAllPairsForProfileAsync(new(senderFriendCode));
             var existingPair = existingPairs.FirstOrDefault(p =>
                 p.Id == senderId && p.PairId == targetId);
 
@@ -242,7 +241,7 @@ public class DatabaseService
             }
 
             // Update permissions using the provided permissions
-            var updateResult = await _queries.UpdatePairPermissionsAsync(new()
+            var updateResult = await _pairs.UpdatePairPermissionsAsync(new()
             {
                 ToggleTimerLocks = permissions.ToggleTimerLocks,
                 TogglePermanentLocks = permissions.TogglePermanentLocks,
@@ -305,7 +304,7 @@ public class DatabaseService
             }
 
             // Get all pairs for the user
-            var userPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var userPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
 
             if (!userPairs.Any())
             {
@@ -365,8 +364,8 @@ public class DatabaseService
             }
 
             // Get user IDs from UIDs using existing pairs
-            var userPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
-            var targetPairs = await _queries.GetAllPairsForProfileAsync(new(targetUID));
+            var userPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
+            var targetPairs = await _pairs.GetAllPairsForProfileAsync(new(targetUID));
 
             if (!userPairs.Any())
             {
@@ -384,7 +383,7 @@ public class DatabaseService
             var targetId = targetPairs.First().Id;
 
             // Check if pair exists before attempting deletion
-            var existingPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var existingPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
             var existingPair = existingPairs.FirstOrDefault(p =>
                 p.Id == userId && p.PairId == targetId);
 
@@ -395,7 +394,7 @@ public class DatabaseService
             }
 
             // Delete the pair
-            var deleteResult = await _queries.RemovePairAsync(new()
+            var deleteResult = await _pairs.RemovePairAsync(new()
             {
                 Id = userId,
                 PairId = targetId
@@ -424,7 +423,7 @@ public class DatabaseService
     {
         try
         {
-            var profiles = await _queries.GetAllPairsForProfileAsync(new(uid));
+            var profiles = await _pairs.GetAllPairsForProfileAsync(new(uid));
             return profiles.Any() ? profiles.First().Id : null;
         }
         catch (Exception ex)
@@ -463,7 +462,7 @@ public class DatabaseService
                 return new List<TwoWayPermissions>();
             }
 
-            var allPairs = await _queries.GetAllPairsForProfileAsync(new(userUID));
+            var allPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
             var result = new List<TwoWayPermissions>();
 
             foreach (var pair in allPairs)

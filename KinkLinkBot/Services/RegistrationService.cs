@@ -13,7 +13,9 @@ namespace KinkLinkBot.Services;
 /// </summary>
 public class RegistrationService
 {
-    private readonly QueriesSql _queries;
+    private readonly AuthSql _auth;
+    private readonly UsersSql _users;
+    private readonly ProfilesSql _profiles;
     private readonly ILogger<RegistrationService> _logger;
     private readonly DiscordSocketClient _client;
     private readonly BotConfiguration _config;
@@ -24,7 +26,9 @@ public class RegistrationService
         DiscordSocketClient client,
         BotConfiguration config)
     {
-        _queries = new QueriesSql(connectionString);
+        _auth = new AuthSql(connectionString);
+        _users = new UsersSql(connectionString);
+        _profiles = new ProfilesSql(connectionString);
         _logger = logger;
         _client = client;
         _config = config;
@@ -38,7 +42,7 @@ public class RegistrationService
         try
         {
             // Check if user already exists
-            var existingUser = await _queries.SelectUserbyDiscordIdAsync(new((long)discordId));
+            var existingUser = await _users.SelectUserbyDiscordIdAsync(new((long)discordId));
 
             if (existingUser.HasValue)
             {
@@ -62,7 +66,7 @@ public class RegistrationService
 
             // Create new user
             var secret = GenerateSecret();
-            var newUser = await _queries.RegisterNewUserAsync(new(
+            var newUser = await _users.RegisterNewUserAsync(new(
                 DiscordId: (long)discordId,
                 SecretKey: secret
             ));
@@ -105,7 +109,7 @@ public class RegistrationService
     {
         try
         {
-            var existingUser = await _queries.SelectUserbyDiscordIdAsync(new((long)discordId));
+            var existingUser = await _users.SelectUserbyDiscordIdAsync(new((long)discordId));
 
             if (!existingUser.HasValue)
             {
@@ -116,7 +120,7 @@ public class RegistrationService
                 };
             }
 
-            var deletedUser = await _queries.DeleteUserAccountAsync(new((long)discordId));
+            var deletedUser = await _users.DeleteUserAccountAsync(new((long)discordId));
 
             if (deletedUser.HasValue)
             {
@@ -157,7 +161,7 @@ public class RegistrationService
     {
         try
         {
-            var existingUser = await _queries.SelectUserbyDiscordIdAsync(new((long)discordId));
+            var existingUser = await _users.SelectUserbyDiscordIdAsync(new((long)discordId));
 
             if (!existingUser.HasValue)
             {
@@ -179,7 +183,7 @@ public class RegistrationService
 
             var newUID = GenerateUID();
 
-            var profileExists = await _queries.ProfileExistsAsync(new(newUID));
+            var profileExists = await _profiles.ProfileExistsAsync(new(newUID));
             // This is _exceedingly unlikely_ but I'm paranoid, so just in case.
             // (Odds of this occurring are 1/3,656,158,440,062,976)
             if (profileExists?.Exists == true)
@@ -191,7 +195,7 @@ public class RegistrationService
                 };
             }
 
-            var newProfile = await _queries.CreateNewUIDForUserAsync(new(
+            var newProfile = await _profiles.CreateNewUIDForUserAsync(new(
                 UserId: existingUser.Value.Id,
                 Uid: newUID,
                 // TODO: Clean this up (allow for alias to be set during creation)
@@ -236,7 +240,7 @@ public class RegistrationService
     {
         try
         {
-            var existingUser = await _queries.SelectUserbyDiscordIdAsync(new((long)discordId));
+            var existingUser = await _users.SelectUserbyDiscordIdAsync(new((long)discordId));
 
             if (!existingUser.HasValue)
             {
@@ -247,7 +251,7 @@ public class RegistrationService
                 };
             }
 
-            var profileExists = await _queries.ProfileExistsAsync(new(UID));
+            var profileExists = await _profiles.ProfileExistsAsync(new(UID));
             if (!profileExists?.Exists == true)
             {
                 return new ProfileResponse
@@ -257,7 +261,7 @@ public class RegistrationService
                 };
             }
 
-            var deletedProfile = await _queries.DeleteProfileAsync(new(UID, existingUser.Value.Id));
+            var deletedProfile = await _profiles.DeleteProfileAsync(new(UID, existingUser.Value.Id));
 
             if (deletedProfile.HasValue)
             {

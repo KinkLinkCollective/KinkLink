@@ -10,7 +10,7 @@ public static class ModelExtensions
     /// <summary>
     /// Converts a GetAllPairsForProfileRow to a Pair domain model
     /// </summary>
-    public static Pair ToPair(this QueriesSql.GetAllPairsForProfileRow row)
+    public static Pair ToPair(this PairsSql.GetAllPairsForProfileRow row)
     {
         return new Pair(
             row.Id,
@@ -40,7 +40,7 @@ public static class ModelExtensions
     /// <summary>
     /// Converts a collection of GetAllPairsForProfileRow to Pair domain models
     /// </summary>
-    public static IEnumerable<Pair> ToPairs(this IEnumerable<QueriesSql.GetAllPairsForProfileRow> rows)
+    public static IEnumerable<Pair> ToPairs(this IEnumerable<PairsSql.GetAllPairsForProfileRow> rows)
     {
         return rows.Select(ToPair);
     }

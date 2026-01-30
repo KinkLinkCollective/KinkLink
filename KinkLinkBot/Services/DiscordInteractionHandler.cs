@@ -303,7 +303,7 @@ public class DiscordInteractionHandler
             {
                 var embed = new EmbedBuilder()
                     .WithTitle("✅ UID Created Successfully")
-                    .WithDescription($"Your new UID has been generated. Use this UID to connect to the game client.\n\n**Secret Key:** `{response.Secret}`")
+                    .WithDescription($"Your new UID has been generated. Use this UID to connect to the game client.\n\n**UID:** `{response.UID}`")
                     .WithColor(Color.Green)
                     .AddField("Next Steps", "1. Open KinkLink plugin in FFXIV\n2. Enter your UID and secret key\n3. Configure your profile settings")
                     .WithFooter("Keep your secret key secure!")
