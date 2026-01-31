@@ -37,6 +37,11 @@ public class CharacterConfiguration
     public string ProfileUID = string.Empty;
 
     /// <summary>
+    ///     This is the current setting for the preferred title used to generate the Global Chat alias.
+    /// </summary>
+    public KinkLinkCommon.Domain.Network.Title ChatTitle = KinkLinkCommon.Domain.Network.Title.Kinkster;
+
+    /// <summary>
     ///     Save the configuration
     /// </summary>
     public async Task Save() => await ConfigurationService.SaveCharacterConfiguration(this).ConfigureAwait(false);

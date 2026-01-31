@@ -32,19 +32,18 @@ public class NavigationBarComponentUi(NetworkService networkService, ViewService
             {
                 ImGui.TextUnformatted("General");
                 NavBarButton(FontAwesomeIcon.User, "Status", View.Status, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.UserFriends, "Friends", View.Friends, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.Pause, "Pause", View.Pause, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.UserFriends, "Pairs", View.Friends, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.Pause, "Permissions", View.Pause, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.PeopleArrows, "Chat", View.Chat, size, offset, spacing);
 
-                ImGui.TextUnformatted("Actions");
-                NavBarButton(FontAwesomeIcon.PeopleArrows, "Body Swap", View.BodySwap, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.Plus, "Customize+", View.CustomizePlus, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.Smile, "Emote", View.Emote, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.Crown, "Honorific", View.Honorific, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.Stopwatch, "Hypnosis", View.Hypnosis, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.Icons, "Moodles", View.Moodles, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.Comments, "Speak", View.Speak, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.WandMagicSparkles, "Transformation", View.Transformation, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.PeopleGroup, "Twinning", View.Twinning, size, offset, spacing);
+                ImGui.TextUnformatted("Wardrobe");
+                NavBarButton(FontAwesomeIcon.Kiss, "Gags [TODO]", View.Gags, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.Handcuffs, "Restraints [TODO]", View.Wardrobe, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.WandMagicSparkles, "Cursed Loot [TODO]", View.Wardrobe, size, offset, spacing);
+
+                ImGui.TextUnformatted("Toybox");
+                NavBarButton(FontAwesomeIcon.LockOpen, "Restraints [TODO]", View.Locks, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.Dice, "Games [TODO]", View.Locks, size, offset, spacing);
 
                 ImGui.TextUnformatted("Configuration");
                 NavBarButton(FontAwesomeIcon.History, "History", View.History, size, offset, spacing);

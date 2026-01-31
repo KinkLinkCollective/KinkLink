@@ -95,18 +95,18 @@ public class NetworkService : IDisposable
                 if (Connection.State is HubConnectionState.Connected)
                 {
                     Connected?.Invoke();
-                    NotificationHelper.Success("[Aether Remote] Connected", string.Empty);
+                    NotificationHelper.Success("[Kink Link] Connected", string.Empty);
                 }
                 else
                 {
-                    NotificationHelper.Warning("[Aether Remote] Unable to connect", "See developer console for more information");
+                    NotificationHelper.Warning("[Kink Link] Unable to connect", "See developer console for more information");
                 }
             }
         }
         catch (Exception e)
         {
             Plugin.Log.Warning($"[NetworkService] [StartAsync] {e.Message}]");
-            NotificationHelper.Warning("[Aether Remote] Could not connect", "See developer console for more information");
+            NotificationHelper.Warning("[Kink Link] Could not connect", "See developer console for more information");
         }
 
         Connecting = false;
@@ -220,24 +220,24 @@ public class NetworkService : IDisposable
 
                 case LoginAuthenticationErrorCode.VersionMismatch:
                     Plugin.Log.Warning($"[NetworkService] [LoginAuthenticationError] Client Outdated]");
-                    NotificationHelper.Error("Aether Remote - Client Outdated", "You will need to update the plugin before connecting to the servers.");
+                    NotificationHelper.Error("Kink Link - Client Outdated", "You will need to update the plugin before connecting to the servers.");
                     return null;
 
                 case LoginAuthenticationErrorCode.UnknownSecret:
                     Plugin.Log.Warning($"[NetworkService] [LoginAuthenticationError] Invalid secret");
-                    NotificationHelper.Error("Aether Remote - Invalid Secret", "The secret you provided is either empty, or invalid. If you believe this is a mistake, please reach out to the developer.");
+                    NotificationHelper.Error("Kink Link - Invalid Secret", "The secret you provided is either empty, or invalid. If you believe this is a mistake, please reach out to the developer.");
                     return null;
 
                 case LoginAuthenticationErrorCode.UnknownProfileUID:
                     Plugin.Log.Warning($"[NetworkService] [LoginAuthenticationError] Invalid ProfileUID]");
-                    NotificationHelper.Error("Aether Remote - Invalid ProfileUID", "The secret you provided is either empty, or invalid. If you believe this is a mistake, please reach out to the developer.");
+                    NotificationHelper.Error("Kink Link - Invalid ProfileUID", "The secret you provided is either empty, or invalid. If you believe this is a mistake, please reach out to the developer.");
                     return null;
 
                 case LoginAuthenticationErrorCode.Uninitialized:
                 case LoginAuthenticationErrorCode.Unknown:
                 default:
                     Plugin.Log.Warning($"[NetworkService] [LoginAuthenticationError] Unable to connect for some reason");
-                    NotificationHelper.Error("Aether Remote - Unable to Connect", $"Something went wrong while connecting to the server, {result.ErrorCode}");
+                    NotificationHelper.Error("Kink Link - Unable to Connect", $"Something went wrong while connecting to the server, {result.ErrorCode}");
                     return null;
             }
         }

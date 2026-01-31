@@ -1,3 +1,4 @@
+using KinkLinkCommon.Domain.Network;
 using KinkLinkServer.Domain;
 using KinkLinkServer.Domain.Interfaces;
 using KinkLinkServer.SignalR.Handlers;
@@ -18,6 +19,7 @@ public partial class PrimaryHub(
 
     // Handlers
     AddFriendHandler addFriendHandler,
+    ChatHandler chatHandler,
     CustomizePlusHandler customizePlusHandler,
     EmoteHandler emoteHandler,
     GetAccountDataHandler getAccountDataHandler,
@@ -36,7 +38,7 @@ public partial class PrimaryHub(
     private string FriendCode => Context.User?.FindFirst(AuthClaimTypes.Uid)?.Value ?? throw new Exception("FriendCode not present in claims");
 
     /// <summary>
-    ///     Handles when a client connects to the hub
+    ///     Handles when a client connects to hub
     /// </summary>
     public override async Task OnConnectedAsync()
     {
@@ -51,7 +53,8 @@ public partial class PrimaryHub(
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         metricsService.IncrementSignalRConnection("disconnect");
-        await onlineStatusUpdateHandler.Handle(FriendCode, false, Clients); await base.OnDisconnectedAsync(exception);
+        await onlineStatusUpdateHandler.Handle(FriendCode, false, Clients);
+        await base.OnDisconnectedAsync(exception);
     }
 
     /// <summary>

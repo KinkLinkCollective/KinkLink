@@ -15,7 +15,7 @@ public class ClientInfo(string connectionId)
     ///     The local character name associated with this client.
     ///     This can be exploited by modifying the request.
     ///     A regular client will only return the local player, but it is possible a modified client could return another name.
-    ///     A fix can be implemented by enforcing all accounts onboard to Aether Remote to do a lodestone registration process.
+    ///     A fix can be implemented by enforcing all accounts onboard to Kink Link to do a lodestone registration process.
     /// </summary>
     public string CharacterName = string.Empty;
 

@@ -99,6 +99,7 @@ public class Program
             // Services
             builder.Services.AddSingleton<IPresenceService, PresenceService>();
             builder.Services.AddSingleton<IRequestLoggingService, RequestLoggingService>();
+            builder.Services.AddSingleton<ChatService>();
 
             // Managers
             builder.Services.AddSingleton<IForwardedRequestManager, ForwardedRequestManager>();
@@ -106,6 +107,7 @@ public class Program
             // Handles
             builder.Services.AddSingleton<OnlineStatusUpdateHandler>();
             builder.Services.AddSingleton<AddFriendHandler>();
+            builder.Services.AddSingleton<ChatHandler>();
             builder.Services.AddSingleton<CustomizePlusHandler>();
             builder.Services.AddSingleton<EmoteHandler>();
             builder.Services.AddSingleton<GetAccountDataHandler>();

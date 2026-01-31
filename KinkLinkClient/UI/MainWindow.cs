@@ -1,6 +1,4 @@
-using System.Numerics;
-using KinkLinkClient.Domain;
-using KinkLinkClient.Domain.Interfaces;
+using System.Numerics; using KinkLinkClient.Domain; using KinkLinkClient.Domain.Interfaces;
 using KinkLinkClient.Services;
 using KinkLinkClient.UI.Components.NavigationBar;
 using KinkLinkClient.UI.Views.CustomizePlus;
@@ -17,13 +15,14 @@ using KinkLinkClient.UI.Views.Speak;
 using KinkLinkClient.UI.Views.Status;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
+using KinkLinkClient.UI.Views.Chat;
 
 namespace KinkLinkClient.UI;
 
 public class MainWindow : Window
 {
     // Const
-    private static readonly string MainWindowTitle = $"Aether Remote 2 - Version {Plugin.Version}";
+    private static readonly string MainWindowTitle = $"Kink Link 2 - Version {Plugin.Version}";
 
     // Services
     private readonly ViewService _viewService;
@@ -31,7 +30,10 @@ public class MainWindow : Window
     // Components
     private readonly NavigationBarComponentUi _navigationBar;
 
+    // Services
+
     // Views
+    private readonly ChatViewUi _chatview;
     private readonly CustomizePlusViewUi _customizePlusView;
     private readonly DebugViewUi _debugView;
     private readonly EmoteViewUi _emoteView;
@@ -48,6 +50,7 @@ public class MainWindow : Window
     public MainWindow(
         ViewService viewService,
         NavigationBarComponentUi navigationBarComponentUi,
+        ChatViewUi chatUiService,
         CustomizePlusViewUi customizePlusView,
         DebugViewUi debugView,
         EmoteViewUi emoteView,
@@ -68,6 +71,7 @@ public class MainWindow : Window
         };
 
         _viewService = viewService;
+        _chatview = chatUiService;
 
         _navigationBar = navigationBarComponentUi;
 
@@ -93,6 +97,7 @@ public class MainWindow : Window
 
         IDrawable view = _viewService.CurrentView switch
         {
+            View.Chat => _chatview,
             View.CustomizePlus => _customizePlusView,
             View.Debug => _debugView,
             View.Emote => _emoteView,

@@ -17,10 +17,6 @@ public static class ConfigurationService
     private const string CharactersFolderName = "Characters";
     private static readonly string CharactersFolderPath = Path.Combine(Plugin.PluginInterface.GetPluginConfigDirectory(), CharactersFolderName);
 
-    // Hypnosis Profiles
-    private const string HypnosisFolderName = "Hypnosis";
-    public static readonly string HypnosisFolderPath = Path.Combine(Plugin.PluginInterface.GetPluginConfigDirectory(), HypnosisFolderName);
-
     /// <summary>
     ///     Loads the plugin configuration file
     /// </summary>
@@ -36,13 +32,6 @@ public static class ConfigurationService
 
                 // Create a new configuration
                 var configuration = new Configuration();
-
-                // Check to see if there is a legacy configuration present
-                if (Plugin.LegacyConfiguration is { } legacyConfiguration)
-                {
-                    // Copy the notes
-                    configuration.Notes = legacyConfiguration.Notes;
-                }
 
                 // Save the new configuration
                 await SaveConfiguration(configuration).ConfigureAwait(false);

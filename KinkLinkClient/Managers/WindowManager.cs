@@ -14,7 +14,7 @@ public class WindowManager : IDisposable
     public WindowManager(MainWindow mainWindow)
     {
         _mainWindow = mainWindow;
-        _windowSystem = new WindowSystem("Aether Remote");
+        _windowSystem = new WindowSystem("Kink Link");
         _windowSystem.AddWindow(mainWindow);
 
 #if DEBUG

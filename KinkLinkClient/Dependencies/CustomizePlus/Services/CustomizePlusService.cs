@@ -88,7 +88,7 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
         _customizePlusPlugin = plugin;
         ApiAvailable = true;
 
-        // As a safety precaution, attempt to delete any lingering Aether Remote profiles that may exist
+        // As a safety precaution, attempt to delete any lingering Kink Link profiles that may exist
         await DeleteTemporaryCustomizeAsync().ConfigureAwait(false);
 
         IpcReady?.Invoke(this, EventArgs.Empty);
@@ -216,7 +216,7 @@ public class CustomizePlusService : IDisposable, IExternalPlugin
     }
 
     /// <summary>
-    ///     Deletes the temporary profile created by Aether Remote, if one exists
+    ///     Deletes the temporary profile created by Kink Link, if one exists
     /// </summary>
     public async Task<bool> DeleteTemporaryCustomizeAsync()
     {

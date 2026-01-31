@@ -25,4 +25,7 @@ public static class HubMethod
     public const string Hypnosis = "Hypnosis";
     public const string HypnosisStop = "HypnosisStop";
     public const string Honorific = "Honorific";
+
+    public const string SendChatMessage = "SendChatMessage";
+    public const string ReceiveChatMessage = "ReceiveChatMessage";
 }

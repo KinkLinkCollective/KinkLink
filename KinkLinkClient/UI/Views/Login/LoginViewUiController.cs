@@ -26,6 +26,9 @@ public class LoginViewUiController : IDisposable
         _networkService = networkService;
         _loginManager = loginManager;
         _loginManager.LoginFinished += OnLoginFinished;
+        Secret = Plugin.Configuration.SecretKey;
+        if (Plugin.CharacterConfiguration is not null)
+            ProfileUID = Plugin.CharacterConfiguration.ProfileUID;
     }
 
     public async void Connect()
@@ -37,7 +40,7 @@ public class LoginViewUiController : IDisposable
                 return;
 
             // Don't save if the string is empty
-            if (Secret == string.Empty)
+            if (string.IsNullOrWhiteSpace(Secret) || string.IsNullOrWhiteSpace(ProfileUID))
                 return;
 
             // Set the secret
@@ -47,7 +50,6 @@ public class LoginViewUiController : IDisposable
             // Save the configuration
             await Plugin.Configuration.Save().ConfigureAwait(false);
             await Plugin.CharacterConfiguration.Save().ConfigureAwait(false);
-            Plugin.Log.Error($"{Plugin.Configuration.SecretKey} {Plugin.CharacterConfiguration.ProfileUID}");
             // Try to connect to the server
             await _networkService.StartAsync();
         }

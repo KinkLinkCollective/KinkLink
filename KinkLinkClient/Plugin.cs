@@ -31,6 +31,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Microsoft.Extensions.DependencyInjection;
+using KinkLinkClient.UI.Views.Chat;
 
 namespace KinkLinkClient;
 
@@ -106,6 +107,7 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<HonorificHandler>();
         services.AddSingleton<MoodlesHandler>();
         services.AddSingleton<SpeakHandler>();
+        services.AddSingleton<ChatMessageReceivedHandler>();
         services.AddSingleton<SyncOnlineStatusHandler>();
         services.AddSingleton<SyncPermissionsHandler>();
         services.AddSingleton<CustomizePlusHandler>();
@@ -118,6 +120,7 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<NavigationBarComponentUi>();
 
         // Ui - View Controllers
+        services.AddSingleton<ChatViewUiController>();
         services.AddSingleton<CustomizePlusViewUiController>();
         services.AddSingleton<DebugViewUiController>();
         services.AddSingleton<EmoteViewUiController>();
@@ -132,6 +135,7 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<StatusViewUiController>();
 
         // Ui - Views
+        services.AddSingleton<ChatViewUi>();
         services.AddSingleton<CustomizePlusViewUi>();
         services.AddSingleton<DebugViewUi>();
         services.AddSingleton<EmoteViewUi>();
@@ -163,10 +167,12 @@ public sealed class Plugin : IDalamudPlugin
 
         // Handlers
         _services.GetRequiredService<ChatCommandHandler>();
+        // _services.GetRequiredService<ChatHandler>();
         _services.GetRequiredService<ConnectionManager>();
         _services.GetRequiredService<GlamourerEventHandler>();
 
         // Handlers Network
+        _services.GetRequiredService<ChatMessageReceivedHandler>();
         _services.GetRequiredService<EmoteHandler>();
         _services.GetRequiredService<HonorificHandler>();
         _services.GetRequiredService<MoodlesHandler>();

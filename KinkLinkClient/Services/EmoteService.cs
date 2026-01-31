@@ -31,7 +31,7 @@ public class EmoteService
 
             /*
              * For some reason, there is a bug in game where if someone is actively doing the /pet emote
-             * and someone in Aether Remote issues them a /stroke command, the game will hard crash to
+             * and someone in Kink Link issues them a /stroke command, the game will hard crash to
              * desktop without any crash logs. So hopefully, just replacing /stroke with /pet will
              * prevent a situation where this can happen.
              */

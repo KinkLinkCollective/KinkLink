@@ -23,7 +23,7 @@ public class LoginViewUi(LoginViewUiController controller, NetworkService networ
 
         SharedUserInterfaces.ContentBox("LoginHeader", KinkLinkStyle.PanelBackground, true, () =>
         {
-            SharedUserInterfaces.BigTextCentered("Aether Remote");
+            SharedUserInterfaces.BigTextCentered("Kink Link");
             SharedUserInterfaces.TextCentered(Plugin.Version.ToString());
         });
 

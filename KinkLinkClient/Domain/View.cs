@@ -5,20 +5,21 @@ namespace KinkLinkClient.Domain;
 /// </summary>
 public enum View
 {
-    BodySwap,
+    Chat,
     CustomizePlus,
     Debug,
     Emote,
     Friends,
+    Gags,
     History,
     Honorific,
     Hypnosis,
+    Locks,
     Login,
     Moodles,
     Pause,
     Settings,
     Speak,
     Status,
-    Transformation,
-    Twinning
+    Wardrobe,
 }
