@@ -4,6 +4,8 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
 
 namespace KinkLinkBot;
 
@@ -11,83 +13,123 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        Console.WriteLine("[KinkLinkBot] Starting...");
+        // Configure Serilog
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Discord", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithEnvironmentName()
+            .WriteTo.Console(
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File(
+                path: "logs/kinklink-bot-.json",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 30,
+                formatter: new Serilog.Formatting.Json.JsonFormatter())
+            .CreateLogger();
 
-        // Load configuration
-        var configPath = args.Length > 0 ? args[0] : "/app/config.json";
-        var config = BotConfiguration.Load(configPath);
-
-        if (config == null)
+        try
         {
-            Console.WriteLine("[KinkLinkBot] Failed to load configuration. Exiting.");
-            return;
+            Log.Information("Starting KinkLink Bot");
+
+            // Load configuration
+            var configPath = args.Length > 0 ? args[0] : "/app/config.json";
+            var config = BotConfiguration.Load(configPath);
+
+            if (config == null)
+            {
+                Log.Fatal("Failed to load configuration from {ConfigPath}. Exiting.", configPath);
+                return;
+            }
+
+            // Validate database connection string
+            if (string.IsNullOrEmpty(config.DbConnectionString))
+            {
+                Log.Fatal("Database connection string not configured. Exiting.");
+                return;
+            }
+
+            Log.Information("Configuration loaded successfully");
+
+            // Set up Discord client
+            var discordConfig = new DiscordSocketConfig
+            {
+                GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages,
+                LogLevel = LogSeverity.Info
+            };
+
+            var client = new DiscordSocketClient(discordConfig);
+
+            // Set up services
+            var services = new ServiceCollection();
+
+            // Add Serilog to logging
+            services.AddLogging(builder =>
+            {
+                builder.AddSerilog();
+            });
+
+            services.AddSingleton(client);
+            services.AddSingleton(_ => config);
+
+            // Register application services
+            // RegistrationService creates its own QueriesSql with connection string
+            services.AddSingleton<RegistrationService>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<RegistrationService>>();
+                var discordClient = sp.GetRequiredService<DiscordSocketClient>();
+                return new RegistrationService(logger, discordClient, config);
+            });
+            services.AddSingleton<DiscordInteractionHandler>();
+
+            var serviceProvider = services.BuildServiceProvider();
+
+            // Get services
+            var registrationService = serviceProvider.GetRequiredService<RegistrationService>();
+            var interactionHandler = serviceProvider.GetRequiredService<DiscordInteractionHandler>();
+
+            // Initialize interaction handler
+            interactionHandler.Initialize();
+
+            // Set up logging
+            client.Log += LogAsync;
+
+            // Login and start
+            await client.LoginAsync(TokenType.Bot, config.Bot.Token);
+            await client.StartAsync();
+
+            // Check server health
+            Log.Information("Bot is ready. Press Ctrl+C to stop.");
+
+            // Keep the bot running
+            await Task.Delay(-1);
         }
-
-        // Validate database connection string
-        if (string.IsNullOrEmpty(config.DbConnectionString))
+        catch (Exception ex)
         {
-            Console.WriteLine("[KinkLinkBot] Database connection string not configured. Exiting.");
-            return;
+            Log.Fatal(ex, "Bot terminated unexpectedly");
         }
-
-        // Set up Discord client
-        var discordConfig = new DiscordSocketConfig
+        finally
         {
-            GatewayIntents = GatewayIntents.Guilds | GatewayIntents.GuildMessages,
-            LogLevel = LogSeverity.Info
-        };
-
-        var client = new DiscordSocketClient(discordConfig);
-
-        // Set up services
-        var services = new ServiceCollection();
-        
-        // Add logging
-        services.AddLogging(builder =>
-        {
-            builder.AddConsole();
-            builder.SetMinimumLevel(LogLevel.Information);
-        });
-        
-        services.AddSingleton(client);
-        services.AddSingleton(_ => config);
-
-        // Register application services
-        // RegistrationService creates its own QueriesSql with connection string
-        services.AddSingleton<RegistrationService>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<RegistrationService>>();
-            var discordClient = sp.GetRequiredService<DiscordSocketClient>();
-            return new RegistrationService(logger, discordClient, config);
-        });
-        services.AddSingleton<DiscordInteractionHandler>();
-
-        var serviceProvider = services.BuildServiceProvider();
-
-        // Get services
-        var registrationService = serviceProvider.GetRequiredService<RegistrationService>();
-        var interactionHandler = serviceProvider.GetRequiredService<DiscordInteractionHandler>();
-
-        // Initialize interaction handler
-        interactionHandler.Initialize();
-
-        // Set up logging
-        client.Log += LogAsync;
-
-        // Login and start
-        await client.LoginAsync(TokenType.Bot, config.Bot.Token);
-        await client.StartAsync();
-
-        // Check server health
-        Console.WriteLine("[KinkLinkBot] Bot is ready. Press Ctrl+C to stop.");
-
-        // Keep the bot running
-        await Task.Delay(-1);
+            Log.CloseAndFlush();
+        }
     }
 
     private static Task LogAsync(LogMessage message)
     {
-        Console.WriteLine($"[Discord] [{message.Severity}] {message.Message}");
+        var level = message.Severity switch
+        {
+            LogSeverity.Critical => LogEventLevel.Fatal,
+            LogSeverity.Error => LogEventLevel.Error,
+            LogSeverity.Warning => LogEventLevel.Warning,
+            LogSeverity.Info => LogEventLevel.Information,
+            LogSeverity.Verbose => LogEventLevel.Debug,
+            LogSeverity.Debug => LogEventLevel.Debug,
+            _ => LogEventLevel.Information
+        };
+
+        Log.Write(level, "[Discord] [{Severity}] {Message}", message.Severity, message.Message);
         return Task.CompletedTask;
     }
 }

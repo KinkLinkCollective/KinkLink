@@ -73,7 +73,7 @@ public class RegistrationService
 
             if (newUser.HasValue)
             {
-                _logger.LogInformation($"New user registered: Discord ID {discordId}, User ID {newUser.Value.Id}");
+                _logger.LogInformation("New user registered: Discord ID {DiscordUserId}, User ID {UserId}", discordId, newUser.Value.Id);
 
                 return new RegistrationResponse
                 {
@@ -83,7 +83,7 @@ public class RegistrationService
             }
             else
             {
-                _logger.LogError($"Failed to register new user with Discord ID {discordId}");
+                _logger.LogError("Failed to register new user with Discord ID {DiscordUserId}", discordId);
                 return new RegistrationResponse
                 {
                     Success = false,
@@ -124,7 +124,7 @@ public class RegistrationService
 
             if (deletedUser.HasValue)
             {
-                _logger.LogInformation($"User account deleted: Discord ID {discordId}, User ID {deletedUser.Value.Id}");
+                _logger.LogInformation("User account deleted: Discord ID {DiscordUserId}, User ID {UserId}", discordId, deletedUser.Value.Id);
 
                 return new RegistrationResponse
                 {
@@ -134,7 +134,7 @@ public class RegistrationService
             }
             else
             {
-                _logger.LogError($"Failed to delete user account with Discord ID {discordId}");
+                _logger.LogError("Failed to delete user account with Discord ID {DiscordUserId}", discordId);
                 return new RegistrationResponse
                 {
                     Success = false,
@@ -207,7 +207,7 @@ public class RegistrationService
 
             if (newProfile.HasValue)
             {
-                _logger.LogInformation($"New UID created: {newUID} for Discord ID {discordId}, User ID {existingUser.Value.Id}");
+                _logger.LogInformation("New UID created: {ProfileUID} for Discord ID {DiscordUserId}, User ID {UserId}", newUID, discordId, existingUser.Value.Id);
 
                 return new ProfileResponse
                 {
@@ -217,7 +217,7 @@ public class RegistrationService
             }
             else
             {
-                _logger.LogError($"Failed to create UID {newUID} for Discord ID {discordId}");
+                _logger.LogError("Failed to create UID {ProfileUID} for Discord ID {DiscordUserId}", newUID, discordId);
                 return new ProfileResponse
                 {
                     Success = false,
@@ -265,7 +265,7 @@ public class RegistrationService
 
             if (deletedProfile.HasValue)
             {
-                _logger.LogInformation($"UID {UID} deleted for Discord ID {discordId}, User ID {existingUser.Value.Id}");
+                _logger.LogInformation("UID {ProfileUID} deleted for Discord ID {DiscordUserId}, User ID {UserId}", UID, discordId, existingUser.Value.Id);
 
                 return new ProfileResponse
                 {
@@ -275,7 +275,7 @@ public class RegistrationService
             }
             else
             {
-                _logger.LogError($"Failed to delete UID {UID} for Discord ID {discordId}");
+                _logger.LogError("Failed to delete UID {ProfileUID} for Discord ID {DiscordUserId}", UID, discordId);
                 return new ProfileResponse
                 {
                     Success = false,

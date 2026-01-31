@@ -30,6 +30,12 @@
         "resolved": "5.13.1",
         "contentHash": "kmpqhcbnnF+Ib0F9g7+1W17IbZ8Q8G2zn3MJURd/rmQiB3D7cm8YS2JRmvhDzrN5w9OMlfq7MFxVtwG419YkIA=="
       },
+      "Serilog": {
+        "type": "Direct",
+        "requested": "[4.3.0, )",
+        "resolved": "4.3.0",
+        "contentHash": "+cDryFR0GRhsGOnZSKwaDzRRl4MupvJ42FhCE4zhQRVanX0Jpg6WuCBk59OVhVDPmab1bB+nRykAnykYELA9qQ=="
+      },
       "Svg.Skia": {
         "type": "Direct",
         "requested": "[3.2.1, )",
@@ -40,11 +46,6 @@
           "Svg.Custom": "3.2.1",
           "Svg.Model": "3.2.1"
         }
-      },
-      "Dapper": {
-        "type": "Transitive",
-        "resolved": "2.1.42",
-        "contentHash": "TbG2vxnVMSjVLj+OCeZQTVJWe4l41noZti1JhwUKd9E+s7nXQacxZKpOm4X0otHeTkqpvKXl4TEx5e8jHWbyeA=="
       },
       "ExCSS": {
         "type": "Transitive",
@@ -191,6 +192,15 @@
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
         }
       },
+      "Serilog.Extensions.Logging": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "YEAMWu1UnWgf1c1KP85l1SgXGfiVo0Rz6x08pCiPOIBt2Qe18tcZLvdBUuV5o1QHvrs8FAry9wTIhgBRtjIlEg==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging": "8.0.0",
+          "Serilog": "3.1.1"
+        }
+      },
       "ShimSkiaSharp": {
         "type": "Transitive",
         "resolved": "3.2.1",
@@ -235,11 +245,11 @@
       "kinklinkcommon": {
         "type": "Project",
         "dependencies": {
-          "Dapper": "[2.1.39, )",
           "Microsoft.AspNetCore.SignalR.Protocols.MessagePack": "[10.0.1, )",
           "Microsoft.Extensions.Logging": "[8.0.0, )",
           "Npgsql": "[9.0.2, )",
-          "Npgsql.Dapper": "[9.0.2, )"
+          "Serilog": "[4.1.0, )",
+          "Serilog.Extensions.Logging": "[8.0.0, )"
         }
       }
     }

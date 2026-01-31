@@ -55,18 +55,22 @@ public class DatabaseService
 
             var profiles = await _auth.ListUIDsForSecretAsync(new(secret));
             var uidList = profiles.Select(row => row.Uid).ToList();
-            if (uidList.Count > 0) {
-                return new DBSecretAuthResult {
-                Status = DBAuthenticationStatus.Authorized,
+            if (uidList.Count > 0)
+            {
+                return new DBSecretAuthResult
+                {
+                    Status = DBAuthenticationStatus.Authorized,
                     Uids = uidList
                 };
-            } else {
-            _logger.LogWarning("Authentication failed: invalid secret format");
-            return new DBSecretAuthResult
+            }
+            else
             {
+                _logger.LogWarning("Authentication failed: invalid secret format");
+                return new DBSecretAuthResult
+                {
                     Status = DBAuthenticationStatus.Unauthorized,
-                Uids = new()
-            };
+                    Uids = new()
+                };
             }
         }
         catch (Exception ex)
@@ -94,12 +98,13 @@ public class DatabaseService
             }
 
             var result = await _auth.LoginAsync(new(uid, secret));
-            if (result == null) {
-                _logger.LogWarning("Authentication failed: Unauthorized sercret and UID doesn't match");
+            if (result == null)
+            {
+                _logger.LogWarning("Authentication failed: Unauthorized secret and UID doesn't match");
                 return DBAuthenticationStatus.Unauthorized;
             }
             return DBAuthenticationStatus.Authorized;
-            
+
         }
         catch (Exception ex)
         {

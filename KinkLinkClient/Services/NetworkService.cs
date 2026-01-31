@@ -194,7 +194,7 @@ public class NetworkService : IDisposable
             return null;
         }
         using var client = new HttpClient();
-        Plugin.Log.Info($"[NetworkService.TryAuthenticateSecret] {Plugin.Configuration.SecretKey} {Plugin.CharacterConfiguration.ProfileUID}");
+        Plugin.Log.Info($"[NetworkService.TryAuthenticateSecret] Attempting authentication for ProfileUID: {Plugin.CharacterConfiguration.ProfileUID}");
         var request = new GetTokenRequest(
                 Plugin.Configuration.SecretKey,
                 Plugin.CharacterConfiguration.ProfileUID,
