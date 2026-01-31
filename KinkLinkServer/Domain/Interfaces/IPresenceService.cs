@@ -11,4 +11,6 @@ public interface IPresenceService
     public void Remove(string friendCode);
 
     public bool IsUserExceedingCooldown(string friendCode);
+
+    public int GetOnlineCount();
 }

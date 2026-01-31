@@ -2,6 +2,7 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 EXPOSE 5006
+EXPOSE 9090
 
 # Use the .NET 9.0 SDK as build image
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build

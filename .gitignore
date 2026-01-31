@@ -3,6 +3,7 @@
 .idea/
 obj/
 bin/
+logs/
 *.user
 KinkLinkBot/config.json
 KinkLinkServer/.config/dotnet-tools.json

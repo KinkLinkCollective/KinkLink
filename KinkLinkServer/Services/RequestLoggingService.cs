@@ -13,9 +13,12 @@ public class RequestLoggingService : IDisposable, IRequestLoggingService
 
     private readonly List<string> _pendingLogs = [];
     private readonly Timer _flushTimer;
+    private readonly IMetricsService? _metricsService;
 
-    public RequestLoggingService()
+    public RequestLoggingService(IMetricsService? metricsService = null)
     {
+        _metricsService = metricsService;
+
         if (Directory.Exists(LogDirectory) is false)
             Directory.CreateDirectory(LogDirectory);
 
@@ -28,6 +31,7 @@ public class RequestLoggingService : IDisposable, IRequestLoggingService
     public void Log(string message)
     {
         _pendingLogs.Add(message);
+        _metricsService?.IncrementRequestLogging();
     }
 
     // Non-blocking

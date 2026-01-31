@@ -7,6 +7,9 @@ using KinkLinkServer.Managers;
 using KinkLinkServer.Services;
 using KinkLinkServer.SignalR.Handlers;
 using KinkLinkServer.SignalR.Hubs;
+using KinkLinkServer.Extensions;
+using KinkLinkServer.Infrastructure;
+using Prometheus;
 using MessagePack;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
@@ -84,6 +87,9 @@ public class Program
 
             // Add services to the container
             builder.Services.AddControllers();
+
+            // Add metrics
+            builder.Services.AddKinkLinkMetrics();
             builder.Services.AddSignalR(options => options.EnableDetailedErrors = true)
                 .AddMessagePackProtocol(options => options.SerializerOptions = MessagePackSerializerOptions.Standard.WithSecurity(MessagePackSecurity.UntrustedData));
             builder.Services.AddSingleton(configuration);
@@ -121,6 +127,12 @@ public class Program
             }
 
             app.UseRouting();
+
+            // Add metrics middleware
+            app.UseMiddleware<MetricsMiddleware>();
+
+            // Add Prometheus metrics endpoint
+            app.UseMetricServer();
 
             app.UseAuthentication();
             app.UseAuthorization();

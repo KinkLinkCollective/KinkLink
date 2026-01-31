@@ -1,6 +1,7 @@
 using KinkLinkServer.Domain;
 using KinkLinkServer.Domain.Interfaces;
 using KinkLinkServer.SignalR.Handlers;
+using KinkLinkServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -10,6 +11,7 @@ namespace KinkLinkServer.SignalR.Hubs;
 public partial class PrimaryHub(
     // Services
     IRequestLoggingService requestLoggingService,
+    IMetricsService metricsService,
 
     // Managers
     OnlineStatusUpdateHandler onlineStatusUpdateHandler,
@@ -38,6 +40,7 @@ public partial class PrimaryHub(
     /// </summary>
     public override async Task OnConnectedAsync()
     {
+        metricsService.IncrementSignalRConnection("connect");
         await onlineStatusUpdateHandler.Handle(FriendCode, true, Clients);
         await base.OnConnectedAsync();
     }
@@ -47,6 +50,7 @@ public partial class PrimaryHub(
     /// </summary>
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        metricsService.IncrementSignalRConnection("disconnect");
         await onlineStatusUpdateHandler.Handle(FriendCode, false, Clients); await base.OnDisconnectedAsync(exception);
     }
 

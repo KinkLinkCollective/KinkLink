@@ -18,6 +18,8 @@ public class PresenceService : IPresenceService
 
         return (DateTime.UtcNow - presence.Last).TotalSeconds < Constraints.GlobalCommandCooldownInSeconds;
     }
+
+    public int GetOnlineCount() => _presences.Count;
 }
 
 public class Presence(string connectionId, string characterName, string characterWorld)
