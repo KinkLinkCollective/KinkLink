@@ -2,53 +2,45 @@
 
 KinkLink is a community driven kinky community plugin. It aims to serve as a way to connect with other kinksters as well as to help facilitate fun kinky play.
 
-The intended audience is for BDSM inclined adults 18+
+The intended audience is adults 18+.
 
 ### Repo
 
 ```sh
-TODO: Include once available
+https://raw.githubusercontent.com/KinkLinkCollective/KinkLink/refs/heads/main/repo.json
 ```
 
-# Features
+## Features
 >
-> ⚠️ Some of KinkLink interacts with the chat directly, modifying your messages that are sent to the service. Additionally, certain features may remove control over your appearance and take control of your character in certain ways. `⚠️` to indicate. See more in the [safety & security](#safety--security).
+> ⚠️ Most of KinkLink's features interact with your plugin in various ways.
+> ⚠️ Most of KinkLink's features require access to a live server.
 
-## 🗣️ Community Chat
->
-> ⚠️ This feature interacts with the server
+### Community Chat
 
-Forces up to `3` users to send to any of the supported chat channels in game.
+This is an anonymous ephemeral chatroom. It is intended to be used to help organize and find like minded individuals similar to anonymous chatrooms of old.
 
-## 💃 Emote
->
-> ⚠️ This feature interacts with the server
+### Active Gag Garbler
 
-Forces up to `3` users to perform an emote. This plugin will only play emotes a user has unlocked.
+Wear a gag and watch your chat become a drooling mess of letters you didn't intend to type!
 
-## 🪄 Transform
->
-> ❗ This feature requires Glamourer and Mare Synchronos
+### Restraint Wardrobe
 
-Forces any number of users to change their customization and or equipment.
+Whatever you like, you can have it locked on you as a set, or piece by piece.
 
-## 🔄 Body Swap
->
-> ❗ This feature requires Glamourer and Mare Synchronos
+There's even room for some unexpected surprises lurking in dungeon chests.
 
-Forces any number of users and yourself to swap bodies at random.
+### Locks
 
-## 👯 Twinning
->
-> ❗ This feature requires Glamourer and Mare Synchronos
+Lock or be locked in, it just depends on your role~
 
-Forces any number of users to become you.
+A variety of flavours of locks to keep you from escaping your confinement and to keep you quiet.
 
-# Safety & Security
+## Safety & Security
 >
 > ❗ You should only use this plugin with those you trust
 
-If you have gotten this far, it is no secret that this plugin interacts in a very invasive, and automated way with your client. While our team attempts to make this as safe as possible, it is up to you to ensure that you trust your partners.
+If you have gotten this far, it is no secret that this plugin interacts in a very invasive, and automated way with your client.
+While our team attempts to make this as safe as possible, it is up to you to ensure that you trust your partners.
 
 ### 📖 Open Source
 
@@ -68,35 +60,19 @@ Functionality found in the settings tab to immediately disable the plugin and re
 
 This is a server centered plugin. You will need to join and register with a server prior to being able to make use of this plugin. If you do not wish to join one, you may host your own.
 
-# Community Driven
+### Community Driven
 
 This project aims to be primarily driven by those that wish to contribute and assist in the future.
 
 All contributions are welcome, but please read the contribution guide and read out on our discord before attempting to fork and make a PR.
 
-# About The Plugin
+## About The Plugin
 
 KinkLink is a new community drive project inspired by [ProjectGagspeak](https://github.com/Project-GagSpeak/) and built upon the foundations of [AetherRemote](http://github.com/aetherremote/AetherRemote/) projects. I am deeply indepted to both projects for providing the foundations that I walk on. I merely stand on the shoulders of giants as I build this.
 
-# Acknowledgements
+## Acknowledgements
 
-- Mora Nightshade for her tireless effort in helping me to built this from Aether Remote.
-- Cordelia Mistress for the original Gagspeak which served as the initial inspiration towards building this.
-- All the contributors
-- The community members
-
-## Original Testing and Development team for Aether Remote
-
-A huge thank you to everyone who helped in the testing of AetherRemote!
-
-- Mora Nightshade
-- Inanis, Patient #11
-- Khada
-- Jakual ([Twitter](https://twitter.com/JakualPiccies))
-- Ever
-- Soph
-- Suhun
-- Sammy
-- Rodanco
-- Vanessa
-- Kai
+- Mora Nightshade for guidance and fabulous  her tireless effort in helping me to built this from Aether Remote.
+- Cordelia Mist for the original Gagspeak which served as the inspiration towards building this.
+- The original team listed over on [AetherRemote](http://github.com/aetherremote/AetherRemote/) who's efforts gave me the basis to build from.
+- The community supporting my little misadventure.

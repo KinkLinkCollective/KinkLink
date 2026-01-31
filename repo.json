@@ -1,23 +1,20 @@
 [
     {
-        "Author": "KinkLink team",
+        "Author": "KinkLink Collective",
         "Name": "KinkLink",
         "InternalName": "KinkLinkClient",
         "AssemblyVersion": "0.0.0.1",
         "Description": "Welcome to kinklink, the kinky plugin with aimed to help you connect and play with other kinksters around the world!",
         "ApplicableVersion": "any",
-        "RepoUrl": "https://github.com/kinklink/kinklink",
+        "RepoUrl": "https://github.com/KinkLinkCollective/kinklink",
         "Tags": [
             "chat",
-            "customization",
-            "bdsm",
-            "community",
-            "18+"
+            "community"
         ],
         "DalamudApiLevel": 14,
         "LoadPriority": 0,
         "IconUrl": "",
-        "Punchline": "Kinky community plugin focused on BSDM",
+        "Punchline": "TODO",
         "DownloadLinkInstall": "",
         "DownloadLinkTesting": "",
         "DownloadLinkUpdate": ""
