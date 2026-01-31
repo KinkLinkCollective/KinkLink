@@ -99,7 +99,6 @@ public class Program
             // Services
             builder.Services.AddSingleton<IPresenceService, PresenceService>();
             builder.Services.AddSingleton<IRequestLoggingService, RequestLoggingService>();
-            builder.Services.AddSingleton<ChatService>();
 
             // Managers
             builder.Services.AddSingleton<IForwardedRequestManager, ForwardedRequestManager>();
