@@ -1,5 +1,6 @@
 using KinkLinkBot.Configuration;
 using KinkLinkBot.Services;
+using KinkLinkCommon.Security;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,6 +74,7 @@ public class Program
 
             services.AddSingleton(client);
             services.AddSingleton(_ => config);
+            services.AddSingleton<ISecretHasher, SecretHasher>();
 
             // Register application services
             // RegistrationService creates its own QueriesSql with connection string
@@ -80,7 +82,8 @@ public class Program
             {
                 var logger = sp.GetRequiredService<ILogger<RegistrationService>>();
                 var discordClient = sp.GetRequiredService<DiscordSocketClient>();
-                return new RegistrationService(logger, discordClient, config);
+                var secretHasher = sp.GetRequiredService<ISecretHasher>();
+                return new RegistrationService(logger, discordClient, config, secretHasher);
             });
             services.AddSingleton<DiscordInteractionHandler>();
 

@@ -24,38 +24,6 @@ public class AuthController(ILogger<AuthController> logger, Configuration config
     private readonly SymmetricSecurityKey _key = new(Encoding.UTF8.GetBytes(config.SigningKey));
 
     [AllowAnonymous]
-    [HttpPost("profiles")]
-    public async Task<IActionResult> Profiles([FromBody] GetTokenRequest request)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        var actionName = "profiles";
-
-        logger.LogInformation("Profiles request received for version {Version}", request.Version);
-
-        if (request.Version < ExpectedVersion)
-        {
-            metricsService.IncrementAuthentication(actionName, false);
-            metricsService.RecordAuthenticationDuration(actionName, stopwatch.ElapsedMilliseconds);
-            logger.LogWarning("Version mismatch: expected {ExpectedVersion}, got {ActualVersion}", ExpectedVersion, request.Version);
-            return StatusCode(StatusCodes.Status409Conflict, new LoginAuthenticationResult(LoginAuthenticationErrorCode.VersionMismatch, null));
-        }
-
-        var authResult = await database.AuthenticateUser(request.Secret);
-        if (authResult.Status != DBAuthenticationStatus.Authorized && authResult.Uids.Count() != 0)
-        {
-            metricsService.IncrementAuthentication(actionName, false);
-            metricsService.RecordAuthenticationDuration(actionName, stopwatch.ElapsedMilliseconds);
-            logger.LogWarning("Authentication failed for secret: {Status}", authResult.Status);
-            return StatusCode(StatusCodes.Status401Unauthorized, new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownSecret, null));
-        }
-
-        logger.LogInformation("Profiles request successful for {UidCount} UIDs", authResult.Uids.Count());
-        // TODO: Fix this up to return a list of the profiles for a given secret key
-        //     return StatusCode(StatusCodes.Status401Unauthorized, new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownError, null));
-        throw new NotImplementedException();
-    }
-
-    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] GetTokenRequest request)
     {

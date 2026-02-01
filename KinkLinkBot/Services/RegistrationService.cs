@@ -2,6 +2,7 @@ using Discord.WebSocket;
 using KinkLinkBot.Configuration;
 using KinkLinkBot.Domain.Models;
 using KinkLinkCommon.Database;
+using KinkLinkCommon.Security;
 using Microsoft.Extensions.Logging;
 
 namespace KinkLinkBot.Services;
@@ -19,16 +20,19 @@ public class RegistrationService
     private readonly ILogger<RegistrationService> _logger;
     private readonly DiscordSocketClient _client;
     private readonly BotConfiguration _config;
+    private readonly ISecretHasher _secretHasher;
 
     public RegistrationService(
         ILogger<RegistrationService> logger,
         DiscordSocketClient client,
-        BotConfiguration config)
+        BotConfiguration config,
+        ISecretHasher secretHasher)
     {
         var connectionString = config.DbConnectionString;
         _auth = new AuthSql(connectionString);
         _users = new UsersSql(connectionString);
         _profiles = new ProfilesSql(connectionString);
+        _secretHasher = secretHasher;
         _logger = logger;
         _client = client;
         _config = config;
@@ -56,19 +60,23 @@ public class RegistrationService
                     };
                 }
 
-                // Return existing user info
+                // Return existing user info - since we're not migrating existing data, 
+                // this should not happen for production use
+                _logger.LogWarning("Attempted to retrieve existing user with legacy plaintext secret during migration");
                 return new RegistrationResponse
                 {
-                    Success = true,
-                    Secret = existingUser.Value.SecretKey
+                    Success = false,
+                    ErrorMessage = "Account already exists. Please contact an administrator for secret recovery."
                 };
             }
 
             // Create new user
             var secret = GenerateSecret();
+            var (hash, salt) = await _secretHasher.HashSecretAsync(secret);
             var newUser = await _users.RegisterNewUserAsync(new(
                 DiscordId: (long)discordId,
-                SecretKey: secret
+                SecretKeyHash: hash,
+                SecretKeySalt: salt
             ));
 
             if (newUser.HasValue)
@@ -78,7 +86,7 @@ public class RegistrationService
                 return new RegistrationResponse
                 {
                     Success = true,
-                    Secret = newUser.Value.SecretKey
+                    Secret = secret  // Return the original plaintext secret for user to save
                 };
             }
             else
