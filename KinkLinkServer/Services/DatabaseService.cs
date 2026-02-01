@@ -1,8 +1,8 @@
 using KinkLinkCommon.Database;
 using KinkLinkCommon.Domain;
 using KinkLinkCommon.Domain.Enums;
+using KinkLinkCommon.Security;
 using KinkLinkServer.Domain;
-using System.Linq;
 
 namespace KinkLinkServer.Services;
 
@@ -16,74 +16,31 @@ public class DatabaseService
     // Injected
     private readonly ILogger<DatabaseService> _logger;
     private readonly string _connectionString;
+    private readonly ISecretHasher _secretHasher;
 
     // Generated queries from sqlc
     private AuthSql _auth = null!;
     private PairsSql _pairs = null!;
     private UsersSql _users = null!;
+    private ProfilesSql _profiles = null!;
     /// <summary>
     ///     Creates a new DatabaseService with the provided connection string and logger
     /// </summary>
     public DatabaseService(
         Configuration config,
-        ILogger<DatabaseService> logger)
+        ILogger<DatabaseService> logger,
+        ISecretHasher secretHasher)
     {
         _connectionString = config.DatabaseConnectionString;
         _logger = logger;
+        _secretHasher = secretHasher;
 
         _auth = new AuthSql(_connectionString);
         _pairs = new PairsSql(_connectionString);
         _users = new UsersSql(_connectionString);
+        _profiles = new ProfilesSql(_connectionString);
     }
-
-    /// <summary>
-    ///     Gets the user UIDs associated with the user account.
-    /// </summary>
-    public async Task<DBSecretAuthResult> AuthenticateUser(string secret)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(secret))
-            {
-                _logger.LogWarning("Authentication attempted with null or empty secret");
-                return new DBSecretAuthResult
-                {
-                    Status = DBAuthenticationStatus.Unauthorized,
-                    Uids = new()
-                };
-            }
-
-            var profiles = await _auth.ListUIDsForSecretAsync(new(secret));
-            var uidList = profiles.Select(row => row.Uid).ToList();
-            if (uidList.Count > 0)
-            {
-                return new DBSecretAuthResult
-                {
-                    Status = DBAuthenticationStatus.Authorized,
-                    Uids = uidList
-                };
-            }
-            else
-            {
-                _logger.LogWarning("Authentication failed: invalid secret format");
-                return new DBSecretAuthResult
-                {
-                    Status = DBAuthenticationStatus.Unauthorized,
-                    Uids = new()
-                };
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Authentication failed with unexpected error");
-            return new DBSecretAuthResult
-            {
-                Status = DBAuthenticationStatus.UnknownError,
-                Uids = new()
-            };
-        }
-    }
-
+    // TODO: Implement discord OAUTH and don't use the secretkey.
     /// <summary>
     ///     Gets a user entry from the accounts table by secret
     /// </summary>
@@ -97,12 +54,19 @@ public class DatabaseService
                 return DBAuthenticationStatus.Unauthorized;
             }
 
-            var result = await _auth.LoginAsync(new(uid, secret));
-            if (result == null)
-            {
-                _logger.LogWarning("Authentication failed: Unauthorized secret and UID doesn't match");
+            var result = await _auth.LoginAsync(new(uid));
+            if ( result is not { } value || value.SecretKeyHash is not {} hash || value.SecretKeySalt is not {} salt ) {
+                _logger.LogWarning("Authentication failed: UID not found or missing hash data");
                 return DBAuthenticationStatus.Unauthorized;
             }
+            
+            var isValid = await _secretHasher.VerifySecretAsync(secret, hash, salt);
+            if (!isValid)
+            {
+                _logger.LogWarning("Authentication failed: Invalid secret for UID {UID}", uid);
+                return DBAuthenticationStatus.Unauthorized;
+            }
+            
             return DBAuthenticationStatus.Authorized;
 
         }
@@ -116,6 +80,7 @@ public class DatabaseService
     /// <summary>
     ///     Creates an empty set of permissions between sender and target friend codes
     /// </summary>
+    /// TODO: Allow the permissions creation to plumb in a default set of permissions on a user basis.
     public async Task<DBPairResult> CreatePermissions(string userUID, string targetUID)
     {
         try

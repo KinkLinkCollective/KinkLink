@@ -1,6 +1,7 @@
 using System.Text;
 using System.Reflection;
 using KinkLinkCommon.Database;
+using KinkLinkCommon.Security;
 using KinkLinkServer.Domain;
 using KinkLinkServer.Domain.Interfaces;
 using KinkLinkServer.Managers;
@@ -98,6 +99,7 @@ public class Program
 
             // Services
             builder.Services.AddSingleton<IPresenceService, PresenceService>();
+            builder.Services.AddSingleton<ISecretHasher, SecretHasher>();
             builder.Services.AddSingleton<IRequestLoggingService, RequestLoggingService>();
 
             // Managers

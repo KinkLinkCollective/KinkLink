@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS Admin (
 CREATE TABLE IF NOT EXISTS Users (
     id SERIAL PRIMARY KEY,
     discord_id BIGINT NOT NULL UNIQUE,
-    secret_key VARCHAR(64) NOT NULL UNIQUE,
+    secret_key_hash VARCHAR(128),
+    secret_key_salt VARCHAR(32),
     verified bool DEFAULT false,
     banned bool DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

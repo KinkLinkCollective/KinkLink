@@ -27,3 +27,8 @@ UPDATE Profiles
 SET title = $1, description = $2, updated_at = CURRENT_TIMESTAMP
 WHERE UID = $3 AND user_id = $4
 RETURNING *;
+
+-- name: ListUIDsForUser :many
+-- Get all UIDs for a specific user ID
+SELECT UID FROM Profiles 
+WHERE user_id = $1;
