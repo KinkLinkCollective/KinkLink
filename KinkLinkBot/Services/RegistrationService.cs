@@ -39,6 +39,74 @@ public class RegistrationService
     }
 
     /// <summary>
+    ///     Gets a user by Discord ID
+    /// </summary>
+    public async Task<User?> GetUserByDiscordIdAsync(ulong discordId)
+    {
+        try
+        {
+            var userRow = await _users.SelectUserbyDiscordIdAsync(new((long)discordId));
+
+            if (userRow.HasValue)
+            {
+                return new User(
+                    Id: userRow.Value.Id,
+                    DiscordId: userRow.Value.DiscordId,
+                    SecretKeyHash: userRow.Value.SecretKeyHash,
+                    SecretKeySalt: userRow.Value.SecretKeySalt,
+                    Verified: userRow.Value.Verified,
+                    Banned: userRow.Value.Banned,
+                    CreatedAt: userRow.Value.CreatedAt,
+                    UpdatedAt: userRow.Value.UpdatedAt
+                );
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting user by Discord ID {DiscordId}", discordId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets all profiles for a user
+    /// </summary>
+    public async Task<List<Profile>> GetUserProfilesAsync(ulong discordId)
+    {
+        try
+        {
+            var user = await GetUserByDiscordIdAsync(discordId);
+            if (!user.HasValue)
+                return new List<Profile>();
+
+            var profileRows = await _profiles.ListUIDsForUserAsync(new(user.Value.Id));
+            var profiles = new List<Profile>();
+
+            foreach (var row in profileRows)
+            {
+                profiles.Add(new Profile(
+                    Id: 0, // We don't have the ID from ListUIDsForUser, but we don't need it for display
+                    UserId: user.Value.Id,
+                    Uid: row.Uid,
+                    ChatRole: null,
+                    Alias: null,
+                    Title: null,
+                    Description: null
+                ));
+            }
+
+            return profiles;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting profiles for Discord ID {DiscordId}", discordId);
+            return new List<Profile>();
+        }
+    }
+
+    /// <summary>
     ///     Registers a new user account or returns existing if already registered
     /// </summary>
     public async Task<RegistrationResponse> RegisterUserAccount(ulong discordId)
@@ -298,6 +366,155 @@ public class RegistrationService
             {
                 Success = false,
                 ErrorMessage = "An unexpected error occurred while deleting your UID."
+            };
+        }
+    }
+
+    /// <summary>
+    ///     Creates a new profile with an optional alias for the user
+    /// </summary>
+    public async Task<ProfileResponse> CreateProfileWithAliasAsync(ulong discordId, string? alias)
+    {
+        try
+        {
+            var existingUser = await GetUserByDiscordIdAsync(discordId);
+
+            if (!existingUser.HasValue)
+            {
+                return new ProfileResponse
+                {
+                    Success = false,
+                    ErrorMessage = "User account not found. Please register first."
+                };
+            }
+
+            if (existingUser.Value.Banned == true)
+            {
+                return new ProfileResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Your account has been banned. Please contact an administrator."
+                };
+            }
+
+            // Check profile limit (10 profiles max)
+            var existingProfiles = await GetUserProfilesAsync(discordId);
+            if (existingProfiles.Count >= 10)
+            {
+                return new ProfileResponse
+                {
+                    Success = false,
+                    ErrorMessage = "You have reached the maximum limit of 10 profiles. Please delete an existing profile to create a new one."
+                };
+            }
+
+            var newUID = GenerateUID();
+            var profileExists = await _profiles.ProfileExistsAsync(new(newUID));
+
+            // This is exceedingly unlikely but I'm paranoid, so just in case.
+            // (Odds of this occurring are 1/3,656,158,440,062,976)
+            if (profileExists?.Exists == true)
+            {
+                return new ProfileResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Unable to generate a unique UID. Please try again later."
+                };
+            }
+
+            var newProfile = await _profiles.CreateNewUIDForUserAsync(new(
+                UserId: existingUser.Value.Id,
+                Uid: newUID,
+                ChatRole: null,
+                Alias: string.IsNullOrEmpty(alias) ? null : alias,
+                Title: null,
+                Description: null
+            ));
+
+            if (newProfile.HasValue)
+            {
+                _logger.LogInformation("New profile created: {ProfileUID} for Discord ID {DiscordUserId}, User ID {UserId}", newUID, discordId, existingUser.Value.Id);
+
+                return new ProfileResponse
+                {
+                    Success = true,
+                    UID = newUID
+                };
+            }
+            else
+            {
+                _logger.LogError("Failed to create profile {ProfileUID} for Discord ID {DiscordUserId}", newUID, discordId);
+                return new ProfileResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Failed to create profile. Please try again later."
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating profile for Discord ID {DiscordId}", discordId);
+            return new ProfileResponse
+            {
+                Success = false,
+                ErrorMessage = "An unexpected error occurred while creating your profile."
+            };
+        }
+    }
+
+    /// <summary>
+    ///     Regenerates a user's secret key
+    /// </summary>
+    public async Task<RegistrationResponse> RegenerateSecretAsync(ulong discordId)
+    {
+        try
+        {
+            var existingUser = await GetUserByDiscordIdAsync(discordId);
+
+            if (!existingUser.HasValue)
+            {
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "User account not found."
+                };
+            }
+
+            if (existingUser.Value.Banned == true)
+            {
+                return new RegistrationResponse
+                {
+                    Success = false,
+                    ErrorMessage = "Your account has been banned. Please contact an administrator."
+                };
+            }
+
+            // Generate new secret and hash it
+            var newSecret = GenerateSecret();
+            var (hash, salt) = await _secretHasher.HashSecretAsync(newSecret);
+
+            // Update the user's secret in the database
+            await _users.RegenerateSecretKeyAsync(new(
+                DiscordId: (long)discordId,
+                SecretKeyHash: hash,
+                SecretKeySalt: salt
+            ));
+
+            _logger.LogInformation("Secret regenerated for Discord ID {DiscordUserId}, User ID {UserId}", discordId, existingUser.Value.Id);
+
+            return new RegistrationResponse
+            {
+                Success = true,
+                Secret = newSecret  // Return the new plaintext secret for user to save
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error regenerating secret for Discord ID {DiscordId}", discordId);
+            return new RegistrationResponse
+            {
+                Success = false,
+                ErrorMessage = "An unexpected error occurred while regenerating your secret."
             };
         }
     }
