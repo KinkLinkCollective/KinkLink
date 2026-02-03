@@ -10,7 +10,7 @@ public interface ISecretHasher
     /// <param name="secret">The plain text secret to hash</param>
     /// <returns>Tuple containing the hash and salt as base64 strings</returns>
     Task<(string Hash, string Salt)> HashSecretAsync(string secret);
-    
+
     /// <summary>
     /// Verifies a plain text secret against a stored hash and salt
     /// </summary>
