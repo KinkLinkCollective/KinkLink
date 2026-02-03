@@ -18,6 +18,12 @@ using KinkLinkClient.UI.Views.Status;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
 using KinkLinkClient.UI.Views.Chat;
+using KinkLinkClient.UI.Views.CursedLoot;
+using KinkLinkClient.UI.Views.Gags;
+using KinkLinkClient.UI.Views.Games;
+using KinkLinkClient.UI.Views.Interactions;
+using KinkLinkClient.UI.Views.Locks;
+using KinkLinkClient.UI.Views.Wardrobe;
 
 namespace KinkLinkClient.UI;
 
@@ -35,11 +41,11 @@ public class MainWindow : Window
     // Services
 
     // Views
-    private readonly ChatViewUi _chatview;
+    private readonly ChatViewUi _chatView;
     private readonly CustomizePlusViewUi _customizePlusView;
     private readonly DebugViewUi _debugView;
     private readonly EmoteViewUi _emoteView;
-    private readonly FriendsViewUi _friendsView;
+    private readonly PairsViewUi _friendsView;
     private readonly HistoryViewUi _historyView;
     private readonly HonorificViewUi _honorificView;
     private readonly LoginViewUi _loginView;
@@ -48,6 +54,12 @@ public class MainWindow : Window
     private readonly SettingsViewUi _settingsView;
     private readonly SpeakViewUi _speakView;
     private readonly StatusViewUi _statusView;
+    private readonly CursedLootViewUi _cursedlootView;
+    private readonly GagsViewUi _gagsView;
+    private readonly GamesViewUi _gamesView;
+    private readonly InteractionsViewUi _interactionsView;
+    private readonly LocksViewUi _locksView;
+    private readonly WardrobeViewUi _wardrobeView;
 
     public MainWindow(
         ViewService viewService,
@@ -56,7 +68,7 @@ public class MainWindow : Window
         CustomizePlusViewUi customizePlusView,
         DebugViewUi debugView,
         EmoteViewUi emoteView,
-        FriendsViewUi friendsView,
+        PairsViewUi friendsView,
         HistoryViewUi historyView,
         HonorificViewUi honorificView,
         LoginViewUi loginView,
@@ -64,7 +76,14 @@ public class MainWindow : Window
         PauseViewUi pauseView,
         SettingsViewUi settingsView,
         SpeakViewUi speakView,
-        StatusViewUi statusView) : base(MainWindowTitle)
+        StatusViewUi statusView,
+         CursedLootViewUi cursedlootView,
+         GagsViewUi gagsView,
+         GamesViewUi gamesView,
+         InteractionsViewUi interactionsView,
+         LocksViewUi locksView,
+         WardrobeViewUi wardrobeView
+        ) : base(MainWindowTitle)
     {
         SizeConstraints = new WindowSizeConstraints
         {
@@ -73,7 +92,7 @@ public class MainWindow : Window
         };
 
         _viewService = viewService;
-        _chatview = chatUiService;
+        _chatView = chatUiService;
 
         _navigationBar = navigationBarComponentUi;
 
@@ -89,6 +108,12 @@ public class MainWindow : Window
         _settingsView = settingsView;
         _speakView = speakView;
         _statusView = statusView;
+        _cursedlootView = cursedlootView;
+        _gagsView = gagsView;
+        _gamesView = gamesView;
+        _interactionsView = interactionsView;
+        _locksView = locksView;
+        _wardrobeView = wardrobeView;
     }
 
     public override void Draw()
@@ -99,19 +124,23 @@ public class MainWindow : Window
 
         IDrawable view = _viewService.CurrentView switch
         {
-            View.Chat => _chatview,
-            View.CustomizePlus => _customizePlusView,
+            View.CursedLoot => _cursedlootView,
+            View.Chat => _chatView,
             View.Debug => _debugView,
             View.Emote => _emoteView,
-            View.Friends => _friendsView,
+            View.Gags => _gagsView,
+            View.Games => _gamesView,
             View.History => _historyView,
             View.Honorific => _honorificView,
+            View.Interactions => _interactionsView,
+            View.Locks => _locksView,
             View.Login => _loginView,
             View.Moodles => _moodlesView,
+            View.Pairs => _friendsView,
             View.Pause => _pauseView,
             View.Settings => _settingsView,
-            View.Speak => _speakView,
             View.Status => _statusView,
+            View.Wardrobe => _wardrobeView,
             _ => _loginView
         };
 

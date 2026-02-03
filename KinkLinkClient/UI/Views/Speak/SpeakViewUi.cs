@@ -13,7 +13,7 @@ using Dalamud.Interface.Colors;
 namespace KinkLinkClient.UI.Views.Speak;
 
 public class SpeakViewUi(
-    FriendsListComponentUi friendsList,
+    PairsListComponentUi friendsList,
     SpeakViewUiController controller,
     CommandLockoutService commandLockoutService,
     SelectionManager selectionManager) : IDrawable

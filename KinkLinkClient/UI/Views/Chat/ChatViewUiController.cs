@@ -14,7 +14,7 @@ public class ChatViewUiController : IDisposable
     // Injected
     private readonly NetworkService _network;
     private readonly WorldService _world;
-
+    private const uint MAX_CHAT_HISTORY = 10;
     private List<ChatReceivedMessage> _messages = new();
 
     private bool _busy = false;
@@ -62,6 +62,12 @@ public class ChatViewUiController : IDisposable
 
     public void AddMessage(ChatReceivedMessage message)
     {
+        // TODO: If this proves too costly, migrate to a circular buffer
+        // To keep the chat reasonably optimized, start removing messages if it is too long.
+        if (_messages.Count > MAX_CHAT_HISTORY)
+        {
+            _messages.RemoveAt(0);
+        }
         _messages.Add(message);
         ScrollToBottom = true;
     }

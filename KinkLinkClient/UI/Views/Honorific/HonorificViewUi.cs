@@ -15,7 +15,7 @@ using Lumina.Text;
 
 namespace KinkLinkClient.UI.Views.Honorific;
 
-public class HonorificViewUi(HonorificViewUiController controller, FriendsListComponentUi friendsList, CommandLockoutService commandLockoutService, SelectionManager selectionManager) : IDrawable
+public class HonorificViewUi(HonorificViewUiController controller, PairsListComponentUi friendsList, CommandLockoutService commandLockoutService, SelectionManager selectionManager) : IDrawable
 {
     // Const
     private const int SendHonorificButtonHeight = 40;

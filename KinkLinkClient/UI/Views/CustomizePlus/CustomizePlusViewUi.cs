@@ -10,7 +10,7 @@ using Dalamud.Interface;
 namespace KinkLinkClient.UI.Views.CustomizePlus;
 
 public class CustomizePlusViewUi(
-    FriendsListComponentUi friendsList,
+    PairsListComponentUi friendsList,
     CustomizePlusViewUiController controller,
     CommandLockoutService commandLockoutService,
     SelectionManager selectionManager) : IDrawable

@@ -15,7 +15,7 @@ using Dalamud.Interface;
 namespace KinkLinkClient.UI.Views.Moodles;
 
 public class MoodlesViewUi(
-    FriendsListComponentUi friendsList,
+    PairsListComponentUi friendsList,
     MoodlesViewUiController controller,
     CommandLockoutService commandLockoutService,
     SelectionManager selectionManager) : IDrawable

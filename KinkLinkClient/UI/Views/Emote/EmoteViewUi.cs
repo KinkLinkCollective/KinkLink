@@ -11,7 +11,7 @@ using Dalamud.Interface.Colors;
 namespace KinkLinkClient.UI.Views.Emote;
 
 public class EmoteViewUi(
-    FriendsListComponentUi friendsList,
+    PairsListComponentUi friendsList,
     EmoteViewUiController controller,
     CommandLockoutService commandLockoutService,
     SelectionManager selectionManager) : IDrawable

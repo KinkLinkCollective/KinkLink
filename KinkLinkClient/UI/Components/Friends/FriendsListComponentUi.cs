@@ -14,7 +14,7 @@ using Dalamud.Interface.Colors;
 
 namespace KinkLinkClient.UI.Components.Friends;
 
-public class FriendsListComponentUi(FriendsListComponentUiController controller, SelectionManager selectionManager)
+public class PairsListComponentUi(FriendsListComponentUiController controller, SelectionManager selectionManager)
 {
     public void Draw(bool displayAddFriendsBox = false, bool displayOfflineFriends = false)
     {

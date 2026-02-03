@@ -13,7 +13,7 @@ using KinkLinkCommon.Domain.Network.AddFriend;
 namespace KinkLinkClient.UI.Components.Friends;
 
 /// <summary>
-///     Handles events and other tasks for <see cref="FriendsListComponentUi" />
+///     Handles events and other tasks for <see cref="PairsListComponentUi" />
 /// </summary>
 public class FriendsListComponentUiController : IDisposable
 {
