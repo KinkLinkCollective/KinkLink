@@ -18,6 +18,11 @@ public class Configuration
     public int Version = 1;
 
     /// <summary>
+    ///     Base URL for the KinkLink server (e.g., "http://localhost:5006")
+    /// </summary>
+    public string ServerBaseUrl = "http://localhost:5006";
+
+    /// <summary>
     ///     Used as a global toggle to ensure that all modules are disabled regardless of their settings.
     /// </summary>
     public bool SafeMode = false;
@@ -26,6 +31,7 @@ public class Configuration
     ///     This is the authentication secret key provided by the disord bot for authorization
     /// </summary>
     public string SecretKey = "";
+
     /// <summary>
     ///     Map of friend code to note
     /// </summary>
