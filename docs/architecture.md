@@ -34,15 +34,25 @@ In KinkLink it uses a pattern inherited from AetherRemote that is as follows:
 `Services` orchestrate dalamud/IPC calls for functionality.
 `Hooks/IPC/Dalamud APIs` are the low level commands which actually cause side effects to the gamestate
 
-As a general rule of thumb
+Currently, the pattern is "call down the heirarchy", and "signal with events up the heirarchy".
 
-- `Handlers` listen to events and only call calls to `Managers` and `Services`
-- `Managers` only call services
-- `Services` only call hooks, IPC and dalamud APIs
+Calling down looks like:
+
+- `Handlers` can all anything below it (though typically `Managers` and `Services`)
+- `Managers` can call `Services`
+- `Services` only call `hooks`, `ipc`, and `Dalamud`
+
+Signaling up
+
+- `Handlers` can listen to events from `Managers`, `Services` and `Hooks/Dalamud` and don't typically emit events
+- `Managers` listen to events from `Services` and `Hooks/Dalamud` and emit events that need to go to handlers
+- `Services` listen to events from `hooks`, `ipc`, and `Dalamud` and emit events that can be listened to above
 
 For network connectivity, this remains true as well. `Handlers` listen to the PrimaryHub and `Services` send network requests as needed.
 
 KinkLink leverages dependency injection to sort out the dependencies, when adding new modules, these need to be added to `Plugin.cs` to ensure that they are booted properly.
+
+When subscripting to an event for your module in the constructor (e.g. `class MyModule(T module) {}` be sure to initialize that module _at least once_ using `_services.GetRequiredService<T>();`
 
 ### Practical Example: Global Chat
 
