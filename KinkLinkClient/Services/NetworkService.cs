@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using KinkLinkClient.Utils;
+using KinkLinkCommon;
 using KinkLinkCommon.Domain.Enums;
 using KinkLinkCommon.Domain.Network.GetToken;
 using KinkLinkCommon.Domain.Network.LoginAuthentication;
@@ -32,11 +33,24 @@ public class NetworkService : IDisposable
     ///     Event fired when the server connection is lost, either by disruption or manual intervention
     /// </summary>
     public event Func<Task>? Disconnected;
-    // TODO: Make this configurable with a main endpoint and the urls being routes
-    private const string HubUrl = "http://localhost:5006/primaryHub";
-    private const string ProfilesUrl = "http://localhost:5006/api/auth/profiles";
-    private const string AuthUrl = "http://localhost:5006/api/auth/login";
-    // To fix deserialization issues because c# cannot deserialize it's own classes after it serializes them without it.
+    /// <summary>
+    ///     Gets the full hub URL by combining server base URL with hub route
+    /// </summary>
+    private string HubUrl => $"{Plugin.Configuration?.ServerBaseUrl ?? "http://localhost:5006"}/primaryHub";
+
+    /// <summary>
+    ///     Gets the full profiles URL by combining server base URL with profiles route
+    /// </summary>
+    private string ProfilesUrl => $"{Plugin.Configuration?.ServerBaseUrl ?? "http://localhost:5006"}/api/auth/profiles";
+
+    /// <summary>
+    ///     Gets the full auth URL by combining server base URL with login route
+    /// </summary>
+    private string AuthUrl => $"{Plugin.Configuration?.ServerBaseUrl ?? "http://localhost:5006"}/api/auth/login";
+
+    /// <summary>
+    /// To fix deserialization that are occurring when connecting, not sure why, but C# appears to have issues with serializing/deserializing a JSON string via message pack without it.
+    /// </summary>
     private static readonly JsonSerializerOptions DeserializationOptions = new() { PropertyNameCaseInsensitive = true };
     /// <summary>
     ///     Access token required to connect to the SignalR hub
@@ -179,7 +193,7 @@ public class NetworkService : IDisposable
         return Task.CompletedTask;
     }
 
-    private static async Task<string?> TryAuthenticateSecret()
+    private async Task<string?> TryAuthenticateSecret()
     {
 
         if (Plugin.Configuration is null || Plugin.CharacterConfiguration is null)
