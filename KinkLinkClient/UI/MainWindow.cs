@@ -1,4 +1,6 @@
-using System.Numerics; using KinkLinkClient.Domain; using KinkLinkClient.Domain.Interfaces;
+using System.Numerics;
+using KinkLinkClient.Domain;
+using KinkLinkClient.Domain.Interfaces;
 using KinkLinkClient.Services;
 using KinkLinkClient.UI.Components.NavigationBar;
 using KinkLinkClient.UI.Views.CustomizePlus;

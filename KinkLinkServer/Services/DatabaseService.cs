@@ -55,18 +55,19 @@ public class DatabaseService
             }
 
             var result = await _auth.LoginAsync(new(uid));
-            if ( result is not { } value || value.SecretKeyHash is not {} hash || value.SecretKeySalt is not {} salt ) {
+            if (result is not { } value || value.SecretKeyHash is not { } hash || value.SecretKeySalt is not { } salt)
+            {
                 _logger.LogWarning("Authentication failed: UID not found or missing hash data");
                 return DBAuthenticationStatus.Unauthorized;
             }
-            
+
             var isValid = await _secretHasher.VerifySecretAsync(secret, hash, salt);
             if (!isValid)
             {
                 _logger.LogWarning("Authentication failed: Invalid secret for UID {UID}", uid);
                 return DBAuthenticationStatus.Unauthorized;
             }
-            
+
             return DBAuthenticationStatus.Authorized;
 
         }
