@@ -12,9 +12,9 @@ namespace KinkLinkClient.UI.Views.Friends;
 /// <summary>
 ///     Handles UI elements for the Friends tab
 /// </summary>
-public class FriendsViewUi(
-    FriendsListComponentUi friendsList,
-    FriendsViewUiController controller,
+public class PairsViewUi(
+    PairsListComponentUi friendsList,
+    PairsViewUiController controller,
     SelectionManager selectionManager) : IDrawable
 {
     private const string UnsavedChangesText = "You have unsaved changes";

@@ -12,9 +12,9 @@ using KinkLinkCommon.Domain.Network.UpdateFriend;
 namespace KinkLinkClient.UI.Views.Friends;
 
 /// <summary>
-///     Handles events and other tasks for <see cref="FriendsViewUi" />
+///     Handles events and other tasks for <see cref="PairsViewUi" />
 /// </summary>
-public class FriendsViewUiController : IDisposable
+public class PairsViewUiController : IDisposable
 {
     // Injected
     private readonly FriendsListService _friendsListService;
@@ -41,9 +41,9 @@ public class FriendsViewUiController : IDisposable
     public BooleanUserPermissions EditingUserPermissions = new();
 
     /// <summary>
-    ///     <inheritdoc cref="FriendsViewUiController" />
+    ///     <inheritdoc cref="PairsViewUiController" />
     /// </summary>
-    public FriendsViewUiController(FriendsListService friendsListService, NetworkService networkService, SelectionManager selectionManager)
+    public PairsViewUiController(FriendsListService friendsListService, NetworkService networkService, SelectionManager selectionManager)
     {
         _friendsListService = friendsListService;
         _networkService = networkService;

@@ -32,6 +32,12 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Microsoft.Extensions.DependencyInjection;
 using KinkLinkClient.UI.Views.Chat;
+using KinkLinkClient.UI.Views.Wardrobe;
+using KinkLinkClient.UI.Views.Locks;
+using KinkLinkClient.UI.Views.Interactions;
+using KinkLinkClient.UI.Views.Games;
+using KinkLinkClient.UI.Views.Gags;
+using KinkLinkClient.UI.Views.CursedLoot;
 
 namespace KinkLinkClient;
 
@@ -116,7 +122,7 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<FriendsListComponentUiController>();
 
         // Ui - Components
-        services.AddSingleton<FriendsListComponentUi>();
+        services.AddSingleton<PairsListComponentUi>();
         services.AddSingleton<NavigationBarComponentUi>();
 
         // Ui - View Controllers
@@ -124,7 +130,7 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<CustomizePlusViewUiController>();
         services.AddSingleton<DebugViewUiController>();
         services.AddSingleton<EmoteViewUiController>();
-        services.AddSingleton<FriendsViewUiController>();
+        services.AddSingleton<PairsViewUiController>();
         services.AddSingleton<HistoryViewUiController>();
         services.AddSingleton<HonorificViewUiController>();
         services.AddSingleton<LoginViewUiController>();
@@ -134,12 +140,19 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<SpeakViewUiController>();
         services.AddSingleton<StatusViewUiController>();
 
+        services.AddSingleton<CursedLootViewUiController>();
+        services.AddSingleton<GagsViewUiController>();
+        services.AddSingleton<GamesViewUiController>();
+        services.AddSingleton<InteractionsViewUiController>();
+        services.AddSingleton<LocksViewUiController>();
+        services.AddSingleton<WardrobeViewUiController>();
+
         // Ui - Views
         services.AddSingleton<ChatViewUi>();
         services.AddSingleton<CustomizePlusViewUi>();
         services.AddSingleton<DebugViewUi>();
         services.AddSingleton<EmoteViewUi>();
-        services.AddSingleton<FriendsViewUi>();
+        services.AddSingleton<PairsViewUi>();
         services.AddSingleton<HistoryViewUi>();
         services.AddSingleton<HonorificViewUi>();
         services.AddSingleton<LoginViewUi>();
@@ -149,6 +162,13 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<SpeakViewUi>();
         services.AddSingleton<StatusViewUi>();
 
+        services.AddSingleton<CursedLootViewUi>();
+        services.AddSingleton<GagsViewUi>();
+        services.AddSingleton<GamesViewUi>();
+        services.AddSingleton<InteractionsViewUi>();
+        services.AddSingleton<LocksViewUi>();
+        services.AddSingleton<WardrobeViewUi>();
+        //
         // Ui - Windows
         services.AddSingleton<MainWindow>();
         services.AddSingleton<WindowManager>();

@@ -2,7 +2,6 @@ using System.Numerics;
 using KinkLinkClient.Domain.Interfaces;
 using KinkLinkClient.Utils;
 using Dalamud.Bindings.ImGui;
-
 // ReSharper disable RedundantBoolCompare
 
 namespace KinkLinkClient.UI.Views.Chat;
@@ -10,14 +9,14 @@ namespace KinkLinkClient.UI.Views.Chat;
 public class ChatViewUi(ChatViewUiController controller) : IDrawable
 {
     // Const
-    private const int SendChatButtonHeight = 40;
+    private const int SendChatButtonHeight = 20;
 
     public void Draw()
     {
         ImGui.BeginChild("ChatContent", Vector2.Zero, false, KinkLinkStyle.ContentFlags);
 
         var width = ImGui.GetWindowWidth();
-        var padding = new Vector2(ImGui.GetStyle().WindowPadding.X, 0);
+        var padding = ImGui.GetStyle().WindowPadding;
 
         var begin = ImGui.GetCursorPosY();
 

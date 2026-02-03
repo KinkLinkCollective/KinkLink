@@ -32,18 +32,19 @@ public class NavigationBarComponentUi(NetworkService networkService, ViewService
             {
                 ImGui.TextUnformatted("General");
                 NavBarButton(FontAwesomeIcon.User, "Status", View.Status, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.UserFriends, "Pairs", View.Friends, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.UserFriends, "Pairs", View.Pairs, size, offset, spacing);
                 NavBarButton(FontAwesomeIcon.Pause, "Permissions", View.Pause, size, offset, spacing);
                 NavBarButton(FontAwesomeIcon.PeopleArrows, "Chat", View.Chat, size, offset, spacing);
 
                 ImGui.TextUnformatted("Wardrobe");
                 NavBarButton(FontAwesomeIcon.Kiss, "Gags [TODO]", View.Gags, size, offset, spacing);
                 NavBarButton(FontAwesomeIcon.Handcuffs, "Restraints [TODO]", View.Wardrobe, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.WandMagicSparkles, "Cursed Loot [TODO]", View.Wardrobe, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.WandMagicSparkles, "Cursed Loot [TODO]", View.CursedLoot, size, offset, spacing);
 
                 ImGui.TextUnformatted("Toybox");
-                NavBarButton(FontAwesomeIcon.LockOpen, "Restraints [TODO]", View.Locks, size, offset, spacing);
-                NavBarButton(FontAwesomeIcon.Dice, "Games [TODO]", View.Locks, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.LockOpen, "Locks [TODO]", View.Locks, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.LockOpen, "Interactions [TODO]", View.Interactions, size, offset, spacing);
+                NavBarButton(FontAwesomeIcon.Dice, "Games [TODO]", View.Games, size, offset, spacing);
 
                 ImGui.TextUnformatted("Configuration");
                 NavBarButton(FontAwesomeIcon.History, "History", View.History, size, offset, spacing);
