@@ -1,7 +1,7 @@
 namespace KinkLinkCommon.Domain.Enums.Permissions;
 
 [Flags]
-public enum SpeakPermissions2
+public enum GarblerChannels
 {
     // No Permissions
     None = 0,
