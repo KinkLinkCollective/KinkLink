@@ -1,4 +1,5 @@
 using KinkLinkCommon.Database;
+using KinkLinkCommon.Domain.Enums;
 using MessagePack;
 
 namespace KinkLinkCommon.Domain;
@@ -10,10 +11,11 @@ namespace KinkLinkCommon.Domain;
 public record UserPermissions
 {
     public DateTime? Expires;
-    public bool ToggleTimerLocks, TogglePermanentLocks, ToggleGarbler, LockGarbler, ToggleChannels, LockChannels;
-    public bool ApplyGag, LockGag, UnlockGag, RemoveGag;
-    public bool ApplyWardrobe, LockWardrobe, UnlockWardrobe, RemoveWardrobe;
-    public bool ApplyMoodles, LockMoodles, UnlockMoodles, RemoveMoodles;
+    public PermissionsModes Mode;
+    public RelationshipPriority Priority;
+    public GagPermissions Gags;
+    public WardrobePermissions Wardrobe;
+    public MoodlesPermissions Moodles;
 
     public UserPermissions()
     {
@@ -24,24 +26,15 @@ public record UserPermissions
     /// </summary>
     public UserPermissions(Pair pair)
     {
-        Expires = pair.Expires;
-        ToggleTimerLocks = pair.ToggleTimerLocks;
-        TogglePermanentLocks = pair.TogglePermanentLocks;
-        ToggleGarbler = pair.ToggleGarbler;
-        LockGarbler = pair.LockGarbler;
-        ToggleChannels = pair.ToggleChannels;
-        LockChannels = pair.LockChannels;
-        ApplyGag = pair.ApplyGag;
-        LockGag = pair.LockGag;
-        UnlockGag = pair.UnlockGag;
-        RemoveGag = pair.RemoveGag;
-        ApplyWardrobe = pair.ApplyWardrobe;
-        LockWardrobe = pair.LockWardrobe;
-        UnlockWardrobe = pair.UnlockWardrobe;
-        RemoveWardrobe = pair.RemoveWardrobe;
-        ApplyMoodles = pair.ApplyMoodles;
-        LockMoodles = pair.LockMoodles;
-        UnlockMoodles = pair.UnlockMoodles;
-        RemoveMoodles = pair.RemoveMoodles;
+        // Reimplement when the new bitmasks are enabled
+    }
+    public UserPermissions(bool temporary, PermissionsModes modes, RelationshipPriority priority, GagPermissions gags, WardrobePermissions wardrobe, MoodlesPermissions moodles) {
+        if (temporary) {
+            // Set Expires to datetime + 1 day or something defined in a configuration file somewhere.
+        }
+        Mode = modes;
+        Gags = gags;
+        Wardrobe = wardrobe;
+        Moodles = moodles;
     }
 }

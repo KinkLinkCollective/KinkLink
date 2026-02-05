@@ -50,30 +50,30 @@ public static class ChatChannelExtensions
     /// <summary>
     ///     Convert a chat channel to speak permissions
     /// </summary>
-    public static SpeakPermissions2 ToSpeakPermissions(this ChatChannel chatChannel, string? extra = null)
+    public static GarblerChannels ToSpeakPermissions(this ChatChannel chatChannel, string? extra = null)
     {
         return chatChannel switch
         {
-            ChatChannel.Say => SpeakPermissions2.Say,
-            ChatChannel.Roleplay => SpeakPermissions2.Roleplay,
-            ChatChannel.Echo => SpeakPermissions2.Echo,
-            ChatChannel.Yell => SpeakPermissions2.Yell,
-            ChatChannel.Shout => SpeakPermissions2.Shout,
-            ChatChannel.Tell => SpeakPermissions2.Tell,
-            ChatChannel.Party => SpeakPermissions2.Party,
-            ChatChannel.Alliance => SpeakPermissions2.Alliance,
-            ChatChannel.FreeCompany => SpeakPermissions2.FreeCompany,
-            ChatChannel.PvPTeam => SpeakPermissions2.PvPTeam,
-            ChatChannel.Linkshell => ConvertToLinkshell(SpeakPermissions2.Ls1, extra),
-            ChatChannel.CrossWorldLinkshell => ConvertToLinkshell(SpeakPermissions2.Cwl1, extra),
-            _ => SpeakPermissions2.None
+            ChatChannel.Say => GarblerChannels.Say,
+            ChatChannel.Roleplay => GarblerChannels.Roleplay,
+            ChatChannel.Echo => GarblerChannels.Echo,
+            ChatChannel.Yell => GarblerChannels.Yell,
+            ChatChannel.Shout => GarblerChannels.Shout,
+            ChatChannel.Tell => GarblerChannels.Tell,
+            ChatChannel.Party => GarblerChannels.Party,
+            ChatChannel.Alliance => GarblerChannels.Alliance,
+            ChatChannel.FreeCompany => GarblerChannels.FreeCompany,
+            ChatChannel.PvPTeam => GarblerChannels.PvPTeam,
+            ChatChannel.Linkshell => ConvertToLinkshell(GarblerChannels.Ls1, extra),
+            ChatChannel.CrossWorldLinkshell => ConvertToLinkshell(GarblerChannels.Cwl1, extra),
+            _ => GarblerChannels.None
         };
     }
 
-    private static SpeakPermissions2 ConvertToLinkshell(SpeakPermissions2 starting, string? extra)
+    private static GarblerChannels ConvertToLinkshell(GarblerChannels starting, string? extra)
     {
         return int.TryParse(extra, out var number)
-            ? (SpeakPermissions2)((int)starting << (number - 1))
-            : SpeakPermissions2.None;
+            ? (GarblerChannels)((int)starting << (number - 1))
+            : GarblerChannels.None;
     }
 }

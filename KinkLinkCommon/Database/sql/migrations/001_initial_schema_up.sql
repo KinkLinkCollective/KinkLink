@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS Profiles (
 -- The pair permissions can expire to facilitate temporary pairings
 -- Each individual permission is just a boolean value for simplicity
 CREATE TABLE IF NOT EXISTS Pairs (
-    id SERIAL NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
-    pair_id INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+    id SERIAL NOT NULL REFERENCES Profiles(id) ON DELETE CASCADE,
+    pair_id INTEGER NOT NULL REFERENCES Profiles(id) ON DELETE CASCADE,
     PRIMARY KEY (id, pair_id),
     expires TIMESTAMP,
 
