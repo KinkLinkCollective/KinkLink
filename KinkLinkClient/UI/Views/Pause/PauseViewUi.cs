@@ -36,28 +36,28 @@ public class PauseViewUi(
                 if (ImGui.BeginTable("GeneralSpeakPermissions", 4) is false)
                     return;
 
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.None);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.None);
 
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Say);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Say);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Yell);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Yell);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Shout);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Shout);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Tell);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Tell);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Party);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Party);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Alliance);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Alliance);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.FreeCompany);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.FreeCompany);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.PvPTeam);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.PvPTeam);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Echo);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Echo);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Roleplay);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Roleplay);
 
                 ImGui.EndTable();
             });
@@ -69,21 +69,21 @@ public class PauseViewUi(
                     return;
 
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls1);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Ls1);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls2);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Ls2);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls3);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Ls3);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls4);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Ls4);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls5);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Ls5);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls6);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Ls6);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls7);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Ls7);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Ls8);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Ls8);
 
                 ImGui.EndTable();
             });
@@ -95,21 +95,21 @@ public class PauseViewUi(
                     return;
 
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl1);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Cwl1);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl2);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Cwl2);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl3);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Cwl3);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl4);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Cwl4);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl5);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Cwl5);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl6);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Cwl6);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl7);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Cwl7);
                 ImGui.TableNextColumn();
-                BuildPauseButtonForSpeakFeature(SpeakPermissions2.Cwl8);
+                BuildPauseButtonForSpeakFeature(GarblerChannels.Cwl8);
 
                 ImGui.EndTable();
             });
@@ -200,7 +200,7 @@ public class PauseViewUi(
         ImGui.EndChild();
     }
 
-    private void BuildPauseButtonForFriend(Friend friend)
+    private void BuildPauseButtonForFriend(Pair friend)
     {
         if (pauseService.IsFriendPaused(friend.FriendCode))
         {
@@ -219,7 +219,7 @@ public class PauseViewUi(
         ImGui.TextUnformatted(friend.NoteOrFriendCode);
     }
 
-    private void BuildPauseButtonForSpeakFeature(SpeakPermissions2 permissions)
+    private void BuildPauseButtonForSpeakFeature(GarblerChannels permissions)
     {
         if (pauseService.IsFeaturePaused(permissions))
         {
