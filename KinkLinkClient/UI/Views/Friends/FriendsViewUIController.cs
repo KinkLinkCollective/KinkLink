@@ -17,12 +17,15 @@ namespace KinkLinkClient.UI.Views.Friends;
 /// </summary>
 public class FriendsViewUiController : IDisposable
 {
-    public enum SubView {
+    public enum SubView
+    {
         PairPerms,
         DefaultPerms,
-        ViewPairPerms
+        ViewPairPerms,
     }
+
     // Injected
+    private readonly IdentityService _identityService;
     private readonly FriendsListService _friendsListService;
     private readonly NetworkService _networkService;
     private readonly SelectionManager _selectionManager;
@@ -31,6 +34,7 @@ public class FriendsViewUiController : IDisposable
     private Friend? _friendBeingEdited;
     private PermissionsUiState _permissionsToBeGrantedToFriendOriginal = new();
     private PermissionsUiState _permissionsGrantedByFriendOriginal = new();
+
     // TODO: Pull this from local config
     private PermissionsUiState _defaultPermissionsOriginal = new();
 
@@ -40,6 +44,7 @@ public class FriendsViewUiController : IDisposable
     public string FriendCode = string.Empty;
 
     public bool PairSelected => _friendBeingEdited != null;
+
     /// <summary>
     ///     Note to display
     /// </summary>
@@ -54,11 +59,18 @@ public class FriendsViewUiController : IDisposable
     ///     Used to differentiate between the three permissions editing/viewing modes
     /// </summary
     public SubView View = SubView.DefaultPerms;
+
     /// <summary>
     ///     <inheritdoc cref="FriendsViewUiController" />
     /// </summary>
-    public FriendsViewUiController(FriendsListService friendsListService, NetworkService networkService, SelectionManager selectionManager)
+    public FriendsViewUiController(
+        IdentityService identityService,
+        FriendsListService friendsListService,
+        NetworkService networkService,
+        SelectionManager selectionManager
+    )
     {
+        _identityService = identityService;
         _friendsListService = friendsListService;
         _networkService = networkService;
         _selectionManager = selectionManager;
@@ -66,8 +78,10 @@ public class FriendsViewUiController : IDisposable
         _selectionManager.FriendSelected += OnSelectedChangedEvent;
     }
 
-    public void RefreshViewData() {
-        switch (View) {
+    public void RefreshViewData()
+    {
+        switch (View)
+        {
             case SubView.PairPerms:
                 // Ensure that it is looking at the pair perms
                 EditingPermissions = _permissionsToBeGrantedToFriendOriginal;
@@ -83,6 +97,21 @@ public class FriendsViewUiController : IDisposable
         }
     }
 
+    private async Task SaveDefaultPermissions()
+    {
+        if (Plugin.CharacterConfiguration == null)
+        {
+            NotificationHelper.Error("Error", "CharacterConfiguration is null somehow!");
+            return;
+        }
+        NotificationHelper.Info("Saved Defaults!", "Default configuration saved to {}");
+        _defaultPermissionsOriginal = EditingPermissions;
+        Plugin.CharacterConfiguration.DefaultPermissions = PermissionsUiState.To(
+            EditingPermissions
+        );
+        await Plugin.CharacterConfiguration.Save();
+    }
+
     /// <summary>
     ///     Handles the Save Button from the UI based on what has changed.
     /// </summary>
@@ -90,6 +119,13 @@ public class FriendsViewUiController : IDisposable
     {
         try
         {
+            // Update the default permissions if needed
+            if (View == SubView.DefaultPerms)
+            {
+                await SaveDefaultPermissions();
+                return;
+            }
+
             if (_friendBeingEdited is null)
                 return;
 
@@ -106,7 +142,10 @@ public class FriendsViewUiController : IDisposable
             var permissions = PermissionsUiState.To(EditingPermissions);
 
             var request = new UpdateFriendRequest(FriendCode, permissions);
-            var response = await _networkService.InvokeAsync<UpdateFriendResponse>(HubMethod.UpdateFriend, request);
+            var response = await _networkService.InvokeAsync<UpdateFriendResponse>(
+                HubMethod.UpdateFriend,
+                request
+            );
             if (response.Result is UpdateFriendEc.Success)
             {
                 _friendBeingEdited.Note = Note == string.Empty ? null : Note;
@@ -137,7 +176,10 @@ public class FriendsViewUiController : IDisposable
                 return;
 
             var request = new RemoveFriendRequest(FriendCode);
-            var response = await _networkService.InvokeAsync<RemovePair>(HubMethod.RemoveFriend, request);
+            var response = await _networkService.InvokeAsync<RemovePair>(
+                HubMethod.RemoveFriend,
+                request
+            );
             if (response.Result is RemovePairEc.Success)
             {
                 _friendsListService.Delete(_friendBeingEdited);
@@ -161,15 +203,26 @@ public class FriendsViewUiController : IDisposable
     /// </summary>
     public bool PendingChanges()
     {
+        // Default perms can be edited anytime.
+        if (
+            View == SubView.DefaultPerms
+            && EditingPermissions.Equals(_defaultPermissionsOriginal) is false
+        )
+            return true;
+
         if (_friendBeingEdited is null)
             return false;
 
         // It ain't pretty, but it works?
-        if ( View == SubView.PairPerms && EditingPermissions.Equals(_permissionsToBeGrantedToFriendOriginal) is false)
+        if (
+            View == SubView.PairPerms
+            && EditingPermissions.Equals(_permissionsToBeGrantedToFriendOriginal) is false
+        )
             return true;
-        if ( View == SubView.DefaultPerms && EditingPermissions.Equals(_defaultPermissionsOriginal) is false)
-            return true;
-        if ( View == SubView.ViewPairPerms && EditingPermissions.Equals(_permissionsGrantedByFriendOriginal) is false)
+        if (
+            View == SubView.ViewPairPerms
+            && EditingPermissions.Equals(_permissionsGrantedByFriendOriginal) is false
+        )
             return true;
 
         var note = Note == string.Empty ? null : Note;
@@ -185,8 +238,12 @@ public class FriendsViewUiController : IDisposable
             return;
 
         _friendBeingEdited = friend;
-        _permissionsToBeGrantedToFriendOriginal  = PermissionsUiState.From(_friendBeingEdited.PermissionsGrantedToFriend);
-        _permissionsGrantedByFriendOriginal = PermissionsUiState.From(_friendBeingEdited.PermissionsGrantedByFriend);
+        _permissionsToBeGrantedToFriendOriginal = PermissionsUiState.From(
+            _friendBeingEdited.PermissionsGrantedToFriend
+        );
+        _permissionsGrantedByFriendOriginal = PermissionsUiState.From(
+            _friendBeingEdited.PermissionsGrantedByFriend
+        );
 
         FriendCode = _friendBeingEdited.FriendCode;
         Note = _friendBeingEdited.Note ?? string.Empty;
