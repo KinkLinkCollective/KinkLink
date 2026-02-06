@@ -10,10 +10,14 @@ public partial class FriendsViewUi {
     {
         switch (selectionManager.Selected.Count) {
             case 0:
-                SharedUserInterfaces.ContentBox("DrawPermissionsSelectOne", KinkLinkStyle.PanelBackground, true, () => {
-                    ImGui.TextUnformatted("No pair selected. Please select a pair to continue");
-                });
-                return;
+                // Default should still display regardless of selection state
+                if (controller.View != FriendsViewUiController.SubView.DefaultPerms) {
+                        SharedUserInterfaces.ContentBox("DrawPermissionsSelectOne", KinkLinkStyle.PanelBackground, true, () => {
+                        ImGui.TextUnformatted("No pair selected. Please select a pair to continue");
+                    });
+                    return;
+                }
+                break;
             case >1:
                 SharedUserInterfaces.ContentBox("DrawPermissionsSelectOnlyOne", KinkLinkStyle.PanelBackground, true, () => {
                     ImGui.TextUnformatted("Can only set one pair permissions at a time.");
