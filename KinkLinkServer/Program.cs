@@ -28,7 +28,7 @@ namespace KinkLinkServer;
 
 public class Program
 {
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         // Attempt to load configuration values
         if (Configuration.Load() is not { } configuration)
@@ -78,6 +78,16 @@ public class Program
                 Log.Fatal("Database migration failed: {Error}", result.Error);
                 Environment.Exit(1);
             }
+            if (TestDataSeeder.ShouldSeed())
+            {
+                var seed_result = await TestDataSeeder.SeedAsync(configuration);
+
+                if (!seed_result)
+                {
+                    Log.Fatal("Seeding data failed in test environment", result.Error);
+                    Environment.Exit(1);
+                }
+            }
 
             Log.Information("Database migration completed successfully");
 
@@ -107,14 +117,15 @@ public class Program
 
             // Database services
             builder.Services.AddSingleton<PairsService>();
+            builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<KinkLinkProfileConfigService>();
             builder.Services.AddSingleton<KinkLinkProfilesService>();
+            builder.Services.AddSingleton<PermissionsService>();
 
             // Business services
             builder.Services.AddSingleton<IPresenceService, PresenceService>();
             builder.Services.AddSingleton<ISecretHasher, SecretHasher>();
             builder.Services.AddSingleton<IRequestLoggingService, RequestLoggingService>();
-            builder.Services.AddSingleton<PermissionsService>();
 
             // Managers
             builder.Services.AddSingleton<IForwardedRequestManager, ForwardedRequestManager>();

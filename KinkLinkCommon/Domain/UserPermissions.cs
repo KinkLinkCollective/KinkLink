@@ -29,8 +29,16 @@ public record UserPermissions
     /// </summary>
     public UserPermissions(Pair pair)
     {
-        // TODO: Reimplement when the new bitmasks are enabled
-        // Convert the filetype for pair into a user permission
+        Id = pair.Id;
+        PairId = pair.PairId;
+        Expires = pair.Expires;
+        Priority = (RelationshipPriority)(pair.Priority ?? 0);
+        ControlsPerm = pair.ControlsPerm ?? false;
+        ControlsConfig = pair.ControlsConfig ?? false;
+        DisableSafeword = pair.DisableSafeword ?? false;
+        Gags = (GagPermissions)(pair.Gags ?? 0);
+        Wardrobe = (WardrobePermissions)(pair.Wardrobe ?? 0);
+        Moodles = (MoodlesPermissions)(pair.Moodles ?? 0);
     }
 
     public UserPermissions(

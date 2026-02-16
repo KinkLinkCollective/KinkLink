@@ -57,7 +57,7 @@ public class KinkLinkProfilesService
         var result = await _profilesSql.UpdateDetailsForProfileAsync(
             new(title, description, uid, id)
         );
-        
+
         if (result is not { } row)
             return null;
 

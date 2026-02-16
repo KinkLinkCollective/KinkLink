@@ -1,5 +1,6 @@
 using KinkLinkCommon.Database;
 using KinkLinkCommon.Domain.Enums;
+using KinkLinkServer.Domain;
 
 namespace KinkLinkServer.Services;
 
@@ -19,14 +20,14 @@ public class AuthService
     /// <summary>
     ///     Creates a new DatabaseService with the provided connection string and logger
     /// </summary>
-    public AuthService(AuthSql auth, ILogger<AuthService> logger)
+    public AuthService(Configuration config, ILogger<AuthService> logger)
     {
         _logger = logger;
 
-        _auth = auth;
+        _auth = new AuthSql(config.DatabaseConnectionString);
     }
 
-    // TODO: Implement discord OAUTH and don't use the secretkey.
+    // TODO: Implement discord or XIVAUTH based OAUTH and don't use the secretkey.
     /// <summary>
     ///     Gets a user entry from the accounts table by secret
     /// </summary>
