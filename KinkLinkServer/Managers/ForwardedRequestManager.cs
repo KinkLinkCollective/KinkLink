@@ -10,7 +10,7 @@ namespace KinkLinkServer.Managers;
 /// <summary>
 ///     <inheritdoc cref="IForwardedRequestManager"/>
 /// </summary>
-public class ForwardedRequestManager(DatabaseService database, IPresenceService presence, ILogger<ForwardedRequestManager> logger) : IForwardedRequestManager
+public class ForwardedRequestManager(PermissionsService permissionsService, IPresenceService presence, ILogger<ForwardedRequestManager> logger) : IForwardedRequestManager
 {
     private static readonly TimeSpan TimeOutDuration = TimeSpan.FromSeconds(8);
 
@@ -41,7 +41,7 @@ public class ForwardedRequestManager(DatabaseService database, IPresenceService 
         if (presence.TryGet(targetUID) is not { } target)
             return (null!, ActionResultBuilder.Fail(ActionResultEc.TargetOffline));
 
-        if (await database.GetPermissions(userUID, targetUID) is not { } permissions)
+        if (await permissionsService.GetPermissions(userUID, targetUID) is not { } permissions)
             return (null!, ActionResultBuilder.Fail(ActionResultEc.TargetNotFriends));
 
         if (HasRequiredPermissions(new UserPermissions(permissions), required) is false)

@@ -1,24 +1,24 @@
-using System.Text;
 using System.Reflection;
+using System.Text;
+using DbUp;
 using KinkLinkCommon.Database;
 using KinkLinkCommon.Security;
 using KinkLinkServer.Domain;
 using KinkLinkServer.Domain.Interfaces;
+using KinkLinkServer.Extensions;
+using KinkLinkServer.Infrastructure;
 using KinkLinkServer.Managers;
 using KinkLinkServer.Services;
 using KinkLinkServer.SignalR.Handlers;
 using KinkLinkServer.SignalR.Hubs;
-using KinkLinkServer.Extensions;
-using KinkLinkServer.Infrastructure;
-using Prometheus;
 using MessagePack;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Npgsql;
-using DbUp;
+using Prometheus;
 using Serilog;
 using Serilog.Events;
 
@@ -34,7 +34,9 @@ public class Program
         if (Configuration.Load() is not { } configuration)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            System.Console.WriteLine("Error cannot load Configuiration at {Configuration.ConfigurationPath}");
+            System.Console.WriteLine(
+                "Error cannot load Configuiration at {Configuration.ConfigurationPath}"
+            );
             Console.ResetColor();
             Environment.Exit(1);
             return;
@@ -48,12 +50,14 @@ public class Program
             .Enrich.WithMachineName()
             .Enrich.WithEnvironmentName()
             .WriteTo.Console(
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
+                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}"
+            )
             .WriteTo.File(
                 path: "logs/kinklink-server-.json",
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
-                formatter: new Serilog.Formatting.Json.JsonFormatter())
+                formatter: new Serilog.Formatting.Json.JsonFormatter()
+            )
             .CreateLogger();
 
         try
@@ -63,7 +67,8 @@ public class Program
             // Migrate the database prior to building the WebApplication
             EnsureDatabase.For.PostgresqlDatabase(configuration.DatabaseConnectionString);
 
-            var upgrader = DeployChanges.To.PostgresqlDatabase(configuration.DatabaseConnectionString)
+            var upgrader = DeployChanges
+                .To.PostgresqlDatabase(configuration.DatabaseConnectionString)
                 .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
                 .LogToConsole()
                 .Build();
@@ -91,16 +96,25 @@ public class Program
 
             // Add metrics
             builder.Services.AddKinkLinkMetrics();
-            builder.Services.AddSignalR(options => options.EnableDetailedErrors = true)
-                .AddMessagePackProtocol(options => options.SerializerOptions = MessagePackSerializerOptions.Standard.WithSecurity(MessagePackSecurity.UntrustedData));
+            builder
+                .Services.AddSignalR(options => options.EnableDetailedErrors = true)
+                .AddMessagePackProtocol(options =>
+                    options.SerializerOptions = MessagePackSerializerOptions.Standard.WithSecurity(
+                        MessagePackSecurity.UntrustedData
+                    )
+                );
             builder.Services.AddSingleton(configuration);
-            // Register database service - DatabaseService handles its own QueriesSql creation
-            builder.Services.AddSingleton<DatabaseService>();
 
-            // Services
+            // Database services
+            builder.Services.AddSingleton<PairsService>();
+            builder.Services.AddSingleton<KinkLinkProfileConfigService>();
+            builder.Services.AddSingleton<KinkLinkProfilesService>();
+
+            // Business services
             builder.Services.AddSingleton<IPresenceService, PresenceService>();
             builder.Services.AddSingleton<ISecretHasher, SecretHasher>();
             builder.Services.AddSingleton<IRequestLoggingService, RequestLoggingService>();
+            builder.Services.AddSingleton<PermissionsService>();
 
             // Managers
             builder.Services.AddSingleton<IForwardedRequestManager, ForwardedRequestManager>();
@@ -155,18 +169,25 @@ public class Program
         }
     }
 
-    private static void ConfigureJwtAuthentication(IServiceCollection services, Configuration configuration)
+    private static void ConfigureJwtAuthentication(
+        IServiceCollection services,
+        Configuration configuration
+    )
     {
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
             {
-                ValidateAudience = false,
-                ValidateIssuer = false,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(configuration.SigningKey)),
-            };
-        });
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateAudience = false,
+                    ValidateIssuer = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.ASCII.GetBytes(configuration.SigningKey)
+                    ),
+                };
+            });
     }
 }

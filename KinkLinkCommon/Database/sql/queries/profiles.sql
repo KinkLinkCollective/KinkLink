@@ -14,7 +14,7 @@ RETURNING *;
 SELECT EXISTS(
     SELECT 1 FROM Profiles 
     WHERE UID = $1
-);
+)::boolean AS exists;
 
 -- name: UpdateAliasForProfile :one
 UPDATE Profiles 

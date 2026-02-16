@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS Users (
     id SERIAL PRIMARY KEY,
     discord_id BIGINT NOT NULL UNIQUE,
     secret_key_hash VARCHAR(64),
-    verified bool DEFAULT false,
-    banned bool DEFAULT false,
+    verified BOOLEAN DEFAULT false,
+    banned BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -34,38 +34,40 @@ CREATE TABLE IF NOT EXISTS Profiles (
     chat_role VARCHAR(20) DEFAULT '',
     alias VARCHAR(20) DEFAULT '',
     title VARCHAR(20) DEFAULT 'Kinkster',
-    description TEXT
+    description TEXT DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- This is the pairs table used to link UUIDs
 -- The pair permissions can expire to facilitate temporary pairings
 -- Each individual permission is just a boolean value for simplicity
 CREATE TABLE IF NOT EXISTS Pairs (
-    id SERIAL NOT NULL REFERENCES Profiles(id) ON DELETE CASCADE,
+    id INTEGER NOT NULL REFERENCES Profiles(id) ON DELETE CASCADE,
     pair_id INTEGER NOT NULL REFERENCES Profiles(id) ON DELETE CASCADE,
     PRIMARY KEY (id, pair_id),
     expires TIMESTAMP,
 
-    toggle_timer_locks BOOL DEFAULT false NOT NULL,
-    toggle_permanent_locks BOOL DEFAULT false NOT NULL,
+    toggle_timer_locks BOOLEAN DEFAULT false,
+    toggle_permanent_locks BOOLEAN DEFAULT false,
 
-    toggle_garbler BOOL DEFAULT false NOT NULL,
-    lock_garbler BOOL DEFAULT false NOT NULL,
-    toggle_channels BOOL DEFAULT false NOT NULL,
-    lock_channels BOOL DEFAULT false NOT NULL,
+    toggle_garbler BOOLEAN DEFAULT false,
+    lock_garbler BOOLEAN DEFAULT false,
+    toggle_channels BOOLEAN DEFAULT false,
+    lock_channels BOOLEAN DEFAULT false,
     
-    apply_gag BOOL DEFAULT false NOT NULL,
-    lock_gag BOOL DEFAULT false NOT NULL,
-    unlock_gag BOOL DEFAULT false NOT NULL,
-    remove_gag BOOL DEFAULT false NOT NULL,
+    apply_gag BOOLEAN DEFAULT false,
+    lock_gag BOOLEAN DEFAULT false,
+    unlock_gag BOOLEAN DEFAULT false,
+    remove_gag BOOLEAN DEFAULT false,
 
-    apply_wardrobe BOOL DEFAULT false NOT NULL,
-    lock_wardrobe BOOL DEFAULT false NOT NULL,
-    unlock_wardrobe BOOL DEFAULT false NOT NULL,
-    remove_wardrobe BOOL DEFAULT false NOT NULL,
+    apply_wardrobe BOOLEAN DEFAULT false,
+    lock_wardrobe BOOLEAN DEFAULT false,
+    unlock_wardrobe BOOLEAN DEFAULT false,
+    remove_wardrobe BOOLEAN DEFAULT false,
 
-    apply_moodles BOOL DEFAULT false NOT NULL,
-    lock_moodles BOOL DEFAULT false NOT NULL,
-    unlock_moodles BOOL DEFAULT false NOT NULL,
-    remove_moodles BOOL DEFAULT false NOT NULL
+    apply_moodles BOOLEAN DEFAULT false,
+    lock_moodles BOOLEAN DEFAULT false,
+    unlock_moodles BOOLEAN DEFAULT false,
+    remove_moodles BOOLEAN DEFAULT false
 );

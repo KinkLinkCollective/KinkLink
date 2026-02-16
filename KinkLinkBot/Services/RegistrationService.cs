@@ -94,7 +94,9 @@ public class RegistrationService
                         ChatRole: null,
                         Alias: null,
                         Title: null,
-                        Description: null
+                        Description: null,
+                        CreatedAt: null,
+                        UpdatedAt: null
                     )
                 );
             }

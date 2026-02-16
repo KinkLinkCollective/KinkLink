@@ -2,7 +2,7 @@
 -- If it doesn't exist, register a new user.
 -- Uses hashed secret for security
 INSERT INTO Users (discord_id, secret_key_hash)
-VALUES (@discord_id, encode(digest(@secret_key, 'sha256'), 'hex'))
+VALUES (@discord_id, encode(digest(@secret_key, 'sha256'), 'hex')::text)
 ON CONFLICT (discord_id) DO NOTHING
 RETURNING *;
 
@@ -10,7 +10,7 @@ RETURNING *;
 -- Allows users to get a new secret key from the service.
 -- Uses hashed secret for security
 UPDATE Users
-SET secret_key_hash=encode(digest(@secret_key, 'sha256'), 'hex')
+SET secret_key_hash=encode(digest(@secret_key, 'sha256'), 'hex')::text
 WHERE discord_id=$1;
 
 -- name: DeleteUserAccount :one
@@ -27,4 +27,4 @@ WHERE discord_id = $1;
 SELECT EXISTS(
     SELECT 1 FROM Users 
     WHERE discord_id = $1
-);
+)::boolean AS exists;

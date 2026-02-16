@@ -1,7 +1,7 @@
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Diagnostics;
 using KinkLinkCommon.Domain.Enums;
 using KinkLinkCommon.Domain.Network.GetToken;
 using KinkLinkCommon.Domain.Network.LoginAuthentication;
@@ -15,7 +15,12 @@ namespace KinkLinkServer.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(ILogger<AuthController> logger, Configuration config, DatabaseService database, IMetricsService metricsService) : ControllerBase
+public class AuthController(
+    ILogger<AuthController> logger,
+    Configuration config,
+    AuthService authService,
+    IMetricsService metricsService
+) : ControllerBase
 {
     // Const
     private static readonly Version ExpectedVersion = new(0, 0, 0, 1);
@@ -30,30 +35,52 @@ public class AuthController(ILogger<AuthController> logger, Configuration config
         var stopwatch = Stopwatch.StartNew();
         var actionName = "login";
 
-        logger.LogInformation("Login request received for profile UID {ProfileUID}, version {Version}", request.ProfileUID, request.Version);
+        logger.LogInformation(
+            "Login request received for profile UID {ProfileUID}, version {Version}",
+            request.ProfileUID,
+            request.Version
+        );
 
         if (request.Version < ExpectedVersion)
         {
             metricsService.IncrementAuthentication(actionName, false);
             metricsService.RecordAuthenticationDuration(actionName, stopwatch.ElapsedMilliseconds);
-            logger.LogWarning("Version mismatch for profile {ProfileUID}: expected {ExpectedVersion}, got {ActualVersion}", request.ProfileUID, ExpectedVersion, request.Version);
-            return StatusCode(StatusCodes.Status409Conflict, new LoginAuthenticationResult(LoginAuthenticationErrorCode.VersionMismatch, ""));
+            logger.LogWarning(
+                "Version mismatch for profile {ProfileUID}: expected {ExpectedVersion}, got {ActualVersion}",
+                request.ProfileUID,
+                ExpectedVersion,
+                request.Version
+            );
+            return StatusCode(
+                StatusCodes.Status409Conflict,
+                new LoginAuthenticationResult(LoginAuthenticationErrorCode.VersionMismatch, "")
+            );
         }
 
-        var authStatus = await database.LoginUser(request.Secret, request.ProfileUID);
+        var authStatus = await authService.LoginUser(request.Secret, request.ProfileUID);
         if (authStatus != DBAuthenticationStatus.Authorized)
         {
             metricsService.IncrementAuthentication(actionName, false);
             metricsService.RecordAuthenticationDuration(actionName, stopwatch.ElapsedMilliseconds);
-            logger.LogWarning("Login failed for profile {ProfileUID}: {Status}", request.ProfileUID, authStatus);
-            return StatusCode(StatusCodes.Status401Unauthorized, new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownSecret, ""));
+            logger.LogWarning(
+                "Login failed for profile {ProfileUID}: {Status}",
+                request.ProfileUID,
+                authStatus
+            );
+            return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                new LoginAuthenticationResult(LoginAuthenticationErrorCode.UnknownSecret, "")
+            );
         }
 
         var token = GenerateJwtToken([new Claim(AuthClaimTypes.Uid, request.ProfileUID)]);
         metricsService.IncrementAuthentication(actionName, true);
         metricsService.RecordAuthenticationDuration(actionName, stopwatch.ElapsedMilliseconds);
         logger.LogInformation("Login successful for profile {ProfileUID}", request.ProfileUID);
-        return StatusCode(StatusCodes.Status200OK, new LoginAuthenticationResult(LoginAuthenticationErrorCode.Success, token.RawData));
+        return StatusCode(
+            StatusCodes.Status200OK,
+            new LoginAuthenticationResult(LoginAuthenticationErrorCode.Success, token.RawData)
+        );
     }
 
     private JwtSecurityToken GenerateJwtToken(List<Claim> claims)
@@ -66,8 +93,11 @@ public class AuthController(ILogger<AuthController> logger, Configuration config
         var token = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            SigningCredentials = new SigningCredentials(_key, SecurityAlgorithms.HmacSha256Signature),
-            Expires = DateTime.UtcNow.AddHours(4)
+            SigningCredentials = new SigningCredentials(
+                _key,
+                SecurityAlgorithms.HmacSha256Signature
+            ),
+            Expires = DateTime.UtcNow.AddHours(4),
         };
 
         var jwtToken = new JwtSecurityTokenHandler().CreateJwtSecurityToken(token);
@@ -75,7 +105,10 @@ public class AuthController(ILogger<AuthController> logger, Configuration config
 
         metricsService.IncrementAuthentication(actionName, true);
         metricsService.RecordAuthenticationDuration(actionName, stopwatch.ElapsedMilliseconds);
-        logger.LogInformation("JWT token generated successfully, expires at {ExpiryTime}", token.Expires);
+        logger.LogInformation(
+            "JWT token generated successfully, expires at {ExpiryTime}",
+            token.Expires
+        );
         return jwtToken;
     }
 }

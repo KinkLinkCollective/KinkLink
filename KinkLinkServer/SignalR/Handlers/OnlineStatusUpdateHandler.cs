@@ -2,15 +2,19 @@ using KinkLinkCommon.Domain.Enums;
 using KinkLinkCommon.Domain.Network;
 using KinkLinkCommon.Domain.Network.SyncOnlineStatus;
 using KinkLinkServer.Domain.Interfaces;
-using Microsoft.AspNetCore.SignalR;
 using KinkLinkServer.Services;
+using Microsoft.AspNetCore.SignalR;
 
 namespace KinkLinkServer.SignalR.Handlers;
 
 /// <summary>
 ///     Processes clients connecting and disconnecting from the server
 /// </summary>
-public class OnlineStatusUpdateHandler(DatabaseService database, IPresenceService presenceService, ILogger<OnlineStatusUpdateHandler> logger)
+public class OnlineStatusUpdateHandler(
+    PermissionsService permissionsService,
+    IPresenceService presenceService,
+    ILogger<OnlineStatusUpdateHandler> logger
+)
 {
     /// <summary>
     ///     Handle the event, removing or adding from the current client list, and updating all the user's friends who are online
@@ -20,7 +24,7 @@ public class OnlineStatusUpdateHandler(DatabaseService database, IPresenceServic
         if (online is false)
             presenceService.Remove(friendCode);
 
-        var permissions = await database.GetAllPermissions(friendCode);
+        var permissions = await permissionsService.GetAllPermissions(friendCode);
         foreach (var permission in permissions)
         {
             // Ignore pending friends
@@ -35,18 +39,35 @@ public class OnlineStatusUpdateHandler(DatabaseService database, IPresenceServic
             {
                 if (online)
                 {
-                    var request = new SyncOnlineStatusCommand(friendCode, FriendOnlineStatus.Online, permission.PermissionsGrantedTo);
-                    await clients.Client(target.ConnectionId).SendAsync(HubMethod.SyncOnlineStatus, request);
+                    var request = new SyncOnlineStatusCommand(
+                        friendCode,
+                        FriendOnlineStatus.Online,
+                        permission.PermissionsGrantedTo
+                    );
+                    await clients
+                        .Client(target.ConnectionId)
+                        .SendAsync(HubMethod.SyncOnlineStatus, request);
                 }
                 else
                 {
-                    var request = new SyncOnlineStatusCommand(friendCode, FriendOnlineStatus.Offline, null);
-                    await clients.Client(target.ConnectionId).SendAsync(HubMethod.SyncOnlineStatus, request);
+                    var request = new SyncOnlineStatusCommand(
+                        friendCode,
+                        FriendOnlineStatus.Offline,
+                        null
+                    );
+                    await clients
+                        .Client(target.ConnectionId)
+                        .SendAsync(HubMethod.SyncOnlineStatus, request);
                 }
             }
             catch (Exception e)
             {
-                logger.LogError("Syncing online status {Sender} -> {Target} failed, {Error}", friendCode, permission.TargetUID, e);
+                logger.LogError(
+                    "Syncing online status {Sender} -> {Target} failed, {Error}",
+                    friendCode,
+                    permission.TargetUID,
+                    e
+                );
             }
         }
     }

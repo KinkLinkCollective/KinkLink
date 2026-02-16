@@ -3,7 +3,7 @@
 -- Uses hashed secret key for security
 SELECT p.UID FROM Profiles p
 JOIN Users u ON p.user_id = u.id
-WHERE u.secret_key_hash = encode(digest(@secret_key, 'sha256'), 'hex');
+WHERE u.secret_key_hash = encode(digest(@secret_key, 'sha256'), 'hex')::text;
 
 -- name: Login :one
 -- Confirm whether or not a UID is valid with a secret.
@@ -13,4 +13,4 @@ SELECT EXISTS(
     SELECT 1 FROM Profiles p
     JOIN Users u ON p.user_id = u.id
     WHERE p.UID = $1
-) as is_valid;
+)::boolean as is_valid;

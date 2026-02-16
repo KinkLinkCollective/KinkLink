@@ -1,19 +1,19 @@
 -- name: InsertTestUser :one
 -- Inserts a test user into the Users table
 INSERT INTO Users (discord_id, secret_key_hash, verified, banned)
-VALUES ($1, $2, COALESCE($3, false), COALESCE($4, false))
+VALUES ($1, $2, COALESCE($3, false)::boolean, COALESCE($4, false)::boolean)
 RETURNING id;
 
 -- name: InsertTestProfile :one
 -- Inserts a test profile into the Profiles table
 INSERT INTO Profiles (user_id, uid, chat_role, alias, title, description)
-VALUES ($1, $2, COALESCE($3, ''), COALESCE($4, ''), COALESCE($5, 'Kinkster'), COALESCE($6, ''))
+VALUES ($1, $2, COALESCE($3, '')::varchar, COALESCE($4, '')::varchar, COALESCE($5, 'Kinkster')::varchar, COALESCE($6, '')::varchar)
 RETURNING id;
 
 -- name: InsertTestPair :one
 -- Inserts a test pair relationship between two profiles
 INSERT INTO Pairs (id, pair_id, priority, gags, wardrobe, moodles)
-VALUES ($1, $2, COALESCE($3, 0), COALESCE($4, 0), COALESCE($5, 0), COALESCE($6, 0))
+VALUES ($1, $2, COALESCE($3, 0)::integer, COALESCE($4, 0)::integer, COALESCE($5, 0)::integer, COALESCE($6, 0)::integer)
 RETURNING *;
 
 -- name: InsertTestPairWithPermissions :one
@@ -24,10 +24,6 @@ RETURNING *;
 
 -- name: DeleteTestUserByDiscordId :one
 -- Deletes a user and all related profiles and pairs by discord_id
-WITH deleted_profiles AS (
-    DELETE FROM Profiles WHERE user_id IN (SELECT id FROM Users WHERE Users.discord_id = $1)
-    RETURNING id
-)
 DELETE FROM Users WHERE Users.discord_id = $1
 RETURNING *;
 
@@ -54,7 +50,7 @@ SELECT id FROM Users WHERE discord_id = $1;
 SELECT EXISTS (
     SELECT 1 FROM information_schema.tables 
     WHERE table_schema = 'public' 
-    AND table_name = $1
+    AND table_name = $1::varchar
 )::boolean as exists;
 
 -- name: ColumnExists :one
@@ -62,10 +58,10 @@ SELECT EXISTS (
 SELECT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_schema = 'public' 
-    AND table_name = $1
-    AND column_name = $2
+    AND table_name = $1::varchar
+    AND column_name = $2::varchar
 )::boolean as exists;
 
--- name: TruncateTables :one
+-- name: TruncateTables :exec
 -- Truncates all tables in correct order for test isolation
 TRUNCATE TABLE Pairs, Profiles, Users RESTART IDENTITY CASCADE;
