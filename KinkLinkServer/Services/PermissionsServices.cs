@@ -6,44 +6,24 @@ using KinkLinkServer.Domain;
 
 namespace KinkLinkServer.Services;
 
-/// <summary>
-///     Provides methods for interacting with the permissions tables for users and pairs
-/// </summary>
 public class PermissionsService
 {
-    // Injected
-    private readonly ILogger<DatabaseService> _logger;
-    private readonly string _connectionString;
-    private readonly ISecretHasher _secretHasher;
+    private readonly ILogger<PermissionsService> _logger;
+    private readonly PairsService _pairsService;
+    private readonly KinkLinkProfilesService _profilesService;
 
-    // Generated queries from sqlc
-    private AuthSql _auth = null!;
-    private PairsSql _pairs = null!;
-    private UsersSql _users = null!;
-    private ProfilesSql _profiles = null!;
-
-    /// <summary>
-    ///     Creates a new DatabaseService with the provided connection string and logger
-    /// </summary>
     public PermissionsService(
         Configuration config,
-        ILogger<DatabaseService> logger,
-        ISecretHasher secretHasher
+        ILogger<PermissionsService> logger,
+        PairsService pairsService,
+        KinkLinkProfilesService profilesService
     )
     {
-        _connectionString = config.DatabaseConnectionString;
         _logger = logger;
-        _secretHasher = secretHasher;
-
-        _pairs = new PairsSql(_connectionString);
-        _users = new UsersSql(_connectionString);
-        _profiles = new ProfilesSql(_connectionString);
+        _pairsService = pairsService;
+        _profilesService = profilesService;
     }
 
-    /// <summary>
-    ///     Creates an empty set of permissions between sender and target friend codes
-    /// </summary>
-    /// TODO: Allow the permissions creation to plumb in a default set of permissions on a user basis.
     public async Task<DBPairResult> CreatePermissions(string userUID, string targetUID)
     {
         try
@@ -60,9 +40,8 @@ public class PermissionsService
                 return DBPairResult.PairUIDDoesNotExist;
             }
 
-            // Get profile IDs from UIDs using Profiles table
-            var userProfile = await _profiles.GetProfileByUidAsync(new(userUID));
-            var targetProfile = await _profiles.GetProfileByUidAsync(new(targetUID));
+            var userProfile = await _profilesService.GetIdFromUidAsync(userUID);
+            var targetProfile = await _profilesService.GetIdFromUidAsync(targetUID);
 
             if (userProfile == null)
             {
@@ -82,11 +61,10 @@ public class PermissionsService
                 return DBPairResult.PairUIDDoesNotExist;
             }
 
-            var userId = userProfile.Value.Id;
-            var targetId = targetProfile.Value.Id;
+            var userId = userProfile.Value;
+            var targetId = targetProfile.Value;
 
-            // Check if pair already exists
-            var existingPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
+            var existingPairs = await _pairsService.GetAllPairsForProfileAsync(userUID);
 
             var hasOneWayPair = existingPairs.Any(p => p.Id == userId && p.PairId == targetId);
             var hasReversePair = existingPairs.Any(p => p.Id == targetId && p.PairId == userId);
@@ -111,8 +89,7 @@ public class PermissionsService
                 return DBPairResult.OnesidedPairExists;
             }
 
-            // Create new pair with no permissions (all false)
-            var newPair = await _pairs.AddPairAsync(new() { Id = userId, PairId = targetId });
+            var newPair = await _pairsService.AddPairAsync(userId, targetId);
 
             if (newPair != null)
             {
@@ -138,9 +115,6 @@ public class PermissionsService
         }
     }
 
-    /// <summary>
-    ///     Updates a set of permissions between sender and target friend codes
-    /// </summary>
     public async Task<DBPairResult> UpdatePermissions(
         string senderFriendCode,
         string targetFriendCode,
@@ -164,9 +138,8 @@ public class PermissionsService
                 return DBPairResult.PairUIDDoesNotExist;
             }
 
-            // Get profile IDs from UIDs using Profiles table
-            var senderProfile = await _profiles.GetProfileByUidAsync(new(senderFriendCode));
-            var targetProfile = await _profiles.GetProfileByUidAsync(new(targetFriendCode));
+            var senderProfile = await _profilesService.GetIdFromUidAsync(senderFriendCode);
+            var targetProfile = await _profilesService.GetIdFromUidAsync(targetFriendCode);
 
             if (senderProfile == null)
             {
@@ -186,11 +159,10 @@ public class PermissionsService
                 return DBPairResult.PairUIDDoesNotExist;
             }
 
-            var senderId = senderProfile.Value.Id;
-            var targetId = targetProfile.Value.Id;
+            var senderId = senderProfile.Value;
+            var targetId = targetProfile.Value;
 
-            // Check if pair exists in sender->target direction
-            var existingPairs = await _pairs.GetAllPairsForProfileAsync(new(senderFriendCode));
+            var existingPairs = await _pairsService.GetAllPairsForProfileAsync(senderFriendCode);
             var existingPair = existingPairs.FirstOrDefault(p =>
                 p.Id == senderId && p.PairId == targetId
             );
@@ -205,17 +177,13 @@ public class PermissionsService
                 return DBPairResult.NoOp;
             }
 
-            // Update permissions using the provided permissions
-            var updateResult = await _pairs.UpdatePairPermissionsAsync(
-                new()
-                {
-                    Priority = (int)permissions.Priority,
-                    Gags = (int)permissions.Gags,
-                    Wardrobe = (int)permissions.Wardrobe,
-                    Moodles = (int)permissions.Moodles,
-                    Id = senderId,
-                    PairId = targetId,
-                }
+            var updateResult = await _pairsService.UpdatePairPermissionsAsync(
+                (int)permissions.Priority,
+                (int)permissions.Gags,
+                (int)permissions.Wardrobe,
+                (int)permissions.Moodles,
+                senderId,
+                targetId
             );
 
             if (updateResult != null)
@@ -242,9 +210,6 @@ public class PermissionsService
         }
     }
 
-    /// <summary>
-    ///     Gets permissions for a relationship
-    /// </summary>
     public async Task<Pair?> GetPermissions(string userUID, string targetUID)
     {
         try
@@ -261,8 +226,7 @@ public class PermissionsService
                 return null;
             }
 
-            // Get all pairs for the user
-            var userPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
+            var userPairs = await _pairsService.GetAllPairsForProfileAsync(userUID);
 
             if (!userPairs.Any())
             {
@@ -270,7 +234,6 @@ public class PermissionsService
                 return null;
             }
 
-            // Find the specific pair relationship
             var targetPair = userPairs.FirstOrDefault(p => p.PairUid == targetUID);
 
             if (targetPair == default)
@@ -283,14 +246,18 @@ public class PermissionsService
                 return null;
             }
 
-            // Create UserPermissions from the pair data
-            var userPermissions = new Pair
-            {
-                Priority = targetPair.Priority,
-                Wardrobe = targetPair.Wardrobe,
-                Gags = targetPair.Gags,
-                Moodles = targetPair.Moodles,
-            };
+            var userPermissions = new Pair(
+                targetPair.Id,
+                targetPair.PairId,
+                targetPair.Expires,
+                (int)targetPair.Priority,
+                targetPair.ControlsPerm,
+                targetPair.ControlsConfig,
+                targetPair.DisableSafeword,
+                (int)targetPair.Gags,
+                (int)targetPair.Wardrobe,
+                (int)targetPair.Moodles
+            );
 
             _logger.LogDebug(
                 "GetPermissions: retrieved permissions from {UserUID} to {TargetUID}",
@@ -306,9 +273,6 @@ public class PermissionsService
         }
     }
 
-    /// <summary>
-    ///     Deletes a permissions relationship
-    /// </summary>
     public async Task<DBPairResult> DeletePermissions(string userUID, string targetUID)
     {
         try
@@ -325,9 +289,8 @@ public class PermissionsService
                 return DBPairResult.PairUIDDoesNotExist;
             }
 
-            // Get profile IDs from UIDs using Profiles table
-            var userProfile = await _profiles.GetProfileByUidAsync(new(userUID));
-            var targetProfile = await _profiles.GetProfileByUidAsync(new(targetUID));
+            var userProfile = await _profilesService.GetIdFromUidAsync(userUID);
+            var targetProfile = await _profilesService.GetIdFromUidAsync(targetUID);
 
             if (userProfile == null)
             {
@@ -347,11 +310,10 @@ public class PermissionsService
                 return DBPairResult.PairUIDDoesNotExist;
             }
 
-            var userId = userProfile.Value.Id;
-            var targetId = targetProfile.Value.Id;
+            var userId = userProfile.Value;
+            var targetId = targetProfile.Value;
 
-            // Check if pair exists before attempting deletion
-            var existingPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
+            var existingPairs = await _pairsService.GetAllPairsForProfileAsync(userUID);
             var existingPair = existingPairs.FirstOrDefault(p =>
                 p.Id == userId && p.PairId == targetId
             );
@@ -366,12 +328,9 @@ public class PermissionsService
                 return DBPairResult.NoOp;
             }
 
-            // Delete the pair
-            var deleteResult = await _pairs.RemovePairAsync(
-                new() { Id = userId, PairId = targetId }
-            );
+            var deleteResult = await _pairsService.RemovePairAsync(userId, targetId);
 
-            if (deleteResult != null)
+            if (deleteResult)
             {
                 _logger.LogInformation(
                     "DeletePermissions: successfully deleted pair from {UserUID} to {TargetUID}",
@@ -397,57 +356,14 @@ public class PermissionsService
 
     private async Task<bool> IsTwoWayPaired(string user, string pair)
     {
-        var userid = await _profiles.GetProfileByUidAsync(new(user));
-        var pairid = await _profiles.GetProfileByUidAsync(new(pair));
-        // Checks for a regcord indicating that the two pairs are linked in two direction
-        var result = await _pairs.ConfirmTwoWayPairAsync(new(userid.Value.Id, pairid.Value.Id));
-        if (result == null)
+        var userProfile = await _profilesService.GetIdFromUidAsync(user);
+        var pairProfile = await _profilesService.GetIdFromUidAsync(pair);
+        if (userProfile == null || pairProfile == null)
             return false;
-        return result.Value.Twowaypair ?? false;
+
+        return await _pairsService.ConfirmTwoWayPairAsync(userProfile.Value, pairProfile.Value);
     }
 
-    private async Task<bool> IsActionPermitted(string user, string pair, PairAction WhichPerm)
-    {
-        // Based on the provided permission query the correct columns for the user/pair and check that an action is allowed
-        return false;
-    }
-
-    /// <summary>
-    ///     Helper method to get user ID from UID (friend code)
-    /// </summary>
-    private async Task<int?> GetUserIdFromUid(string uid)
-    {
-        try
-        {
-            var profile = await _profiles.GetProfileByUidAsync(new(uid));
-            return profile?.Id;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "GetUserIdFromUid failed for UID {UID}", uid);
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Helper method to validate UID format
-    /// </summary>
-    private bool IsValidUid(string uid)
-    {
-        return !string.IsNullOrWhiteSpace(uid) && uid.Length >= 3 && uid.Length <= 10;
-    }
-
-    /// <summary>
-    ///     Helper method to validate secret format
-    /// </summary>
-    private bool IsValidSecret(string secret)
-    {
-        return !string.IsNullOrWhiteSpace(secret) && secret.Length >= 10 && secret.Length <= 100;
-    }
-
-    /// <summary>
-    ///     Gets all permissions for a user
-    /// </summary>
     public async Task<List<TwoWayPermissions>> GetAllPermissions(string userUID)
     {
         try
@@ -458,24 +374,33 @@ public class PermissionsService
                 return new List<TwoWayPermissions>();
             }
 
-            var allPairs = await _pairs.GetAllPairsForProfileAsync(new(userUID));
+            var allPairs = await _pairsService.GetAllPairsForProfileAsync(userUID);
             var result = new List<TwoWayPermissions>();
 
             foreach (var pair in allPairs)
             {
-                // Convert from GetAllPairsForProfileRow to Pair model
                 var pairModel = new Pair(
                     pair.Id,
                     pair.PairId,
                     pair.Expires,
-                    pair.Priority,
-                    pair.Gags,
-                    pair.Wardrobe,
-                    pair.Moodles
+                    (int)pair.Priority,
+                    pair.ControlsPerm,
+                    pair.ControlsConfig,
+                    pair.DisableSafeword,
+                    (int)pair.Gags,
+                    (int)pair.Wardrobe,
+                    (int)pair.Moodles
                 );
-
-                var permission = new TwoWayPermissions(userUID, pair.PairUid, pairModel, new());
-                result.Add(permission);
+                if (pair.PairUid != null)
+                {
+                    var permission = new TwoWayPermissions(
+                        userUID,
+                        pair.PairUid,
+                        pairModel,
+                        new Pair()
+                    );
+                    result.Add(permission);
+                }
             }
 
             _logger.LogDebug(

@@ -11,7 +11,7 @@ namespace KinkLinkServer.Services;
 public class AuthService
 {
     // Injected
-    private readonly ILogger<DatabaseService> _logger;
+    private readonly ILogger<AuthService> _logger;
 
     // Generated queries from sqlc
     private AuthSql _auth;
@@ -19,7 +19,7 @@ public class AuthService
     /// <summary>
     ///     Creates a new DatabaseService with the provided connection string and logger
     /// </summary>
-    public AuthService(AuthSql auth, ILogger<DatabaseService> logger)
+    public AuthService(AuthSql auth, ILogger<AuthService> logger)
     {
         _logger = logger;
 

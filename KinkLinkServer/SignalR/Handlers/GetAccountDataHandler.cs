@@ -9,27 +9,40 @@ namespace KinkLinkServer.SignalR.Handlers;
 /// <summary>
 ///     Handles the logic for fulfilling a <see cref="GetAccountDataRequest"/>
 /// </summary>
-public class GetAccountDataHandler(DatabaseService database, IPresenceService presenceService)
+public class GetAccountDataHandler(
+    PermissionsService permissionsService,
+    IPresenceService presenceService
+)
 {
     /// <summary>
     ///     Handles the request
     /// </summary>
-    public async Task<GetAccountDataResponse> Handle(string friendCode, string connectionId, GetAccountDataRequest request)
+    public async Task<GetAccountDataResponse> Handle(
+        string friendCode,
+        string connectionId,
+        GetAccountDataRequest request
+    )
     {
         var presence = new Presence(connectionId, request.CharacterName, request.CharacterWorld);
         presenceService.Add(friendCode, presence);
 
         var results = new List<FriendRelationship>();
-        var permissions = await database.GetAllPermissions(friendCode);
+        var permissions = await permissionsService.GetAllPermissions(friendCode);
         foreach (var permission in permissions)
         {
-            var online = permission.PermissionsGrantedBy is null
-                ? FriendOnlineStatus.Pending
-                : presenceService.TryGet(permission.TargetUID) is null
-                    ? FriendOnlineStatus.Offline
-                    : FriendOnlineStatus.Online;
+            var online =
+                permission.PermissionsGrantedBy is null ? FriendOnlineStatus.Pending
+                : presenceService.TryGet(permission.TargetUID) is null ? FriendOnlineStatus.Offline
+                : FriendOnlineStatus.Online;
 
-            results.Add(new FriendRelationship(permission.TargetUID, online, permission.PermissionsGrantedTo, permission.PermissionsGrantedBy));
+            results.Add(
+                new FriendRelationship(
+                    permission.TargetUID,
+                    online,
+                    permission.PermissionsGrantedTo,
+                    permission.PermissionsGrantedBy
+                )
+            );
         }
 
         return new GetAccountDataResponse(GetAccountDataEc.Success, friendCode, results);
