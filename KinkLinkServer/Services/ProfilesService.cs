@@ -21,29 +21,54 @@ public class KinkLinkProfilesService
 
     public async Task<int?> GetIdFromUidAsync(string uid)
     {
-        // TODO :This function should return a list of UserPermissions associated with this UID.
-        // Lookup and associate the UID with the profile and return the primary key if it exists
-        throw new NotImplementedException("Function not implemented");
+        var profile = await _profilesSql.GetProfileByUidAsync(new(uid));
+        return profile?.Id;
     }
 
     public async Task<KinkLinkProfile?> GetProfileByUidAsync(string uid)
     {
-        // TODO :This function should return a list of UserPermissions associated with this UID.
-        // Lookup and associate the UID with the profile and return the profile if it exists.
-        throw new NotImplementedException("Function not implemented");
+        var result = await _profilesSql.GetProfileByUidAsync(new(uid));
+        if (result is not { } row)
+            return null;
+
+        return new KinkLinkProfile(
+            row.Uid,
+            row.ChatRole,
+            row.Alias,
+            row.Title,
+            row.Description,
+            null,
+            null
+        );
     }
 
     public async Task<KinkLinkProfile?> UpdateDetailsByUidAsync(
         string uid,
-        // The current title they wish to use.
         string title,
         string alias,
         string chatRole,
         string description
     )
     {
-        // TODO: Update the user profile associated with `uid`
-        // First lookup the UID to get the profile ID, then update the entry for that UID for the profile
-        throw new NotImplementedException("Function not implemented");
+        var profileId = await GetIdFromUidAsync(uid);
+        if (profileId is not { } id)
+            return null;
+
+        var result = await _profilesSql.UpdateDetailsForProfileAsync(
+            new(title, description, uid, id)
+        );
+        
+        if (result is not { } row)
+            return null;
+
+        return new KinkLinkProfile(
+            row.Uid,
+            row.ChatRole,
+            row.Alias,
+            row.Title,
+            row.Description,
+            row.CreatedAt,
+            row.UpdatedAt
+        );
     }
 }

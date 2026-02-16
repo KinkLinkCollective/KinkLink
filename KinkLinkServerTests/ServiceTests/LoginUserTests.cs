@@ -14,7 +14,7 @@ public class LoginUserTests : DatabaseServiceTestBase
         
         await CreateTestUserWithProfileAsync(123456789012345678, "LOGINUSER1", "dummy_hash");
         
-        var result = await DatabaseService.LoginUser("test_secret_key_123", "LOGINUSER1");
+        var result = await AuthService.LoginUser("test_secret_key_123", "LOGINUSER1");
         
         Assert.Equal(DBAuthenticationStatus.Authorized, result);
     }
@@ -24,7 +24,7 @@ public class LoginUserTests : DatabaseServiceTestBase
     {
         await Fixture.ResetDatabaseAsync();
         
-        var result = await DatabaseService.LoginUser("some_secret", "NONEXISTENT");
+        var result = await AuthService.LoginUser("some_secret", "NONEXISTENT");
         
         Assert.Equal(DBAuthenticationStatus.Unauthorized, result);
     }
@@ -34,7 +34,7 @@ public class LoginUserTests : DatabaseServiceTestBase
     {
         await Fixture.ResetDatabaseAsync();
         
-        var result = await DatabaseService.LoginUser(null!, "some_uid");
+        var result = await AuthService.LoginUser(null!, "some_uid");
         
         Assert.Equal(DBAuthenticationStatus.Unauthorized, result);
     }
@@ -44,7 +44,7 @@ public class LoginUserTests : DatabaseServiceTestBase
     {
         await Fixture.ResetDatabaseAsync();
         
-        var result = await DatabaseService.LoginUser("", "some_uid");
+        var result = await AuthService.LoginUser("", "some_uid");
         
         Assert.Equal(DBAuthenticationStatus.Unauthorized, result);
     }
@@ -54,7 +54,7 @@ public class LoginUserTests : DatabaseServiceTestBase
     {
         await Fixture.ResetDatabaseAsync();
         
-        var result = await DatabaseService.LoginUser("some_secret", null!);
+        var result = await AuthService.LoginUser("some_secret", null!);
         
         Assert.Equal(DBAuthenticationStatus.Unauthorized, result);
     }
@@ -64,7 +64,7 @@ public class LoginUserTests : DatabaseServiceTestBase
     {
         await Fixture.ResetDatabaseAsync();
         
-        var result = await DatabaseService.LoginUser("some_secret", "");
+        var result = await AuthService.LoginUser("some_secret", "");
         
         Assert.Equal(DBAuthenticationStatus.Unauthorized, result);
     }

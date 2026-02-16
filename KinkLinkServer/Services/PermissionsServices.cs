@@ -178,12 +178,12 @@ public class PermissionsService
             }
 
             var updateResult = await _pairsService.UpdatePairPermissionsAsync(
+                senderId,
+                targetId,
                 (int)permissions.Priority,
                 (int)permissions.Gags,
                 (int)permissions.Wardrobe,
-                (int)permissions.Moodles,
-                senderId,
-                targetId
+                (int)permissions.Moodles
             );
 
             if (updateResult != null)
