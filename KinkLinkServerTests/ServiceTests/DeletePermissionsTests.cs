@@ -14,7 +14,7 @@ public class DeletePermissionsTests : DatabaseServiceTestBase
         
         var (profileId1, profileId2, uid1, uid2) = await CreatePairedProfilesAsync();
         
-        var result = await DatabaseService.DeletePermissions(uid1, uid2);
+        var result = await PermissionsService.DeletePermissions(uid1, uid2);
         
         Assert.Equal(DBPairResult.Success, result);
     }
@@ -27,7 +27,7 @@ public class DeletePermissionsTests : DatabaseServiceTestBase
         var (_, _, uid1) = await CreateTestUserWithProfileAsync(111111111111111111, "DEL1");
         var (_, _, uid2) = await CreateTestUserWithProfileAsync(222222222222222222, "DEL2");
         
-        var result = await DatabaseService.DeletePermissions(uid1, uid2);
+        var result = await PermissionsService.DeletePermissions(uid1, uid2);
         
         Assert.Equal(DBPairResult.NoOp, result);
     }
@@ -39,7 +39,7 @@ public class DeletePermissionsTests : DatabaseServiceTestBase
         
         var (_, _, uid) = await CreateTestUserWithProfileAsync(111111111111111111, "SAME2");
         
-        var result = await DatabaseService.DeletePermissions(uid, uid);
+        var result = await PermissionsService.DeletePermissions(uid, uid);
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }
@@ -49,7 +49,7 @@ public class DeletePermissionsTests : DatabaseServiceTestBase
     {
         await Fixture.ResetDatabaseAsync();
         
-        var result = await DatabaseService.DeletePermissions("", "VALID");
+        var result = await PermissionsService.DeletePermissions("", "VALID");
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }
@@ -61,7 +61,7 @@ public class DeletePermissionsTests : DatabaseServiceTestBase
         
         var (_, _, uid) = await CreateTestUserWithProfileAsync(111111111111111111, "EXISTS2");
         
-        var result = await DatabaseService.DeletePermissions(uid, "NONEXISTENT");
+        var result = await PermissionsService.DeletePermissions(uid, "NONEXISTENT");
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }

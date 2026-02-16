@@ -16,7 +16,7 @@ public class CreatePermissionsTests : DatabaseServiceTestBase
         var (_, _, uid1) = await CreateTestUserWithProfileAsync(111111111111111111, "CREATE1");
         var (_, _, uid2) = await CreateTestUserWithProfileAsync(222222222222222222, "CREATE2");
         
-        var result = await DatabaseService.CreatePermissions(uid1, uid2);
+        var result = await PermissionsService.CreatePermissions(uid1, uid2);
         
         Assert.Equal(DBPairResult.PairCreated, result);
     }
@@ -28,7 +28,7 @@ public class CreatePermissionsTests : DatabaseServiceTestBase
         
         var (_, _, uid) = await CreateTestUserWithProfileAsync(111111111111111111, "SAMEUSER1");
         
-        var result = await DatabaseService.CreatePermissions(uid, uid);
+        var result = await PermissionsService.CreatePermissions(uid, uid);
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }
@@ -38,7 +38,7 @@ public class CreatePermissionsTests : DatabaseServiceTestBase
     {
         await Fixture.ResetDatabaseAsync();
         
-        var result = await DatabaseService.CreatePermissions("", "VALIDUID");
+        var result = await PermissionsService.CreatePermissions("", "VALIDUID");
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }
@@ -57,7 +57,7 @@ public class CreatePermissionsTests : DatabaseServiceTestBase
             PairId = profileId2
         });
         
-        var result = await DatabaseService.CreatePermissions(uid1, uid2);
+        var result = await PermissionsService.CreatePermissions(uid1, uid2);
         
         Assert.Equal(DBPairResult.OnesidedPairExists, result);
     }
@@ -81,7 +81,7 @@ public class CreatePermissionsTests : DatabaseServiceTestBase
             PairId = profileId1
         });
         
-        var result = await DatabaseService.CreatePermissions(uid1, uid2);
+        var result = await PermissionsService.CreatePermissions(uid1, uid2);
         
         Assert.Equal(DBPairResult.Paired, result);
     }
@@ -93,7 +93,7 @@ public class CreatePermissionsTests : DatabaseServiceTestBase
         
         var (_, _, uid) = await CreateTestUserWithProfileAsync(111111111111111111, "EXISTING1");
         
-        var result = await DatabaseService.CreatePermissions(uid, "NONEXISTENT");
+        var result = await PermissionsService.CreatePermissions(uid, "NONEXISTENT");
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }

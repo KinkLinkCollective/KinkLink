@@ -23,7 +23,7 @@ public class UpdatePermissionsTests : DatabaseServiceTestBase
             MoodlesPermissions.CanApplyOwn
         );
         
-        var result = await DatabaseService.UpdatePermissions(uid1, uid2, permissions);
+        var result = await PermissionsService.UpdatePermissions(uid1, uid2, permissions);
         
         Assert.Equal(DBPairResult.Success, result);
     }
@@ -38,7 +38,7 @@ public class UpdatePermissionsTests : DatabaseServiceTestBase
         
         var permissions = new UserPermissions();
         
-        var result = await DatabaseService.UpdatePermissions(uid1, uid2, permissions);
+        var result = await PermissionsService.UpdatePermissions(uid1, uid2, permissions);
         
         Assert.Equal(DBPairResult.NoOp, result);
     }
@@ -52,7 +52,7 @@ public class UpdatePermissionsTests : DatabaseServiceTestBase
         
         var permissions = new UserPermissions();
         
-        var result = await DatabaseService.UpdatePermissions(uid, uid, permissions);
+        var result = await PermissionsService.UpdatePermissions(uid, uid, permissions);
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }
@@ -64,7 +64,7 @@ public class UpdatePermissionsTests : DatabaseServiceTestBase
         
         var permissions = new UserPermissions();
         
-        var result = await DatabaseService.UpdatePermissions("", "VALID", permissions);
+        var result = await PermissionsService.UpdatePermissions("", "VALID", permissions);
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }
@@ -78,7 +78,7 @@ public class UpdatePermissionsTests : DatabaseServiceTestBase
         
         var permissions = new UserPermissions();
         
-        var result = await DatabaseService.UpdatePermissions(uid, "NONEXISTENT", permissions);
+        var result = await PermissionsService.UpdatePermissions(uid, "NONEXISTENT", permissions);
         
         Assert.Equal(DBPairResult.PairUIDDoesNotExist, result);
     }

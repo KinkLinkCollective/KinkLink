@@ -7,17 +7,32 @@ namespace KinkLinkServer.Services;
 public class KinkLinkProfileConfigService
 {
     private readonly ProfileConfigSql _profileConfigSql;
+    private readonly ProfilesSql _profilesSql;
 
     public KinkLinkProfileConfigService(Configuration config)
     {
         _profileConfigSql = new ProfileConfigSql(config.DatabaseConnectionString);
+        _profilesSql = new ProfilesSql(config.DatabaseConnectionString);
+    }
+
+    private async Task<int?> GetProfileIdFromUidAsync(string uid)
+    {
+        var profile = await _profilesSql.GetProfileByUidAsync(new(uid));
+        return profile?.Id;
     }
 
     public async Task<KinkLinkProfileConfig?> GetProfileConfigByUidAsync(string uid)
     {
         var result = await _profileConfigSql.GetProfileConfigByUidAsync(new(uid));
-        // TODO complete this function
-        throw new NotImplementedException();
+        if (result is not { } row)
+            return null;
+
+        return new KinkLinkProfileConfig(
+            row.EnableGlamours ?? false,
+            row.EnableGarbler ?? false,
+            row.EnableGarblerChannels ?? false,
+            row.EnableMoodles ?? false
+        );
     }
 
     public async Task<KinkLinkProfileConfig?> UpdateProfileConfigAsync(
@@ -28,15 +43,41 @@ public class KinkLinkProfileConfigService
         bool enableMoodles
     )
     {
-        // TODO complete this functionm.
-        // Get the first profile, update the values then update it
-        throw new NotImplementedException();
+        var profileId = await GetProfileIdFromUidAsync(uid);
+        if (profileId is not { } id)
+            return null;
+
+        var result = await _profileConfigSql.UpdateProfileConfigAsync(
+            new(id, enableGlamours, enableGarbler, enableGarblerChannels, enableMoodles)
+        );
+        
+        if (result is not { } row)
+            return null;
+
+        return new KinkLinkProfileConfig(
+            row.EnableGlamours ?? false,
+            row.EnableGarbler ?? false,
+            row.EnableGarblerChannels ?? false,
+            row.EnableMoodles ?? false
+        );
     }
 
     public async Task<KinkLinkProfileConfig?> DeleteProfileConfigByUidAsync(string uid)
     {
-        // TODO complete this function
-        // First convert the UID to an Id and then do the query
-        throw new NotImplementedException();
+        var profileId = await GetProfileIdFromUidAsync(uid);
+        if (profileId is not { } id)
+            return null;
+
+        var result = await _profileConfigSql.DeleteProfileConfigAsync(new(id));
+        
+        if (result is not { } row)
+            return null;
+
+        return new KinkLinkProfileConfig(
+            row.EnableGlamours ?? false,
+            row.EnableGarbler ?? false,
+            row.EnableGarblerChannels ?? false,
+            row.EnableMoodles ?? false
+        );
     }
 }
