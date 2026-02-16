@@ -17,79 +17,101 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"INSERT INTO Users (discord_id, secret_key_hash, verified, banned)
               VALUES (@discord_id, @secret_key_hash, @verified, @banned)
               RETURNING id",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("discord_id", @params.DiscordId);
-        cmd.Parameters.AddWithValue("secret_key_hash", @params.SecretKeyHash ?? (object)DBNull.Value);
+        cmd.Parameters.AddWithValue(
+            "secret_key_hash",
+            @params.SecretKeyHash ?? (object)DBNull.Value
+        );
         cmd.Parameters.AddWithValue("verified", @params.Verified ?? false);
         cmd.Parameters.AddWithValue("banned", @params.Banned ?? false);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result as int?;
     }
 
-    public async Task<int?> InsertTestUserAsync(long discordId, string? secretKeyHash = null, bool? verified = null, bool? banned = null)
+    public async Task<int?> InsertTestUserAsync(
+        long discordId,
+        string? secretKeyHash = null,
+        bool? verified = null,
+        bool? banned = null
+    )
     {
-        return await InsertTestUserAsync(new InsertTestUserParams
-        {
-            DiscordId = discordId,
-            SecretKeyHash = secretKeyHash,
-            Verified = verified,
-            Banned = banned
-        });
+        return await InsertTestUserAsync(
+            new InsertTestUserParams
+            {
+                DiscordId = discordId,
+                SecretKeyHash = secretKeyHash,
+                Verified = verified,
+                Banned = banned,
+            }
+        );
     }
 
     public async Task<int?> InsertTestProfileAsync(InsertTestProfileParams @params)
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"INSERT INTO Profiles (user_id, uid, chat_role, alias, title, description)
               VALUES (@user_id, @uid, @chat_role, @alias, @title, @description)
               RETURNING id",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("user_id", @params.UserId);
         cmd.Parameters.AddWithValue("uid", @params.Uid);
         cmd.Parameters.AddWithValue("chat_role", @params.ChatRole ?? "");
         cmd.Parameters.AddWithValue("alias", @params.Alias ?? "");
         cmd.Parameters.AddWithValue("title", @params.Title ?? "Kinkster");
         cmd.Parameters.AddWithValue("description", @params.Description ?? (object)DBNull.Value);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result as int?;
     }
 
-    public async Task<int?> InsertTestProfileAsync(int userId, string uid, string? chatRole = null, string? alias = null, string? title = null, string? description = null)
+    public async Task<int?> InsertTestProfileAsync(
+        int userId,
+        string uid,
+        string? chatRole = null,
+        string? alias = null,
+        string? title = null,
+        string? description = null
+    )
     {
-        return await InsertTestProfileAsync(new InsertTestProfileParams
-        {
-            UserId = userId,
-            Uid = uid,
-            ChatRole = chatRole,
-            Alias = alias,
-            Title = title,
-            Description = description
-        });
+        return await InsertTestProfileAsync(
+            new InsertTestProfileParams
+            {
+                UserId = userId,
+                Uid = uid,
+                ChatRole = chatRole,
+                Alias = alias,
+                Title = title,
+                Description = description,
+            }
+        );
     }
 
     public async Task<PairRecord?> InsertTestPairAsync(InsertTestPairParams @params)
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"INSERT INTO Pairs (id, pair_id, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles)
               VALUES (@id, @pair_id, @priority, @controls_perm, @controls_config, @disable_safeword, @gags, @wardrobe, @moodles)
               RETURNING id, pair_id, expires, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("id", @params.Id);
         cmd.Parameters.AddWithValue("pair_id", @params.PairId);
         cmd.Parameters.AddWithValue("priority", @params.Priority ?? 0);
@@ -99,7 +121,7 @@ public class TestHarnessSql
         cmd.Parameters.AddWithValue("gags", @params.Gags ?? 0);
         cmd.Parameters.AddWithValue("wardrobe", @params.Wardrobe ?? 0);
         cmd.Parameters.AddWithValue("moodles", @params.Moodles ?? 0);
-        
+
         await using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
@@ -114,23 +136,26 @@ public class TestHarnessSql
                 DisableSafeword = reader.GetBoolean(6),
                 Gags = reader.GetInt32(7),
                 Wardrobe = reader.GetInt32(8),
-                Moodle = reader.GetInt32(9)
+                Moodle = reader.GetInt32(9),
             };
         }
         return null;
     }
 
-    public async Task<PairRecord?> InsertTestPairWithPermissionsAsync(InsertTestPairWithPermissionsParams @params)
+    public async Task<PairRecord?> InsertTestPairWithPermissionsAsync(
+        InsertTestPairWithPermissionsParams @params
+    )
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"INSERT INTO Pairs (id, pair_id, expires, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles)
               VALUES (@id, @pair_id, @expires, @priority, @controls_perm, @controls_config, @disable_safeword, @gags, @wardrobe, @moodles)
               RETURNING id, pair_id, expires, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("id", @params.Id);
         cmd.Parameters.AddWithValue("pair_id", @params.PairId);
         cmd.Parameters.AddWithValue("expires", @params.Expires ?? (object)DBNull.Value);
@@ -141,7 +166,7 @@ public class TestHarnessSql
         cmd.Parameters.AddWithValue("gags", @params.Gags);
         cmd.Parameters.AddWithValue("wardrobe", @params.Wardrobe);
         cmd.Parameters.AddWithValue("moodles", @params.Moodles);
-        
+
         await using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
@@ -156,7 +181,7 @@ public class TestHarnessSql
                 DisableSafeword = reader.GetBoolean(6),
                 Gags = reader.GetInt32(7),
                 Wardrobe = reader.GetInt32(8),
-                Moodle = reader.GetInt32(9)
+                Moodle = reader.GetInt32(9),
             };
         }
         return null;
@@ -166,7 +191,7 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"WITH deleted_profiles AS (
                 DELETE FROM Profiles WHERE user_id IN (SELECT id FROM Users WHERE Users.discord_id = @discord_id)
@@ -174,10 +199,11 @@ public class TestHarnessSql
             )
             DELETE FROM Users WHERE Users.discord_id = @discord_id
             RETURNING id",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("discord_id", discordId);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result as int?;
     }
@@ -186,13 +212,14 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             "SELECT id FROM Users WHERE discord_id = @discord_id",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("discord_id", discordId);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result as int?;
     }
@@ -201,13 +228,14 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             "DELETE FROM Profiles WHERE uid = @uid RETURNING id",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("uid", uid);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result as int?;
     }
@@ -216,15 +244,16 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"DELETE FROM Pairs WHERE (id = @id AND pair_id = @pair_id) OR (id = @pair_id AND pair_id = @id)
               RETURNING id, pair_id, expires, priority, gags, wardrobe, moodles",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("id", @params.Id);
         cmd.Parameters.AddWithValue("pair_id", @params.PairId);
-        
+
         await using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
@@ -236,7 +265,7 @@ public class TestHarnessSql
                 Priority = reader.GetInt32(3),
                 Gags = reader.GetInt32(4),
                 Wardrobe = reader.GetInt32(5),
-                Moodle = reader.GetInt32(6)
+                Moodle = reader.GetInt32(6),
             };
         }
         return null;
@@ -246,13 +275,11 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
-        await using var cmd = new NpgsqlCommand(
-            "SELECT id FROM Profiles WHERE uid = @uid",
-            conn);
-        
+
+        await using var cmd = new NpgsqlCommand("SELECT id FROM Profiles WHERE uid = @uid", conn);
+
         cmd.Parameters.AddWithValue("uid", uid);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result as int?;
     }
@@ -261,13 +288,14 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             "SELECT id FROM Users WHERE discord_id = @discord_id",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("discord_id", discordId);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result as int?;
     }
@@ -276,17 +304,18 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"SELECT EXISTS (
                 SELECT 1 FROM information_schema.tables 
                 WHERE table_schema = 'public' 
                 AND LOWER(table_name) = LOWER(@table_name)
             )",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("table_name", tableName);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result is bool b && b;
     }
@@ -295,7 +324,7 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"SELECT EXISTS (
                 SELECT 1 FROM information_schema.columns 
@@ -303,11 +332,12 @@ public class TestHarnessSql
                 AND LOWER(table_name) = LOWER(@table_name)
                 AND LOWER(column_name) = LOWER(@column_name)
             )",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("table_name", tableName);
         cmd.Parameters.AddWithValue("column_name", columnName);
-        
+
         var result = await cmd.ExecuteScalarAsync();
         return result is bool b && b;
     }
@@ -316,19 +346,22 @@ public class TestHarnessSql
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             "TRUNCATE TABLE Pairs, Profiles, Users, ProfileConfig RESTART IDENTITY CASCADE",
-            conn);
-        
+            conn
+        );
+
         await cmd.ExecuteNonQueryAsync();
     }
 
-    public async Task<ProfileConfigRecord?> InsertTestProfileConfigAsync(InsertTestProfileConfigParams @params)
+    public async Task<ProfileConfigRecord?> InsertTestProfileConfigAsync(
+        InsertTestProfileConfigParams @params
+    )
     {
         await using var conn = GetConnection();
         await conn.OpenAsync();
-        
+
         await using var cmd = new NpgsqlCommand(
             @"INSERT INTO ProfileConfig (id, enable_glamours, enable_garbler, enable_garbler_channels, enable_moodles)
               VALUES (@id, @enable_glamours, @enable_garbler, @enable_garbler_channels, @enable_moodles)
@@ -338,14 +371,15 @@ public class TestHarnessSql
                   enable_garbler_channels = EXCLUDED.enable_garbler_channels,
                   enable_moodles = EXCLUDED.enable_moodles
               RETURNING id, enable_glamours, enable_garbler, enable_garbler_channels, enable_moodles",
-            conn);
-        
+            conn
+        );
+
         cmd.Parameters.AddWithValue("id", @params.Id);
         cmd.Parameters.AddWithValue("enable_glamours", @params.EnableGlamours);
         cmd.Parameters.AddWithValue("enable_garbler", @params.EnableGarbler);
         cmd.Parameters.AddWithValue("enable_garbler_channels", @params.EnableGarblerChannels);
         cmd.Parameters.AddWithValue("enable_moodles", @params.EnableMoodles);
-        
+
         await using var reader = await cmd.ExecuteReaderAsync();
         if (await reader.ReadAsync())
         {
@@ -355,7 +389,7 @@ public class TestHarnessSql
                 EnableGlamours = reader.GetBoolean(1),
                 EnableGarbler = reader.GetBoolean(2),
                 EnableGarblerChannels = reader.GetBoolean(3),
-                EnableMoodles = reader.GetBoolean(4)
+                EnableMoodles = reader.GetBoolean(4),
             };
         }
         return null;

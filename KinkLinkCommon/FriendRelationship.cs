@@ -24,28 +24,34 @@ public record FriendRelationship
     /// <summary>
     ///     The permissions the owning user has granted the target user
     /// </summary>
-    public Pair PermissionsGrantedTo { get; set; } = new();
+    public UserPermissions PermissionsGrantedTo { get; set; } = new();
 
     /// <summary>
     ///     The permissions the target yser has granted the owning user
     /// </summary>
-    public Pair? PermissionsGrantedBy { get; set; }
+    public UserPermissions? PermissionsGrantedBy { get; set; }
 
     /// <summary>
     ///     <inheritdoc cref="FriendRelationship"/>
     /// </summary>
-    public FriendRelationship()
-    {
-    }
+    public FriendRelationship() { }
 
     /// <summary>
     ///     <inheritdoc cref="FriendRelationship"/>
     /// </summary>
-    public FriendRelationship(string targetFriendCode, FriendOnlineStatus status, Pair permissionsGrantedTo, Pair? permissionsGrantedBy)
+    public FriendRelationship(
+        string targetFriendCode,
+        FriendOnlineStatus status,
+        Pair permissionsGrantedTo,
+        Pair? permissionsGrantedBy
+    )
     {
         TargetFriendCode = targetFriendCode;
         Status = status;
-        PermissionsGrantedTo = permissionsGrantedTo;
-        PermissionsGrantedBy = permissionsGrantedBy;
+        PermissionsGrantedTo = new UserPermissions(permissionsGrantedTo);
+        if (permissionsGrantedBy.HasValue)
+        {
+            PermissionsGrantedBy = new UserPermissions(permissionsGrantedBy.Value);
+        }
     }
 }

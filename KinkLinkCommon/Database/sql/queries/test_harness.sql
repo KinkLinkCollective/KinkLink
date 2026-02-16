@@ -65,3 +65,49 @@ SELECT EXISTS (
 -- name: TruncateTables :exec
 -- Truncates all tables in correct order for test isolation
 TRUNCATE TABLE Pairs, Profiles, Users RESTART IDENTITY CASCADE;
+
+-- name: SeedUser :one
+-- Seeds a test user (idempotent - updates on conflict)
+INSERT INTO Users (discord_id, secret_key_hash, verified, banned)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (discord_id) DO UPDATE SET
+    secret_key_hash = EXCLUDED.secret_key_hash,
+    verified = EXCLUDED.verified,
+    banned = EXCLUDED.banned
+RETURNING id;
+
+-- name: SeedProfile :one
+-- Seeds a test profile (idempotent)
+INSERT INTO Profiles (user_id, uid, chat_role, alias, title, description)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (uid) DO UPDATE SET
+    chat_role = EXCLUDED.chat_role,
+    alias = EXCLUDED.alias,
+    title = EXCLUDED.title,
+    description = EXCLUDED.description
+RETURNING id;
+
+-- name: SeedProfileConfig :one
+-- Seeds profile config (idempotent)
+INSERT INTO ProfileConfig (id, enable_glamours, enable_garbler, enable_garbler_channels, enable_moodles)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (id) DO UPDATE SET
+    enable_glamours = EXCLUDED.enable_glamours,
+    enable_garbler = EXCLUDED.enable_garbler,
+    enable_garbler_channels = EXCLUDED.enable_garbler_channels,
+    enable_moodles = EXCLUDED.enable_moodles
+RETURNING id;
+
+-- name: SeedPair :one
+-- Seeds a pair relationship (idempotent)
+INSERT INTO Pairs (id, pair_id, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+ON CONFLICT (id, pair_id) DO UPDATE SET
+    priority = EXCLUDED.priority,
+    controls_perm = EXCLUDED.controls_perm,
+    controls_config = EXCLUDED.controls_config,
+    disable_safeword = EXCLUDED.disable_safeword,
+    gags = EXCLUDED.gags,
+    wardrobe = EXCLUDED.wardrobe,
+    moodles = EXCLUDED.moodles
+RETURNING id, pair_id;

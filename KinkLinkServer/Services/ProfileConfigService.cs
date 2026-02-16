@@ -50,7 +50,7 @@ public class KinkLinkProfileConfigService
         var result = await _profileConfigSql.UpdateProfileConfigAsync(
             new(id, enableGlamours, enableGarbler, enableGarblerChannels, enableMoodles)
         );
-        
+
         if (result is not { } row)
             return null;
 
@@ -69,7 +69,7 @@ public class KinkLinkProfileConfigService
             return null;
 
         var result = await _profileConfigSql.DeleteProfileConfigAsync(new(id));
-        
+
         if (result is not { } row)
             return null;
 
