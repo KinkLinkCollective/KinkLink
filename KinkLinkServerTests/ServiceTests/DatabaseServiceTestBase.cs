@@ -14,7 +14,6 @@ public class DatabaseServiceTestBase
     protected readonly DatabaseService DatabaseService;
     protected readonly TestHarnessSql TestHarness;
     protected readonly ILogger<DatabaseService> Logger;
-    protected readonly ISecretHasher SecretHasher;
 
     protected DatabaseServiceTestBase(TestDatabaseFixture fixture)
     {
@@ -23,10 +22,8 @@ public class DatabaseServiceTestBase
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         Logger = loggerFactory.CreateLogger<DatabaseService>();
         
-        SecretHasher = new SecretHasher();
-        
         var config = new Configuration(fixture.ConnectionString, "test_signing_key_that_is_long_enough_for_hs256", "http://localhost:5006");
-        DatabaseService = new DatabaseService(config, Logger, SecretHasher);
+        DatabaseService = new DatabaseService(config);
         TestHarness = new TestHarnessSql(fixture.ConnectionString);
     }
 

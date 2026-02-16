@@ -7,11 +7,9 @@ using KinkLinkServer.Domain;
 namespace KinkLinkServer.Services;
 
 /// <summary>
-///     Provides methods for interacting with the underlying PostgreSQL database from the server perspective.
-///     While this covers authentication, the user functionality is currently integrated directly with a discord bot,
-///     as a result, no direct account management should be included on the server
+///     Provides methods for interacting with the permissions tables for users and pairs
 /// </summary>
-public class DatabaseService
+public class PermissionsService
 {
     // Injected
     private readonly ILogger<DatabaseService> _logger;
@@ -27,7 +25,7 @@ public class DatabaseService
     /// <summary>
     ///     Creates a new DatabaseService with the provided connection string and logger
     /// </summary>
-    public DatabaseService(
+    public PermissionsService(
         Configuration config,
         ILogger<DatabaseService> logger,
         ISecretHasher secretHasher
@@ -37,40 +35,9 @@ public class DatabaseService
         _logger = logger;
         _secretHasher = secretHasher;
 
-        _auth = new AuthSql(_connectionString);
         _pairs = new PairsSql(_connectionString);
         _users = new UsersSql(_connectionString);
         _profiles = new ProfilesSql(_connectionString);
-    }
-
-    // TODO: Implement discord OAUTH and don't use the secretkey.
-    /// <summary>
-    ///     Gets a user entry from the accounts table by secret
-    /// </summary>
-    public async Task<DBAuthenticationStatus> LoginUser(string secret, string uid)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(secret) || string.IsNullOrWhiteSpace(uid))
-            {
-                _logger.LogWarning("Authentication attempted with null or empty secret");
-                return DBAuthenticationStatus.Unauthorized;
-            }
-
-            var result = await _auth.LoginAsync(new(uid));
-            if (result is not { } value || !value.IsValid)
-            {
-                _logger.LogWarning("Authentication failed: UID not found or missing hash data");
-                return DBAuthenticationStatus.Unauthorized;
-            }
-
-            return DBAuthenticationStatus.Authorized;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Authentication failed with unexpected error");
-            return DBAuthenticationStatus.UnknownError;
-        }
     }
 
     /// <summary>
@@ -426,6 +393,23 @@ public class DatabaseService
             _logger.LogError(ex, "DeletePermissions failed with unexpected error");
             return DBPairResult.UnknownError;
         }
+    }
+
+    private async Task<bool> IsTwoWayPaired(string user, string pair)
+    {
+        var userid = await _profiles.GetProfileByUidAsync(new(user));
+        var pairid = await _profiles.GetProfileByUidAsync(new(pair));
+        // Checks for a regcord indicating that the two pairs are linked in two direction
+        var result = await _pairs.ConfirmTwoWayPairAsync(new(userid.Value.Id, pairid.Value.Id));
+        if (result == null)
+            return false;
+        return result.Value.Twowaypair ?? false;
+    }
+
+    private async Task<bool> IsActionPermitted(string user, string pair, PairAction WhichPerm)
+    {
+        // Based on the provided permission query the correct columns for the user/pair and check that an action is allowed
+        return false;
     }
 
     /// <summary>

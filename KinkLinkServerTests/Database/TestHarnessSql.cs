@@ -85,14 +85,17 @@ public class TestHarnessSql
         await conn.OpenAsync();
         
         await using var cmd = new NpgsqlCommand(
-            @"INSERT INTO Pairs (id, pair_id, priority, gags, wardrobe, moodles)
-              VALUES (@id, @pair_id, @priority, @gags, @wardrobe, @moodles)
-              RETURNING id, pair_id, expires, priority, gags, wardrobe, moodles",
+            @"INSERT INTO Pairs (id, pair_id, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles)
+              VALUES (@id, @pair_id, @priority, @controls_perm, @controls_config, @disable_safeword, @gags, @wardrobe, @moodles)
+              RETURNING id, pair_id, expires, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles",
             conn);
         
         cmd.Parameters.AddWithValue("id", @params.Id);
         cmd.Parameters.AddWithValue("pair_id", @params.PairId);
         cmd.Parameters.AddWithValue("priority", @params.Priority ?? 0);
+        cmd.Parameters.AddWithValue("controls_perm", @params.ControlsPerm ?? false);
+        cmd.Parameters.AddWithValue("controls_config", @params.ControlsConfig ?? false);
+        cmd.Parameters.AddWithValue("disable_safeword", @params.DisableSafeword ?? false);
         cmd.Parameters.AddWithValue("gags", @params.Gags ?? 0);
         cmd.Parameters.AddWithValue("wardrobe", @params.Wardrobe ?? 0);
         cmd.Parameters.AddWithValue("moodles", @params.Moodles ?? 0);
@@ -106,9 +109,12 @@ public class TestHarnessSql
                 PairId = reader.GetInt32(1),
                 Expires = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
                 Priority = reader.GetInt32(3),
-                Gags = reader.GetInt32(4),
-                Wardrobe = reader.GetInt32(5),
-                Moodle = reader.GetInt32(6)
+                ControlsPerm = reader.GetBoolean(4),
+                ControlsConfig = reader.GetBoolean(5),
+                DisableSafeword = reader.GetBoolean(6),
+                Gags = reader.GetInt32(7),
+                Wardrobe = reader.GetInt32(8),
+                Moodle = reader.GetInt32(9)
             };
         }
         return null;
@@ -120,15 +126,18 @@ public class TestHarnessSql
         await conn.OpenAsync();
         
         await using var cmd = new NpgsqlCommand(
-            @"INSERT INTO Pairs (id, pair_id, expires, priority, gags, wardrobe, moodles)
-              VALUES (@id, @pair_id, @expires, @priority, @gags, @wardrobe, @moodles)
-              RETURNING id, pair_id, expires, priority, gags, wardrobe, moodles",
+            @"INSERT INTO Pairs (id, pair_id, expires, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles)
+              VALUES (@id, @pair_id, @expires, @priority, @controls_perm, @controls_config, @disable_safeword, @gags, @wardrobe, @moodles)
+              RETURNING id, pair_id, expires, priority, controls_perm, controls_config, disable_safeword, gags, wardrobe, moodles",
             conn);
         
         cmd.Parameters.AddWithValue("id", @params.Id);
         cmd.Parameters.AddWithValue("pair_id", @params.PairId);
         cmd.Parameters.AddWithValue("expires", @params.Expires ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("priority", @params.Priority);
+        cmd.Parameters.AddWithValue("controls_perm", @params.ControlsPerm);
+        cmd.Parameters.AddWithValue("controls_config", @params.ControlsConfig);
+        cmd.Parameters.AddWithValue("disable_safeword", @params.DisableSafeword);
         cmd.Parameters.AddWithValue("gags", @params.Gags);
         cmd.Parameters.AddWithValue("wardrobe", @params.Wardrobe);
         cmd.Parameters.AddWithValue("moodles", @params.Moodles);
@@ -142,9 +151,12 @@ public class TestHarnessSql
                 PairId = reader.GetInt32(1),
                 Expires = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
                 Priority = reader.GetInt32(3),
-                Gags = reader.GetInt32(4),
-                Wardrobe = reader.GetInt32(5),
-                Moodle = reader.GetInt32(6)
+                ControlsPerm = reader.GetBoolean(4),
+                ControlsConfig = reader.GetBoolean(5),
+                DisableSafeword = reader.GetBoolean(6),
+                Gags = reader.GetInt32(7),
+                Wardrobe = reader.GetInt32(8),
+                Moodle = reader.GetInt32(9)
             };
         }
         return null;
@@ -306,10 +318,47 @@ public class TestHarnessSql
         await conn.OpenAsync();
         
         await using var cmd = new NpgsqlCommand(
-            "TRUNCATE TABLE Pairs, Profiles, Users RESTART IDENTITY CASCADE",
+            "TRUNCATE TABLE Pairs, Profiles, Users, ProfileConfig RESTART IDENTITY CASCADE",
             conn);
         
         await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task<ProfileConfigRecord?> InsertTestProfileConfigAsync(InsertTestProfileConfigParams @params)
+    {
+        await using var conn = GetConnection();
+        await conn.OpenAsync();
+        
+        await using var cmd = new NpgsqlCommand(
+            @"INSERT INTO ProfileConfig (id, enable_glamours, enable_garbler, enable_garbler_channels, enable_moodles)
+              VALUES (@id, @enable_glamours, @enable_garbler, @enable_garbler_channels, @enable_moodles)
+              ON CONFLICT (id) DO UPDATE SET
+                  enable_glamours = EXCLUDED.enable_glamours,
+                  enable_garbler = EXCLUDED.enable_garbler,
+                  enable_garbler_channels = EXCLUDED.enable_garbler_channels,
+                  enable_moodles = EXCLUDED.enable_moodles
+              RETURNING id, enable_glamours, enable_garbler, enable_garbler_channels, enable_moodles",
+            conn);
+        
+        cmd.Parameters.AddWithValue("id", @params.Id);
+        cmd.Parameters.AddWithValue("enable_glamours", @params.EnableGlamours);
+        cmd.Parameters.AddWithValue("enable_garbler", @params.EnableGarbler);
+        cmd.Parameters.AddWithValue("enable_garbler_channels", @params.EnableGarblerChannels);
+        cmd.Parameters.AddWithValue("enable_moodles", @params.EnableMoodles);
+        
+        await using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {
+            return new ProfileConfigRecord
+            {
+                Id = reader.GetInt32(0),
+                EnableGlamours = reader.GetBoolean(1),
+                EnableGarbler = reader.GetBoolean(2),
+                EnableGarblerChannels = reader.GetBoolean(3),
+                EnableMoodles = reader.GetBoolean(4)
+            };
+        }
+        return null;
     }
 }
 
@@ -336,6 +385,9 @@ public class InsertTestPairParams
     public int Id { get; set; }
     public int PairId { get; set; }
     public int? Priority { get; set; }
+    public bool? ControlsPerm { get; set; }
+    public bool? ControlsConfig { get; set; }
+    public bool? DisableSafeword { get; set; }
     public int? Gags { get; set; }
     public int? Wardrobe { get; set; }
     public int? Moodles { get; set; }
@@ -347,6 +399,9 @@ public class InsertTestPairWithPermissionsParams
     public int PairId { get; set; }
     public DateTime? Expires { get; set; }
     public int Priority { get; set; }
+    public bool ControlsPerm { get; set; }
+    public bool ControlsConfig { get; set; }
+    public bool DisableSafeword { get; set; }
     public int Gags { get; set; }
     public int Wardrobe { get; set; }
     public int Moodles { get; set; }
@@ -364,7 +419,28 @@ public class PairRecord
     public int PairId { get; set; }
     public DateTime? Expires { get; set; }
     public int Priority { get; set; }
+    public bool ControlsPerm { get; set; }
+    public bool ControlsConfig { get; set; }
+    public bool DisableSafeword { get; set; }
     public int Gags { get; set; }
     public int Wardrobe { get; set; }
     public int Moodle { get; set; }
+}
+
+public class InsertTestProfileConfigParams
+{
+    public int Id { get; set; }
+    public bool EnableGlamours { get; set; }
+    public bool EnableGarbler { get; set; }
+    public bool EnableGarblerChannels { get; set; }
+    public bool EnableMoodles { get; set; }
+}
+
+public class ProfileConfigRecord
+{
+    public int Id { get; set; }
+    public bool EnableGlamours { get; set; }
+    public bool EnableGarbler { get; set; }
+    public bool EnableGarblerChannels { get; set; }
+    public bool EnableMoodles { get; set; }
 }

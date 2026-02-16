@@ -1,5 +1,23 @@
 namespace KinkLinkCommon.Domain.Enums;
 
+// Submission flags level is used for the more... sticky and difficult to get out of systems.
+[Flags]
+public enum SubmissionLevel
+{
+    // Normal
+    Normal = 0,
+
+    // No control over permissions, safeword still works
+    Slave = 1 << 0,
+
+    // No control over configuration/profiles/etc
+    TotalSubmission = 1 << 1,
+
+    // Removal of safeword from ingame. Only available when logged out.
+    EternalBondange = 1 << 2,
+}
+
+//
 /// <summary>
 /// Indicate when permissions should be overriden temporarily such as for Permission overrides
 /// </summary>
@@ -7,10 +25,14 @@ namespace KinkLinkCommon.Domain.Enums;
 public enum PermissionsModes
 {
     None,
+
+    // Permissions and interactions remain active, but features will be disabled temporarily.
+    // (Intended for content or syncing at non-kink venues/meetups without interrupting your dynamics)
+    SafeForWork,
+
     // Indicates that the permissions should be disabled for all but the temporarily white listed pairs.
     Busy,
-    // Permissions and interactions remain active, but features will be disabled temporarily.
-    SafeForWork,
+
     // Indicates that the safeword has been used and all permissions are suspended with all features disabled.
     Safeword,
 }
@@ -48,8 +70,10 @@ public enum WardrobePermissions
 public enum MoodlesPermissions
 {
     None = 1 << 0,
+
     // User allows pair to apply users moodles
     CanApplyOwn = 1 << 1,
+
     // User allows pair to apply the pairs moodles
     CanApplyPairs = 1 << 2,
     CanLock = 1 << 3,

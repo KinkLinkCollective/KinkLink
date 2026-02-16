@@ -16,10 +16,8 @@ public record UserPermissions
     public WardrobePermissions Wardrobe;
     public MoodlesPermissions Moodles;
 
-    public UserPermissions()
-    {
+    public UserPermissions() { }
 
-    }
     /// <summary>
     ///     <inheritdoc cref="UserPermissions"/>
     /// </summary>
@@ -27,7 +25,14 @@ public record UserPermissions
     {
         // Reimplement when the new bitmasks are enabled
     }
-    public UserPermissions(bool temporary, RelationshipPriority priority, GagPermissions gags, WardrobePermissions wardrobe, MoodlesPermissions moodles)
+
+    public UserPermissions(
+        bool temporary,
+        RelationshipPriority priority,
+        GagPermissions gags,
+        WardrobePermissions wardrobe,
+        MoodlesPermissions moodles
+    )
     {
         if (temporary)
         {
