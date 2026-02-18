@@ -42,6 +42,15 @@ WHERE p_profile.UID = $1
       WHERE p2.id = p.pair_id AND p2.pair_id = p.id
   );
 
+-- name: GetPairState :one
+-- Checks for the pairing state of the pairs rill return true/false
+-- for each direction which can be used to determine the type of
+-- pair exisint for these two entities.
+SELECT EXISTS(
+SELECT true FROM pairs WHERE pairs.id = $1 AND Pairs.pair_id = $2  
+) AS AtoB, EXISTS(
+SELECT true FROM pairs WHERE pairs.id = $2 AND Pairs.pair_id = $1  
+) AS BtoA;
 -- name: GetPairByProfileIds :one
 -- Retrieves a specific pair by profile IDs
 SELECT id, pair_id, expires, priority,

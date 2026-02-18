@@ -44,5 +44,7 @@ upb: sqlc
 down:
 	docker compose down
 
+dub: down upb
+
 # Full rebuild
 rebuild: clean build
