@@ -43,7 +43,7 @@ public class PermissionsService
             var userProfile = await _profilesService.GetIdFromUidAsync(userUID);
             var targetProfile = await _profilesService.GetIdFromUidAsync(targetUID);
 
-            if (userProfile == null)
+            if (userProfile == null || targetProfile == null)
             {
                 _logger.LogWarning(
                     "CreatePairRequest failed: user UID {UserUID} not found",
@@ -52,13 +52,18 @@ public class PermissionsService
                 return DBPairResult.PairUIDDoesNotExist;
             }
 
-            if (targetProfile == null)
+            var pairState = await _pairsService.GetPairState(
+                userProfile.Value,
+                targetProfile.Value
+            );
+            // Already made one one, can skip if so
+            if (pairState.Item1)
             {
-                _logger.LogWarning(
-                    "CreatePairRequest failed: target UID {TargetUID} not found",
-                    targetUID
-                );
-                return DBPairResult.PairUIDDoesNotExist;
+                _logger.LogWarning("CreatePairRequest failed: pair already exists", userUID);
+                if (pairState.Item2)
+                    return DBPairResult.Paired;
+                else
+                    return DBPairResult.OnesidedPairExists;
             }
 
             var newPair = await _pairsService.AddPairAsync(userProfile.Value, targetProfile.Value);
@@ -70,7 +75,15 @@ public class PermissionsService
                     userUID,
                     targetUID
                 );
-                return DBPairResult.PairCreated;
+                // To reach this point, we must Item1 (AtoB) _must_ be false. So we will evaluate which kind of return value based on the `Item2` (BtoA)
+                if (pairState.Item2)
+                {
+                    return DBPairResult.Success;
+                }
+                else
+                {
+                    return DBPairResult.PairCreated;
+                }
             }
 
             _logger.LogError(

@@ -191,9 +191,7 @@ public class PairsService
             pairUid,
             interactions
         );
-        var result = await _pairsSql.UpdatePairPermissionsAsync(
-            new(interactions, uid, pairUid)
-        );
+        var result = await _pairsSql.UpdatePairPermissionsAsync(new(interactions, uid, pairUid));
         if (result is not { } row)
         {
             _logger.LogError(
@@ -257,6 +255,25 @@ public class PairsService
             pairUid
         );
         return null;
+    }
+
+    public async Task<(bool, bool)> GetPairState(int id, int pairId)
+    {
+        _logger.LogDebug(
+            "ConfirmTwoWayPairAsync called with id: {Id}, pairId: {PairId}",
+            id,
+            pairId
+        );
+        var result = await _pairsSql.GetPairStateAsync(new(id, pairId));
+        var (AtoB, BtoA) = result is null ? (false, false) : (result.Value.Atob, result.Value.Btoa);
+        _logger.LogDebug(
+            "ConfirmTwoWayPairAsync: id: {Id}, pairId: {PairId}, AtoB: {AtoB}, BtoA: {BtoA}",
+            id,
+            pairId,
+            AtoB,
+            BtoA
+        );
+        return (AtoB, BtoA);
     }
 
     public async Task<bool> ConfirmTwoWayPairAsync(int id, int pairId)
