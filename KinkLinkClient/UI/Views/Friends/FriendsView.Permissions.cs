@@ -52,6 +52,9 @@ public partial class FriendsViewUi
                 {
                     controller.EditingPermissions.Priority = RelationshipPriority.Devotional;
                 }
+                ImGui.Checkbox("Temporary", ref controller.EditingPermissions.Temporary);
+                if (ImGui.IsItemHovered())
+                    ImGui.SetTooltip("Permissions expire after 24 hours");
             });
         }
 
@@ -70,8 +73,8 @@ public partial class FriendsViewUi
             ImGui.Checkbox("Can Enable Garbler", ref controller.EditingPermissions.CanEnableGarbler);
             ImGui.Checkbox("Can Lock Garbler", ref controller.EditingPermissions.CanLockGarbler);
             ImGui.SameLine(half);
-            ImGui.Checkbox("Can Set Garbler Channels", ref controller.EditingPermissions.CanSetGarlblerChannels);
-            ImGui.Checkbox("Can Lock Garbler Channels", ref controller.EditingPermissions.CanLockGarlbleChannels);
+            ImGui.Checkbox("Can Set Garbler Channels", ref controller.EditingPermissions.CanSetGarblerChannels);
+            ImGui.Checkbox("Can Lock Garbler Channels", ref controller.EditingPermissions.CanLockGarblerChannels);
         });
 
         SharedUserInterfaces.ContentBox("WardrobePermissions", KinkLinkStyle.PanelBackground, true, () =>

@@ -49,8 +49,8 @@ public enum InteractionPerms
     CanForceEnableGlamourGag = 1 << 4,
     CanEnableGarbler = 1 << 5,
     CanLockGarbler = 1 << 6,
-    CanSetGarlblerChannels = 1 << 7,
-    CanLockGarlbleChannels = 1 << 8,
+    CanSetGarblerChannels = 1 << 7,
+    CanLockGarblerChannels = 1 << 8,
 
     CanApplyWardrobe = 1 << 9,
     CanLockWardrobe = 1 << 10,
