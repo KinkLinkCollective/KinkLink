@@ -17,7 +17,7 @@ public class PermissionsUiState
     public PermissionsModes Mode = PermissionsModes.None;
 
     /// Gag perms
-    public bool CanApplyGag, CanLockGag, CanUnlockGag, CanRemoveGag, CanForceEnableGagGlamour, CanEnableGarbler, CanLockGarbler, CanSetGarlblerChannels, CanLockGarlbleChannels;
+    public bool CanApplyGag, CanLockGag, CanUnlockGag, CanRemoveGag, CanForceEnableGagGlamour, CanEnableGarbler, CanLockGarbler, CanSetGarblerChannels, CanLockGarblerChannels;
     /// Wardrobe permsThese permissions are specifically related to the wardrobe section of the interaction menu
     public bool CanApplyWardrobe, CanLockWardrobe, CanUnlockWardrobe, CanRemoveWardrobe, CanForceEnableWardrobeGlamour;
     /// These permissions influence all moodles permissions in the interaction menu
@@ -40,8 +40,8 @@ public class PermissionsUiState
         if (CanForceEnableGagGlamour != other.CanForceEnableGagGlamour) return false;
         if (CanEnableGarbler != other.CanEnableGarbler) return false;
         if (CanLockGarbler != other.CanLockGarbler) return false;
-        if (CanSetGarlblerChannels != other.CanSetGarlblerChannels) return false;
-        if (CanLockGarlbleChannels != other.CanLockGarlbleChannels) return false;
+        if (CanSetGarblerChannels != other.CanSetGarblerChannels) return false;
+        if (CanLockGarblerChannels != other.CanLockGarblerChannels) return false;
 
         // Wardrobe permissions
         if (CanApplyWardrobe != other.CanApplyWardrobe) return false;
@@ -79,8 +79,8 @@ public class PermissionsUiState
             CanForceEnableGagGlamour = perms.HasFlag(InteractionPerms.CanForceEnableGlamourGag),
             CanEnableGarbler = perms.HasFlag(InteractionPerms.CanEnableGarbler),
             CanLockGarbler = perms.HasFlag(InteractionPerms.CanLockGarbler),
-            CanSetGarlblerChannels = perms.HasFlag(InteractionPerms.CanSetGarlblerChannels),
-            CanLockGarlbleChannels = perms.HasFlag(InteractionPerms.CanLockGarlbleChannels),
+            CanSetGarblerChannels = perms.HasFlag(InteractionPerms.CanSetGarblerChannels),
+            CanLockGarblerChannels = perms.HasFlag(InteractionPerms.CanLockGarblerChannels),
 
             // Wardrobe permissions
             CanApplyWardrobe = perms.HasFlag(InteractionPerms.CanApplyWardrobe),
@@ -113,8 +113,8 @@ public class PermissionsUiState
         if (permissions.CanForceEnableGagGlamour) perms |= InteractionPerms.CanForceEnableGlamourGag;
         if (permissions.CanEnableGarbler) perms |= InteractionPerms.CanEnableGarbler;
         if (permissions.CanLockGarbler) perms |= InteractionPerms.CanLockGarbler;
-        if (permissions.CanSetGarlblerChannels) perms |= InteractionPerms.CanSetGarlblerChannels;
-        if (permissions.CanLockGarlbleChannels) perms |= InteractionPerms.CanLockGarlbleChannels;
+        if (permissions.CanSetGarblerChannels) perms |= InteractionPerms.CanSetGarblerChannels;
+        if (permissions.CanLockGarblerChannels) perms |= InteractionPerms.CanLockGarblerChannels;
 
         // Wardrobe permissions
         if (permissions.CanApplyWardrobe) perms |= InteractionPerms.CanApplyWardrobe;
