@@ -1,98 +1,40 @@
-using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
-using KinkLinkClient.Dependencies.Glamourer.Domain;
-using KinkLinkClient.Domain;
 using KinkLinkClient.Domain.Interfaces;
 using KinkLinkClient.Utils;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
-// TODO: This class needs to be implemented
-public class WardrobeViewUi(WardrobeViewUiController controller) : IDrawable
+public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDrawable
 {
-    // Const
-    private const int ActionButtonHeight = 40;
-
-    private const int SendDesignButtonHeight = 40;
+    private const int ImportButtonHeight = 40;
+    private const int HeaderMinHeight = 60;
 
     public void Draw()
     {
         ImGui.BeginChild("WardrobeContent", Vector2.Zero, false, KinkLinkStyle.ContentFlags);
 
-        var width = ImGui.GetWindowWidth();
-        var padding = ImGui.GetStyle().WindowPadding;
+        DrawHeader();
 
-        var begin = ImGui.GetCursorPosY();
-
-        Header();
-        DesignSearch(width, padding);
-
-        var headerHeight = ImGui.GetCursorPosY() - begin;
-        var designContextBoxSize = new Vector2(
-            0,
-            ImGui.GetWindowHeight() - headerHeight - padding.X * 6 - SendDesignButtonHeight * 2
-        );
-        if (controller.Designs is { } designs)
-            DesignDisplay(designs, designContextBoxSize);
-        ImGui.Spacing();
-        DesignOptions();
-        SharedUserInterfaces.ContentBox(
-            "DesignAdd",
-            KinkLinkStyle.PanelBackground,
-            false,
-            () =>
-            {
-                if (
-                    ImGui.Button(
-                        "Transform",
-                        new Vector2(ImGui.GetWindowWidth() - padding.X * 2, SendDesignButtonHeight)
-                    )
-                )
-                    NotificationHelper.Success("Success", "TODO: Apply Glamour");
-            }
-        );
+        switch (controller.CurrentView)
+        {
+            case SubView.List:
+                DrawListView();
+                break;
+            case SubView.Import:
+                DrawImportView();
+                break;
+            case SubView.Editor:
+                DrawEditorView();
+                break;
+        }
 
         ImGui.EndChild();
         ImGui.SameLine();
     }
 
-    private void DesignDisplay(IEnumerable<Design> nodes, Vector2 designContextBoxSize)
-    {
-        if (
-            ImGui.BeginChild(
-                "##DesignsDisplayBox",
-                designContextBoxSize,
-                true,
-                ImGuiWindowFlags.AlwaysVerticalScrollbar
-            )
-        )
-        {
-            if (controller.Designs is { } designs)
-            {
-                foreach (var design in nodes)
-                {
-                    if (controller.SelectedDesignId == design.Id)
-                    {
-                        ImGui.PushStyleColor(ImGuiCol.Header, KinkLinkStyle.PrimaryColor);
-                        ImGui.Selectable(design.Path, true);
-                        ImGui.PopStyleColor();
-                    }
-                    else
-                    {
-                        if (ImGui.Selectable($"{design.Path}"))
-                        {
-                            controller.SelectedDesignId = design.Id;
-                        }
-                    }
-                }
-            }
-            ImGui.EndChild();
-        }
-    }
-
-    private void Header()
+    private void DrawHeader()
     {
         SharedUserInterfaces.ContentBox(
             "Wardrobe",
@@ -100,109 +42,38 @@ public class WardrobeViewUi(WardrobeViewUiController controller) : IDrawable
             true,
             () =>
             {
-                SharedUserInterfaces.BigTextCentered("Wardrobe");
-            }
-        );
-    }
+                var padding = ImGui.GetStyle().WindowPadding;
+                var width = ImGui.GetWindowWidth() - padding.X * 2;
 
-    private void DesignSearch(float width, Vector2 padding)
-    {
-        SharedUserInterfaces.ContentBox(
-            "GlamourerDesignSearch",
-            KinkLinkStyle.PanelBackground,
-            true,
-            () =>
-            {
-                SharedUserInterfaces.MediumText("Select Design");
-
-                ImGui.SetNextItemWidth(width - padding.X * 4 - ImGui.GetFontSize());
-                if (
-                    ImGui.InputTextWithHint(
-                        "##DesignSearchBar",
-                        "Search",
-                        ref controller.SearchTerm,
-                        32
-                    )
-                )
-                    controller.FilterDesignsBySearchTerm();
-
-                ImGui.SameLine();
-
-                if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Sync, null, "Refresh Designs"))
-                    _ = controller.RefreshGlamourerDesigns();
-            }
-        );
-    }
-
-    private void DesignOptions()
-    {
-        SharedUserInterfaces.ContentBox(
-            "DesignOptions",
-            KinkLinkStyle.PanelBackground,
-            true,
-            () =>
-            {
-                if (controller.ShouldApplyCustomization)
+                var isSubView = controller.CurrentView != SubView.List;
+                var backButtonWidth = isSubView ? 60 : 0;
+                var importButtonWidth = controller.CurrentView == SubView.List ? 80 : 0;
+                var titleText = controller.CurrentView switch
                 {
-                    ImGui.PushStyleColor(ImGuiCol.Button, KinkLinkStyle.PrimaryColor);
-                    if (
-                        SharedUserInterfaces.IconButton(
-                            FontAwesomeIcon.User,
-                            new Vector2(SendDesignButtonHeight)
-                        )
-                    )
-                        controller.ShouldApplyCustomization = !controller.ShouldApplyCustomization;
-                    ImGui.PopStyleColor();
-                }
-                else
+                    SubView.Import => "Wardrobe [Import]",
+                    SubView.Editor => "Wardrobe [Edit]",
+                    _ => "Wardrobe",
+                };
+
+                if (isSubView)
                 {
-                    if (
-                        SharedUserInterfaces.IconButton(
-                            FontAwesomeIcon.User,
-                            new Vector2(SendDesignButtonHeight)
-                        )
-                    )
-                        controller.ShouldApplyCustomization = !controller.ShouldApplyCustomization;
+                    if (ImGui.Button("Back", new Vector2(backButtonWidth, 35)))
+                    {
+                        controller.CurrentView = SubView.List;
+                    }
+                    ImGui.SameLine();
                 }
 
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(
-                        controller.ShouldApplyCustomization
-                            ? "Currently applying customizations, click to disable"
-                            : "Not applying customizations, click to enable"
-                    );
+                var titleWidth = ImGui.CalcTextSize(titleText).X;
+                var titleStartX = isSubView ? backButtonWidth + padding.X : 0;
 
-                ImGui.SameLine();
+                ImGui.SetCursorPosX(titleStartX + (width - titleStartX - titleWidth) * 0.5f);
+                SharedUserInterfaces.MediumText(titleText);
 
-                if (controller.ShouldApplyEquipment)
-                {
-                    ImGui.PushStyleColor(ImGuiCol.Button, KinkLinkStyle.PrimaryColor);
-                    if (
-                        SharedUserInterfaces.IconButton(
-                            FontAwesomeIcon.Tshirt,
-                            new Vector2(SendDesignButtonHeight)
-                        )
-                    )
-                        controller.ShouldApplyEquipment = !controller.ShouldApplyEquipment;
-                    ImGui.PopStyleColor();
-                }
-                else
-                {
-                    if (
-                        SharedUserInterfaces.IconButton(
-                            FontAwesomeIcon.Tshirt,
-                            new Vector2(SendDesignButtonHeight)
-                        )
-                    )
-                        controller.ShouldApplyEquipment = !controller.ShouldApplyEquipment;
-                }
-
-                if (ImGui.IsItemHovered())
-                    ImGui.SetTooltip(
-                        controller.ShouldApplyEquipment
-                            ? "Currently applying equipment, click to disable"
-                            : "Not applying equipment, click to enable"
-                    );
+                var currentHeight = ImGui.GetCursorPosY();
+                var minHeight = HeaderMinHeight - padding.Y;
+                if (currentHeight < minHeight)
+                    ImGui.SetCursorPosY(minHeight);
             }
         );
     }

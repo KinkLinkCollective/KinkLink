@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Dependencies.Glamourer.Services;
 using KinkLinkClient.Domain;
+using KinkLinkClient.Domain.Dependencies.Glamourer;
+using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 using KinkLinkClient.Managers;
 using KinkLinkClient.Services;
 using KinkLinkClient.Utils;
@@ -13,6 +15,19 @@ using KinkLinkCommon.Domain.Network;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
+public enum SubView
+{
+    List,
+    Import,
+    Editor
+}
+
+public enum ListTab
+{
+    Items,
+    Sets
+}
+
 // TODO: This class needs to be implemented
 public class WardrobeViewUiController : IDisposable
 {
@@ -20,6 +35,212 @@ public class WardrobeViewUiController : IDisposable
     private readonly GlamourerService _glamourerService;
     private readonly NetworkService _networkService;
     private readonly SelectionManager _selectionManager;
+
+    // View State
+    public SubView CurrentView = SubView.List;
+    public ListTab CurrentTab = ListTab.Items;
+
+    // Wardrobe Data (in-memory)
+    public List<WardrobePiece> WardrobePieces = [];
+    public List<WardrobeSet> ImportedSets = [];
+
+    // Selection State
+    public Guid? SelectedPieceId;
+    public Guid? SelectedSetId;
+
+    // Editor State
+    public WardrobePiece? EditingPiece;
+    public WardrobeSet? EditingSet;
+
+    // Editor Fields
+    public string EditedName = string.Empty;
+    public string EditedDescription = string.Empty;
+
+    // Slot Editor State
+    public string SelectedSlotName = "Head";
+    public GlamourerItem EditedItem = new();
+    public uint EditedDye1;
+    public uint EditedDye2;
+
+    public static string[] AllSlotNames =>
+    [
+        "Head", "Body", "Hands", "Legs", "Feet",
+        "Ears", "Neck", "Wrists", "RFinger", "LFinger"
+    ];
+
+    public static string GetSlotDisplayName(string slotName)
+    {
+        return slotName switch
+        {
+            "Head" => "Head",
+            "Body" => "Body",
+            "Hands" => "Hands",
+            "Legs" => "Legs",
+            "Feet" => "Feet",
+            "Ears" => "Earrings",
+            "Neck" => "Necklace",
+            "Wrists" => "Bracelet",
+            "RFinger" => "Right Ring",
+            "LFinger" => "Left Ring",
+            _ => slotName
+        };
+    }
+
+    public static GlamourerEquipmentSlot GetSlotFromName(string slotName)
+    {
+        return slotName switch
+        {
+            "Head" => GlamourerEquipmentSlot.Head,
+            "Body" => GlamourerEquipmentSlot.Body,
+            "Hands" => GlamourerEquipmentSlot.Hands,
+            "Legs" => GlamourerEquipmentSlot.Legs,
+            "Feet" => GlamourerEquipmentSlot.Feet,
+            "Ears" => GlamourerEquipmentSlot.Ears,
+            "Neck" => GlamourerEquipmentSlot.Neck,
+            "Wrists" => GlamourerEquipmentSlot.Wrists,
+            "RFinger" => GlamourerEquipmentSlot.RFinger,
+            "LFinger" => GlamourerEquipmentSlot.LFinger,
+            _ => GlamourerEquipmentSlot.None
+        };
+    }
+
+    public void SaveSlotData()
+    {
+        if (EditingPiece == null) return;
+
+        var slot = GetSlotFromName(SelectedSlotName);
+        EditingPiece = EditingPiece with
+        {
+            Name = EditedName,
+            Description = EditedDescription,
+            Slot = slot,
+            Item = EditedItem.Clone(),
+            Dye1 = EditedDye1 > 0 ? EditedDye1 : null,
+            Dye2 = EditedDye2 > 0 ? EditedDye2 : null
+        };
+    }
+
+    public void LoadSlotData()
+    {
+        if (EditingPiece == null) return;
+
+        EditedName = EditingPiece.Name;
+        EditedDescription = EditingPiece.Description;
+        SelectedSlotName = EditingPiece.Slot.ToString();
+        EditedItem = EditingPiece.Item.Clone();
+        EditedDye1 = EditingPiece.Dye1 ?? 0;
+        EditedDye2 = EditingPiece.Dye2 ?? 0;
+    }
+
+    public void LoadSetData()
+    {
+        if (EditingSet == null) return;
+
+        EditedName = EditingSet.Name;
+        EditedDescription = EditingSet.Description;
+    }
+
+    public void SaveSetData()
+    {
+        if (EditingSet == null) return;
+
+        EditingSet = EditingSet with
+        {
+            Name = EditedName,
+            Description = EditedDescription
+        };
+    }
+
+    public WardrobePiece? GetSelectedPiece() =>
+        SelectedPieceId.HasValue ? WardrobePieces.FirstOrDefault(p => p.Id == SelectedPieceId) : null;
+
+    public WardrobeSet? GetSelectedSet() =>
+        SelectedSetId.HasValue ? ImportedSets.FirstOrDefault(s => s.Id == SelectedSetId) : null;
+
+    public void OpenEditor(WardrobePiece? piece = null)
+    {
+        EditingPiece = piece ?? WardrobePiece.CreateNew(GlamourerEquipmentSlot.Head);
+        EditingSet = null;
+        LoadSlotData();
+        CurrentView = SubView.Editor;
+    }
+
+    public void OpenSetEditor(WardrobeSet? set = null)
+    {
+        EditingSet = set;
+        EditingPiece = null;
+        if (set != null)
+            LoadSetData();
+        CurrentView = SubView.Editor;
+    }
+
+    public void CloseEditor()
+    {
+        EditingPiece = null;
+        EditingSet = null;
+        CurrentView = SubView.List;
+    }
+
+    public void SaveEditor()
+    {
+        if (EditingPiece != null)
+        {
+            SaveSlotData();
+
+            var existing = WardrobePieces.FirstOrDefault(p => p.Id == EditingPiece.Id);
+            if (existing != null)
+            {
+                var index = WardrobePieces.IndexOf(existing);
+                WardrobePieces[index] = EditingPiece;
+            }
+            else
+            {
+                WardrobePieces.Add(EditingPiece);
+            }
+        }
+        else if (EditingSet != null)
+        {
+            SaveSetData();
+
+            var existing = ImportedSets.FirstOrDefault(s => s.Id == EditingSet.Id);
+            if (existing != null)
+            {
+                var index = ImportedSets.IndexOf(existing);
+                ImportedSets[index] = EditingSet;
+            }
+        }
+
+        CloseEditor();
+    }
+
+    public void DeletePiece(Guid id)
+    {
+        var piece = WardrobePieces.FirstOrDefault(p => p.Id == id);
+        if (piece != null)
+        {
+            WardrobePieces.Remove(piece);
+            if (SelectedPieceId == id)
+                SelectedPieceId = null;
+        }
+    }
+
+    public void ImportDesign(Design design, string? name = null, string? description = null)
+    {
+        var set = WardrobeSet.FromDesign(design, name, description);
+        ImportedSets.Add(set);
+        SelectedSetId = set.Id;
+    }
+
+    public void DeleteSet(Guid id)
+    {
+        var set = ImportedSets.FirstOrDefault(s => s.Id == id);
+        if (set != null)
+        {
+            ImportedSets.Remove(set);
+            if (SelectedSetId == id)
+                SelectedSetId = null;
+        }
+    }
 
     /// <summary>
     ///     Search for the design we'd like to send
