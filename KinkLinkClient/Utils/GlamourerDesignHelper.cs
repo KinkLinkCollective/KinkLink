@@ -7,32 +7,42 @@ namespace KinkLinkClient.Utils;
 
 public static class GlamourerDesignHelper
 {
-    // TODO: Handle exceptions when permanent TFs come back
     public static GlamourerEquipmentSlot ToEquipmentSlot(string key)
     {
-        var parsed = uint.Parse(key, NumberStyles.HexNumber);
-        var index = (byte)(parsed >> 16) & 0xFF;
-        return (GlamourerEquipmentSlot)(1 << index);
+        try
+        {
+            var parsed = uint.Parse(key, NumberStyles.HexNumber);
+            var index = (byte)(parsed >> 16) & 0xFF;
+            return (GlamourerEquipmentSlot)(1 << index);
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning($"[GlamourerDesignHelper.FromJObject] Unexpected error, {e}");
+            return (GlamourerEquipmentSlot)0;
+        }
     }
 
-    // TODO: Handle exceptions when permanent TFs come back
     public static JObject ToJObject(GlamourerDesign design)
     {
-        // Convert to a JToken
-        var json = JToken.FromObject(design);
-
-        // Create an empty mods array
-        json["Mods"] = new JArray();
-
-        // Creates a link object with two empty arrays
-        json["Links"] = new JObject
+        try
         {
-            ["Before"] = new JArray(),
-            ["After"] = new JArray()
-        };
+            // Convert to a JToken
+            var json = JToken.FromObject(design);
 
-        // Return the object as a JObject
-        return json as JObject ?? new JObject();
+            // Create an empty mods array
+            json["Mods"] = new JArray();
+
+            // Creates a link object with two empty arrays
+            json["Links"] = new JObject { ["Before"] = new JArray(), ["After"] = new JArray() };
+
+            // Return the object as a JObject
+            return json as JObject ?? new JObject();
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning($"[GlamourerDesignHelper.FromJObject] Unexpected error, {e}");
+            return new JObject();
+        }
     }
 
     public static GlamourerDesign? FromJObject(JObject? design)
@@ -47,7 +57,6 @@ public static class GlamourerDesignHelper
             var copy = design.DeepClone();
 
             // Remove Mods & Links
-            copy["Mods"]?.Parent?.Remove();
             copy["Links"]?.Parent?.Remove();
 
             // Create a new domain object

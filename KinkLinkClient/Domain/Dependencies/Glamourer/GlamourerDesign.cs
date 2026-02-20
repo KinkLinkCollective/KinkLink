@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 
 namespace KinkLinkClient.Domain.Dependencies.Glamourer;
@@ -24,6 +25,7 @@ public class GlamourerDesign
     public GlamourerCustomize Customize = new();
     public GlamourerParameter Parameters = new();
     public Dictionary<string, GlamourerMaterial> Materials = [];
+    public SortedList<Mod, ModSettings> Mods = new();
 
     public GlamourerDesign Clone()
     {
@@ -49,6 +51,9 @@ public class GlamourerDesign
         copy.Bonus = Bonus.Clone();
         copy.Customize = Customize.Clone();
         copy.Parameters = Parameters.Clone();
+        copy.Mods = new();
+        foreach (var item in Mods)
+            copy.Mods.Add(item.Key, item.Value);
 
         // Return copy
         return copy;

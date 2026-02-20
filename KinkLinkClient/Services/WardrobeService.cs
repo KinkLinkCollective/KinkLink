@@ -1,65 +1,108 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using KinkLinkClient;
+using KinkLinkClient.Domain.Configurations;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 
-public enum Slots
-{
-    Head, Chest, Hands, Feet, Legs, Earring, Necklace, Wrists, RingR, RingL, Bonus
-}
 public enum LayerLocks
 {
-    InnerGag, Gag, OuterGag, Blindfold, Collar,
-    Head, Chest, Hands, Feet, Legs, Earring, Necklace, Wrists, RingR, RingL,
+    InnerGag,
+    Gag,
+    OuterGag,
+    Blindfold,
+    Collar,
+    Head,
+    Chest,
+    Hands,
+    Feet,
+    Legs,
+    Earring,
+    Necklace,
+    Wrists,
+    RingR,
+    RingL,
     Bonus,
-    SetLayer
+    SetLayer,
 }
 
-
-public class RestraintInfo
+public class RestraintItem
 {
     public GlamourerItem? Item;
+
     // public ModSettings
     public Dictionary<string, GlamourerMaterial> Materials = [];
     // Need to add in the specific mods associated with the restraint for penumbra
 }
 
+// The wardrobe service contains the information about how our character should
+// look at dispatches commands to the glamourer API to ensure that we are set how we should be set.
 public class WardrobeService
 {
-    public RestraintInfo? InnerGag, Gag, OuterGag, Blindfold, Collar;
+    // Do we need these special layer restraints?
+    private RestraintItem? InnerGag,
+        Gag,
+        OuterGag,
+        Blindfold,
+        Collar;
+
     // Individual layers
-    public RestraintInfo? Head, Chest, Hands, Feet, Legs, Earring, Necklace, Wrists, RingR, RingL, Bonus;
-    public GlamourerBonus? BonusItem;
-    public GlamourerDesign? SetLayer;
+    private RestraintItem? Head,
+        Chest,
+        Hands,
+        Feet,
+        Legs,
+        Earring,
+        Necklace,
+        Wrists,
+        RingR,
+        RingL,
+        Bonus;
+    private GlamourerBonus? BonusItem;
 
+    // Outfit layer
+    private GlamourerDesign? SetLayer;
+    private Dictionary<string, RestraintItem> AvailableRestraints;
+    private Dictionary<string, GlamourerDesign> AvailableSets;
 
-    public async Task SetRestraint(Slots slot, RestraintInfo restraint)
+    public WardrobeService()
     {
-        // TODO: Implement this, 
+        if (Plugin.CharacterConfiguration is { } config)
+        {
+            AvailableSets = config.WardrobeSets;
+            AvailableRestraints = config.WardrobeItems;
+        }
+        else
+        {
+            AvailableSets = new();
+            AvailableRestraints = new();
+        }
     }
 
-    public async Task SetBonusItem(GlamourerBonus restraint)
+    public async Task AddRestraintSet(string name, RestraintItem item)
     {
-        // TODO: Implement the set item
+        AvailableRestraints.Add(name, item);
+        await Save();
     }
 
-    public async Task SetDesign(GlamourerDesign restraint)
+    public async Task AddAvailableRestraintSet(string name, GlamourerDesign design)
     {
-        // TODO: Implement the set item
+        AvailableSets.Add(name, design);
+        await Save();
     }
 
-    public async Task ClearRestraint(Slots slot)
+    private async Task Save()
     {
-        // TODO: Implement the set item
+        if (Plugin.CharacterConfiguration is not null)
+        {
+            Plugin.CharacterConfiguration.WardrobeSets = AvailableSets;
+            Plugin.CharacterConfiguration.WardrobeItems = AvailableRestraints;
+            await Plugin.CharacterConfiguration.Save();
+        }
     }
-
-    public async Task ClearBonusItem()
-    {
-        // TODO: Implement the set item
-    }
-
-    public async Task ClearDesign()
-    {
-        // TODO: Implement the set item
-    }
+    // TODO: Add in the stub functions for wardrobe management.
+    // Need to be able to add to the available sets as well as apply sets/items to the various layers
+    // Sets are easy, they only affect the layer, but the Restraints will need to be applied by slot.
+    // Finally, need to have a handler that is registered to a callback in here so that when the state is finalized it is restored
+    // Locks should be applied via a locking service and checked using it.
 }
