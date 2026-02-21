@@ -44,6 +44,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
 
     // Glamourer Api Design
     private readonly GetDesignBase64 _getDesignBase64;
+    private readonly GetDesignJObject _getDesignJObject;
     private readonly GetDesignListExtended _getDesignListExtended;
 
     // Glamourer Api State
@@ -85,6 +86,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
         _apiVersion = new ApiVersion(Plugin.PluginInterface);
 
         _getDesignBase64 = new GetDesignBase64(Plugin.PluginInterface);
+        _getDesignJObject = new GetDesignJObject(Plugin.PluginInterface);
         _getDesignListExtended = new GetDesignListExtended(Plugin.PluginInterface);
 
         _applyState = new ApplyState(Plugin.PluginInterface);
@@ -393,6 +395,31 @@ public class GlamourerService : IExternalPlugin, IDisposable
         {
             return await Plugin
                 .RunOnFramework(() => _getDesignBase64.Invoke(designId))
+                .ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Error($"[GlamourerService.GetDesignAsync] An expected error occurred, {e}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Get a design from glamourer by providing Guid
+    /// </summary>
+    public async Task<JObject?> GetDesignJObjectAsync(Guid designId)
+    {
+        // Check if we can call this
+        if (!ApiAvailable)
+        {
+            Plugin.Log.Warning("[GlamourerService.GetDesignAsync] Api not available");
+            return null;
+        }
+
+        try
+        {
+            return await Plugin
+                .RunOnFramework(() => _getDesignJObject.Invoke(designId))
                 .ConfigureAwait(false);
         }
         catch (Exception e)

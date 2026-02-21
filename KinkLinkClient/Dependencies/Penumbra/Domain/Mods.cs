@@ -26,8 +26,8 @@ public readonly record struct ModSettings(
     Dictionary<string, List<string>> Settings,
     int Priority,
     bool Enabled,
-    bool ForceInherit,
-    bool Remove
+    bool ForceInherit = false,
+    bool Remove = false
 )
 {
     public ModSettings()

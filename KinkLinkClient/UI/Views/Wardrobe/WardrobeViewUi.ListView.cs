@@ -159,30 +159,25 @@ public partial class WardrobeViewUi
     {
         foreach (var set in controller.ImportedSets)
         {
-            var isSelected = controller.SelectedSetId == set.Id;
+            var isSelected = controller.SelectedSetId == set.Identifier;
 
             if (isSelected)
             {
                 ImGui.PushStyleColor(ImGuiCol.Header, KinkLinkStyle.PrimaryColor);
-                if (ImGui.Selectable($"{set.Name}##{set.Id}", true))
+                if (ImGui.Selectable($"{set.Name}##{set.Identifier}", true))
                 {
-                    controller.SelectedSetId = set.Id;
+                    controller.SelectedSetId = set.Identifier;
                     controller.SelectedPieceId = null;
                 }
                 ImGui.PopStyleColor();
             }
             else
             {
-                if (ImGui.Selectable($"{set.Name}##{set.Id}"))
+                if (ImGui.Selectable($"{set.Name}##{set.Identifier}"))
                 {
-                    controller.SelectedSetId = set.Id;
+                    controller.SelectedSetId = set.Identifier;
                     controller.SelectedPieceId = null;
                 }
-            }
-
-            if (ImGui.IsItemHovered())
-            {
-                ImGui.SetTooltip($"Design: {set.GlamourerDesign.Path}");
             }
         }
 
@@ -197,7 +192,7 @@ public partial class WardrobeViewUi
     {
         var padding = ImGui.GetStyle().WindowPadding;
 
-        if (ImGui.BeginChild("##WardrobeDetailsPane", new Vector2(DetailsPaneWidth, height), true))
+        if (ImGui.BeginChild("##WardrobeDetailsPane", new Vector2(DetailsPaneWidth, height), false))
         {
             SharedUserInterfaces.ContentBox(
                 "WardrobeDetails",
@@ -229,7 +224,7 @@ public partial class WardrobeViewUi
         }
     }
 
-    private void DrawPieceDetails(WardrobePiece piece)
+    private void DrawPieceDetails(RestraintItem piece)
     {
         ImGui.Spacing();
         SharedUserInterfaces.MediumText(piece.Name);
@@ -242,8 +237,8 @@ public partial class WardrobeViewUi
         }
 
         ImGui.Text($"Slot: {piece.Slot}");
-        ImGui.Text($"Item ID: {piece.Item.ItemId}");
-        ImGui.Text($"Apply: {(piece.Item.Apply ? "Yes" : "No")}");
+        ImGui.Text($"Item ID: {piece.Item?.ItemId}");
+        ImGui.Text($"Apply: {(piece.Item?.Apply == true ? "Yes" : "No")}");
 
         if (piece.Dye1.HasValue)
             ImGui.Text($"Dye 1: {piece.Dye1}");
@@ -274,7 +269,7 @@ public partial class WardrobeViewUi
         }
     }
 
-    private void DrawSetDetails(WardrobeSet set)
+    private void DrawSetDetails(GlamourerDesign set)
     {
         ImGui.Spacing();
         SharedUserInterfaces.MediumText(set.Name);
@@ -286,8 +281,7 @@ public partial class WardrobeViewUi
             ImGui.Spacing();
         }
 
-        ImGui.Text($"Design: {set.GlamourerDesign.Name}");
-        ImGui.TextWrapped($"Path: {set.GlamourerDesign.Path}");
+        ImGui.Text($"Design: {set.Name}");
 
         ImGui.Spacing();
 
@@ -304,7 +298,7 @@ public partial class WardrobeViewUi
 
         if (ImGui.Button("Delete", new Vector2(buttonWidth, 30)))
         {
-            controller.DeleteSet(set.Id);
+            controller.DeleteSet(set.Identifier);
         }
     }
 }

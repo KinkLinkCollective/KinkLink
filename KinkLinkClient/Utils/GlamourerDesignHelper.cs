@@ -29,9 +29,6 @@ public static class GlamourerDesignHelper
             // Convert to a JToken
             var json = JToken.FromObject(design);
 
-            // Create an empty mods array
-            json["Mods"] = new JArray();
-
             // Creates a link object with two empty arrays
             json["Links"] = new JObject { ["Before"] = new JArray(), ["After"] = new JArray() };
 

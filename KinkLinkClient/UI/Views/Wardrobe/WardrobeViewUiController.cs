@@ -19,13 +19,13 @@ public enum SubView
 {
     List,
     Import,
-    Editor
+    Editor,
 }
 
 public enum ListTab
 {
     Items,
-    Sets
+    Sets,
 }
 
 // TODO: This class needs to be implemented
@@ -40,17 +40,17 @@ public class WardrobeViewUiController : IDisposable
     public SubView CurrentView = SubView.List;
     public ListTab CurrentTab = ListTab.Items;
 
-    // Wardrobe Data (in-memory)
-    public List<WardrobePiece> WardrobePieces = [];
-    public List<WardrobeSet> ImportedSets = [];
+    // Wardrobe Data (To display)
+    public List<RestraintItem> WardrobePieces = [];
+    public List<GlamourerDesign> ImportedSets = [];
 
     // Selection State
     public Guid? SelectedPieceId;
     public Guid? SelectedSetId;
 
     // Editor State
-    public WardrobePiece? EditingPiece;
-    public WardrobeSet? EditingSet;
+    public RestraintItem? EditingPiece;
+    public GlamourerDesign? EditingSet;
 
     // Editor Fields
     public string EditedName = string.Empty;
@@ -63,10 +63,7 @@ public class WardrobeViewUiController : IDisposable
     public uint EditedDye2;
 
     public static string[] AllSlotNames =>
-    [
-        "Head", "Body", "Hands", "Legs", "Feet",
-        "Ears", "Neck", "Wrists", "RFinger", "LFinger"
-    ];
+        ["Head", "Body", "Hands", "Legs", "Feet", "Ears", "Neck", "Wrists", "RFinger", "LFinger"];
 
     public static string GetSlotDisplayName(string slotName)
     {
@@ -82,7 +79,7 @@ public class WardrobeViewUiController : IDisposable
             "Wrists" => "Bracelet",
             "RFinger" => "Right Ring",
             "LFinger" => "Left Ring",
-            _ => slotName
+            _ => slotName,
         };
     }
 
@@ -100,29 +97,28 @@ public class WardrobeViewUiController : IDisposable
             "Wrists" => GlamourerEquipmentSlot.Wrists,
             "RFinger" => GlamourerEquipmentSlot.RFinger,
             "LFinger" => GlamourerEquipmentSlot.LFinger,
-            _ => GlamourerEquipmentSlot.None
+            _ => GlamourerEquipmentSlot.None,
         };
     }
 
     public void SaveSlotData()
     {
-        if (EditingPiece == null) return;
+        if (EditingPiece == null)
+            return;
 
         var slot = GetSlotFromName(SelectedSlotName);
-        EditingPiece = EditingPiece with
-        {
-            Name = EditedName,
-            Description = EditedDescription,
-            Slot = slot,
-            Item = EditedItem.Clone(),
-            Dye1 = EditedDye1 > 0 ? EditedDye1 : null,
-            Dye2 = EditedDye2 > 0 ? EditedDye2 : null
-        };
+        EditingPiece.Name = EditedName;
+        EditingPiece.Description = EditedDescription;
+        EditingPiece.Slot = slot;
+        EditingPiece.Item = EditedItem.Clone();
+        EditingPiece.Dye1 = EditedDye1 > 0 ? EditedDye1 : null;
+        EditingPiece.Dye2 = EditedDye2 > 0 ? EditedDye2 : null;
     }
 
     public void LoadSlotData()
     {
-        if (EditingPiece == null) return;
+        if (EditingPiece == null)
+            return;
 
         EditedName = EditingPiece.Name;
         EditedDescription = EditingPiece.Description;
@@ -134,38 +130,69 @@ public class WardrobeViewUiController : IDisposable
 
     public void LoadSetData()
     {
-        if (EditingSet == null) return;
+        if (EditingSet == null)
+            return;
 
         EditedName = EditingSet.Name;
         EditedDescription = EditingSet.Description;
     }
 
-    public void SaveSetData()
+    public void ResetEditorFields()
     {
-        if (EditingSet == null) return;
-
-        EditingSet = EditingSet with
-        {
-            Name = EditedName,
-            Description = EditedDescription
-        };
+        EditedName = string.Empty;
+        EditedDescription = string.Empty;
+        SelectedSlotName = "Head";
+        EditedItem = new GlamourerItem();
+        EditedDye1 = 0;
+        EditedDye2 = 0;
     }
 
-    public WardrobePiece? GetSelectedPiece() =>
-        SelectedPieceId.HasValue ? WardrobePieces.FirstOrDefault(p => p.Id == SelectedPieceId) : null;
-
-    public WardrobeSet? GetSelectedSet() =>
-        SelectedSetId.HasValue ? ImportedSets.FirstOrDefault(s => s.Id == SelectedSetId) : null;
-
-    public void OpenEditor(WardrobePiece? piece = null)
+    public void SaveSetData()
     {
-        EditingPiece = piece ?? WardrobePiece.CreateNew(GlamourerEquipmentSlot.Head);
+        if (EditingSet == null)
+            return;
+
+        EditingSet.Name = EditedName;
+        EditingSet.Description = EditedDescription;
+    }
+
+    public RestraintItem? GetSelectedPiece() =>
+        SelectedPieceId.HasValue
+            ? WardrobePieces.FirstOrDefault(p => p.Id == SelectedPieceId)
+            : null;
+
+    public GlamourerDesign? GetSelectedSet() =>
+        SelectedSetId.HasValue
+            ? ImportedSets.FirstOrDefault(s => s.Identifier == SelectedSetId)
+            : null;
+
+    public void OpenEditor(RestraintItem? piece = null)
+    {
+        EditingPiece =
+            piece
+            ?? new RestraintItem
+            {
+                Id = Guid.NewGuid(),
+                Name = "New Piece",
+                Description = string.Empty,
+                Slot = GlamourerEquipmentSlot.Head,
+                Item = new GlamourerItem
+                {
+                    Apply = true,
+                    ApplyCrest = false,
+                    ApplyStain = true,
+                    Crest = false,
+                    ItemId = 0,
+                    Stain = 0,
+                    Stain2 = 0,
+                },
+            };
         EditingSet = null;
         LoadSlotData();
         CurrentView = SubView.Editor;
     }
 
-    public void OpenSetEditor(WardrobeSet? set = null)
+    public void OpenSetEditor(GlamourerDesign? set = null)
     {
         EditingSet = set;
         EditingPiece = null;
@@ -176,12 +203,13 @@ public class WardrobeViewUiController : IDisposable
 
     public void CloseEditor()
     {
+        ResetEditorFields();
         EditingPiece = null;
         EditingSet = null;
         CurrentView = SubView.List;
     }
 
-    public void SaveEditor()
+    public async Task SaveEditorAsync()
     {
         if (EditingPiece != null)
         {
@@ -202,12 +230,26 @@ public class WardrobeViewUiController : IDisposable
         {
             SaveSetData();
 
-            var existing = ImportedSets.FirstOrDefault(s => s.Id == EditingSet.Id);
+            var existing = ImportedSets.FirstOrDefault(s => s.Identifier == EditingSet.Identifier);
             if (existing != null)
             {
                 var index = ImportedSets.IndexOf(existing);
                 ImportedSets[index] = EditingSet;
             }
+        }
+
+        if (Plugin.CharacterConfiguration is { } config)
+        {
+            if (EditingPiece != null)
+            {
+                config.WardrobeItems[EditingPiece.Name] = EditingPiece;
+            }
+            else if (EditingSet != null)
+            {
+                config.WardrobeSets[EditingSet.Name] = EditingSet.Clone();
+            }
+
+            await config.Save();
         }
 
         CloseEditor();
@@ -224,16 +266,48 @@ public class WardrobeViewUiController : IDisposable
         }
     }
 
-    public void ImportDesign(Design design, string? name = null, string? description = null)
+    public void ImportDesign(
+        GlamourerDesign design,
+        string? name = null,
+        string? description = null
+    )
     {
-        var set = WardrobeSet.FromDesign(design, name, description);
-        ImportedSets.Add(set);
-        SelectedSetId = set.Id;
+        design.Name = name ?? design.Name;
+        design.Description = description ?? string.Empty;
+        ImportedSets.Add(design);
+        SelectedSetId = design.Identifier;
+    }
+
+    public async Task ImportDesignByIdAsync(
+        Guid designId,
+        string? name = null,
+        string? description = null
+    )
+    {
+        var designJson = await _glamourerService
+            .GetDesignJObjectAsync(designId)
+            .ConfigureAwait(false);
+        Plugin.Log.Info($"Design Json {designJson}");
+
+        if (designJson is not { } jObject)
+        {
+            Plugin.Log.Error($"{designJson} is not a valid JObject");
+            return;
+        }
+
+        var glamourerDesign = GlamourerDesignHelper.FromJObject(jObject);
+        if (glamourerDesign == null)
+        {
+            Plugin.Log.Error($"{glamourerDesign} is not a valid design");
+            return;
+        }
+
+        ImportDesign(glamourerDesign, name, description);
     }
 
     public void DeleteSet(Guid id)
     {
-        var set = ImportedSets.FirstOrDefault(s => s.Id == id);
+        var set = ImportedSets.FirstOrDefault(s => s.Identifier == id);
         if (set != null)
         {
             ImportedSets.Remove(set);
@@ -283,9 +357,20 @@ public class WardrobeViewUiController : IDisposable
         _networkService = networkService;
         _selectionManager = selectionManager;
 
+        LoadFromConfiguration();
+
         _glamourerService.IpcReady += OnIpcReady;
         if (_glamourerService.ApiAvailable)
             _ = RefreshGlamourerDesigns();
+    }
+
+    public void LoadFromConfiguration()
+    {
+        if (Plugin.CharacterConfiguration is not { } config)
+            return;
+
+        WardrobePieces = config.WardrobeItems.Values.ToList();
+        ImportedSets = config.WardrobeSets.Values.ToList();
     }
 
     /// <summary>

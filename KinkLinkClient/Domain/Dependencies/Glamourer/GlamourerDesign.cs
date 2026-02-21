@@ -5,6 +5,16 @@ using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 
 namespace KinkLinkClient.Domain.Dependencies.Glamourer;
 
+public record struct GlamourerMod(
+    string Name,
+    string DirectoryName,
+    Dictionary<string, List<string>> Settings,
+    int Priority,
+    bool Enabled,
+    bool ForceInherit = false,
+    bool Remove = false
+);
+
 public class GlamourerDesign
 {
     public int FileVersion;
@@ -25,7 +35,7 @@ public class GlamourerDesign
     public GlamourerCustomize Customize = new();
     public GlamourerParameter Parameters = new();
     public Dictionary<string, GlamourerMaterial> Materials = [];
-    public SortedList<Mod, ModSettings> Mods = new();
+    public List<GlamourerMod> Mods = [];
 
     public GlamourerDesign Clone()
     {
@@ -51,9 +61,6 @@ public class GlamourerDesign
         copy.Bonus = Bonus.Clone();
         copy.Customize = Customize.Clone();
         copy.Parameters = Parameters.Clone();
-        copy.Mods = new();
-        foreach (var item in Mods)
-            copy.Mods.Add(item.Key, item.Value);
 
         // Return copy
         return copy;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KinkLinkClient;
@@ -28,11 +29,14 @@ public enum LayerLocks
 
 public class RestraintItem
 {
+    public Guid Id;
+    public string Name = string.Empty;
+    public string Description = string.Empty;
+    public GlamourerEquipmentSlot Slot;
     public GlamourerItem? Item;
-
-    // public ModSettings
+    public uint? Dye1;
+    public uint? Dye2;
     public Dictionary<string, GlamourerMaterial> Materials = [];
-    // Need to add in the specific mods associated with the restraint for penumbra
 }
 
 // The wardrobe service contains the information about how our character should

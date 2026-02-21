@@ -131,7 +131,7 @@ public partial class WardrobeViewUi
         );
     }
 
-    private void ImportSelectedDesign()
+    private async void ImportSelectedDesign()
     {
         if (controller.SelectedDesignId == Guid.Empty)
             return;
@@ -143,7 +143,7 @@ public partial class WardrobeViewUi
         var name = string.IsNullOrWhiteSpace(controller.EditedName) ? design.Name : controller.EditedName;
         var description = controller.EditedDescription ?? string.Empty;
 
-        controller.ImportDesign(design, name, description);
+        await controller.ImportDesignByIdAsync(design.Id, name, description);
 
         controller.EditedName = string.Empty;
         controller.EditedDescription = string.Empty;

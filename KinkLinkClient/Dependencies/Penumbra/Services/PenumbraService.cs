@@ -124,25 +124,31 @@ public class PenumbraService : IExternalPlugin
                     item.Item3.Item1 is PenumbraApiEc.Success && item.Item3.Item2 != null
                 )
                 // Conversion to our `Mod`
-                .Select(item => new Mod(
-                    // Mod Name
-                    item.Value,
-                    // Mod Directory
-                    item.Key,
-                    // Mod Settings
-                    item.Item3.Item2!.Value.Item3,
-                    // Mod priority
-                    item.Item3.Item2.Value.Item2,
-                    // Mod enabled
-                    item.Item3.Item2!.Value.Item1
-                ));
+                .Select(item =>
+                    (
+                        new Mod(
+                            // Mod Name
+                            item.Value,
+                            // Mod Directory
+                            item.Key
+                        ),
+                        new ModSettings(
+                            // Mod Settings
+                            item.Item3.Item2!.Value.Item3,
+                            // Mod priority
+                            item.Item3.Item2.Value.Item2,
+                            // Mod enabled
+                            item.Item3.Item2!.Value.Item1
+                        )
+                    )
+                );
             return settings;
         });
         Plugin.Log.Warning($"[PenumbraService] Could not find any mod data");
         return new List<Mod>();
     }
 
-    public async Task SetTemporaryModState(Mod mod, bool enabled)
+    public async Task SetTemporaryModState(Mod mod, ModSettings settings, bool enabled)
     {
         if (!ApiAvailable)
         {
@@ -161,8 +167,8 @@ public class PenumbraService : IExternalPlugin
                     mod.DirectoryName,
                     false,
                     true,
-                    mod.priority + 100,
-                    mod.Settings.ToDictionary(
+                    settings.Priority + 100,
+                    settings.Settings.ToDictionary(
                         kvp => kvp.Key,
                         kvp => (IReadOnlyList<string>)kvp.Value
                     ),

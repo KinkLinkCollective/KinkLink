@@ -172,8 +172,7 @@ public partial class WardrobeViewUi
                 () =>
                 {
                     SharedUserInterfaces.MediumText("Design Info");
-                    ImGui.Text($"Design: {controller.EditingSet.GlamourerDesign.Name}");
-                    ImGui.TextWrapped($"Path: {controller.EditingSet.GlamourerDesign.Path}");
+                    ImGui.Text($"Design: {controller.EditingSet.Name}");
                 }
             );
         }
@@ -195,7 +194,7 @@ public partial class WardrobeViewUi
 
                 if (ImGui.Button("Save", new Vector2(buttonWidth, 40)))
                 {
-                    controller.SaveEditor();
+                    _ = controller.SaveEditorAsync();
                 }
             }
         );
