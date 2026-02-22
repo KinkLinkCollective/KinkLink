@@ -1,4 +1,6 @@
+using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using KinkLinkClient.Domain;
@@ -10,7 +12,7 @@ public partial class WardrobeViewUi
 {
     private void DrawEditorView()
     {
-        if (controller.EditingPiece == null && controller.EditingSet == null)
+        if (controller.EditingPiece is null && controller.EditingSet is null)
         {
             controller.CloseEditor();
             return;
@@ -20,7 +22,7 @@ public partial class WardrobeViewUi
         var width = ImGui.GetWindowWidth() - padding.X * 2;
         var contentWidth = width - padding.X * 2;
 
-        if (controller.EditingPiece != null)
+        if (controller.EditingPiece is not null)
         {
             SharedUserInterfaces.ContentBox(
                 "EditorName",
@@ -30,7 +32,9 @@ public partial class WardrobeViewUi
                 {
                     SharedUserInterfaces.MediumText("Name");
                     ImGui.SetNextItemWidth(contentWidth);
-                    ImGui.InputText("##Name", ref controller.EditedName, 64);
+                    var name = controller.EditedName;
+                    if (ImGui.InputText("##Name", ref name, 64))
+                        controller.EditedName = name;
                 }
             );
 
@@ -42,7 +46,9 @@ public partial class WardrobeViewUi
                 {
                     SharedUserInterfaces.MediumText("Description");
                     ImGui.SetNextItemWidth(contentWidth);
-                    ImGui.InputText("##Description", ref controller.EditedDescription, 256);
+                    var description = controller.EditedDescription;
+                    if (ImGui.InputText("##Description", ref description, 256))
+                        controller.EditedDescription = description;
                 }
             );
 
@@ -79,8 +85,14 @@ public partial class WardrobeViewUi
                     var itemIdStr = controller.EditedItem.ItemId.ToString();
                     if (ImGui.InputText("##ItemId", ref itemIdStr, 20))
                     {
-                        if (uint.TryParse(itemIdStr, out var result))
+                        if (string.IsNullOrWhiteSpace(itemIdStr))
+                        {
+                            controller.EditedItem.ItemId = 0;
+                        }
+                        else if (uint.TryParse(itemIdStr, out var result))
+                        {
                             controller.EditedItem.ItemId = result;
+                        }
                     }
                 }
             );
@@ -93,22 +105,34 @@ public partial class WardrobeViewUi
                 {
                     SharedUserInterfaces.MediumText("Dyes");
 
-                    var dye1Str = controller.EditedDye1.ToString();
-                    var dye2Str = controller.EditedDye2.ToString();
+                    var dye1Str = controller.EditedDye1 > 0 ? controller.EditedDye1.ToString() : string.Empty;
+                    var dye2Str = controller.EditedDye2 > 0 ? controller.EditedDye2.ToString() : string.Empty;
 
                     ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
                     if (ImGui.InputText("##Dye1", ref dye1Str, 10))
                     {
-                        if (uint.TryParse(dye1Str, out var result))
+                        if (string.IsNullOrWhiteSpace(dye1Str))
+                        {
+                            controller.EditedDye1 = 0;
+                        }
+                        else if (uint.TryParse(dye1Str, out var result))
+                        {
                             controller.EditedDye1 = result;
+                        }
                     }
 
                     ImGui.SameLine(contentWidth * 0.5f);
                     ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
                     if (ImGui.InputText("##Dye2", ref dye2Str, 10))
                     {
-                        if (uint.TryParse(dye2Str, out var result))
+                        if (string.IsNullOrWhiteSpace(dye2Str))
+                        {
+                            controller.EditedDye2 = 0;
+                        }
+                        else if (uint.TryParse(dye2Str, out var result))
+                        {
                             controller.EditedDye2 = result;
+                        }
                     }
                 }
             );
@@ -149,7 +173,9 @@ public partial class WardrobeViewUi
                 {
                     SharedUserInterfaces.MediumText("Name");
                     ImGui.SetNextItemWidth(contentWidth);
-                    ImGui.InputText("##Name", ref controller.EditedName, 64);
+                    var name = controller.EditedName;
+                    if (ImGui.InputText("##Name", ref name, 64))
+                        controller.EditedName = name;
                 }
             );
 
@@ -161,7 +187,9 @@ public partial class WardrobeViewUi
                 {
                     SharedUserInterfaces.MediumText("Description");
                     ImGui.SetNextItemWidth(contentWidth);
-                    ImGui.InputText("##Description", ref controller.EditedDescription, 256);
+                    var description = controller.EditedDescription;
+                    if (ImGui.InputText("##Description", ref description, 256))
+                        controller.EditedDescription = description;
                 }
             );
 
@@ -194,9 +222,22 @@ public partial class WardrobeViewUi
 
                 if (ImGui.Button("Save", new Vector2(buttonWidth, 40)))
                 {
-                    _ = controller.SaveEditorAsync();
+                    _ = SaveAndHandleErrors();
                 }
             }
         );
+    }
+
+    private async Task SaveAndHandleErrors()
+    {
+        try
+        {
+            await controller.SaveEditorAsync();
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Failed to save editor changes");
+            NotificationHelper.Error("Save Failed", "Unable to save changes. Check logs for details.");
+        }
     }
 }

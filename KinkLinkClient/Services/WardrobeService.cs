@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using KinkLinkClient;
+using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Dependencies.Glamourer.Services;
 using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Configurations;
@@ -41,118 +44,216 @@ public class RestraintItem
     public Dictionary<string, GlamourerMaterial> Materials = [];
 }
 
-// The wardrobe service contains the information about how our character should
-// look at dispatches commands to the glamourer API to ensure that we are set how we should be set.
 public class WardrobeService
 {
-    // Injected
     private readonly PenumbraService _penumbraService;
     private readonly GlamourerService _glamourerService;
 
-    // Do we need these special layer restraints?
-    private RestraintItem? InnerGag,
-        Gag,
-        OuterGag,
-        Blindfold,
-        Collar;
+    private Dictionary<string, RestraintItem> _wardrobeItems = [];
+    private Dictionary<string, GlamourerDesign> _wardrobeSets = [];
 
-    // Individual layers
-    private RestraintItem? Head,
-        Chest,
-        Hands,
-        Feet,
-        Legs,
-        Earring,
-        Necklace,
-        Wrists,
-        RingR,
-        RingL,
-        Bonus;
-    private GlamourerBonus? BonusItem;
+    public GlamourerDesign? ActiveSet { get; private set; }
 
-    // Outfit layer
-    private GlamourerDesign? SetLayer;
-    private Dictionary<string, RestraintItem> AvailableRestraints;
-    private Dictionary<string, GlamourerDesign> AvailableSets;
+    public IReadOnlyList<RestraintItem> WardrobePieces => [.. _wardrobeItems.Values];
+    public IReadOnlyList<GlamourerDesign> ImportedSets => [.. _wardrobeSets.Values];
+
+    public List<Design>? GlamourerDesigns { get; private set; }
+    private List<Design>? _filteredGlamourerDesigns;
+
+    public string GlamourerSearchTerm { get; set; } = string.Empty;
+    public Guid SelectedGlamourerDesignId { get; set; } = Guid.Empty;
+
+    public List<Design>? FilteredGlamourerDesigns =>
+        string.IsNullOrEmpty(GlamourerSearchTerm) ? GlamourerDesigns : _filteredGlamourerDesigns;
+
+    public bool IsGlamourerApiAvailable => _glamourerService.ApiAvailable;
 
     public WardrobeService(GlamourerService glamourerService, PenumbraService penumbraService)
     {
         _penumbraService = penumbraService;
         _glamourerService = glamourerService;
+
+        LoadFromConfiguration();
+
+        _glamourerService.IpcReady += OnIpcReady;
+        if (_glamourerService.ApiAvailable)
+        {
+            _ = RefreshGlamourerDesignsAsync();
+        }
+    }
+
+    private void OnIpcReady(object? sender, EventArgs e)
+    {
+        _ = RefreshGlamourerDesignsAsync();
+    }
+
+    public void LoadFromConfiguration()
+    {
         if (Plugin.CharacterConfiguration is { } config)
         {
-            AvailableSets = config.WardrobeSets;
-            AvailableRestraints = config.WardrobeItems;
+            _wardrobeItems = config.WardrobeItems ?? [];
+            _wardrobeSets = config.WardrobeSets ?? [];
         }
         else
         {
-            AvailableSets = new();
-            AvailableRestraints = new();
+            _wardrobeItems = [];
+            _wardrobeSets = [];
         }
     }
 
-    public async Task AddRestraintSet(string name, RestraintItem item)
+    public void AddPiece(RestraintItem piece)
     {
-        AvailableRestraints.Add(name, item);
-        await Save();
+        _wardrobeItems[piece.Name] = piece;
+        _ = SaveAsync();
     }
 
-    public async Task AddAvailableRestraintSet(string name, GlamourerDesign design)
+    public void UpdatePiece(RestraintItem piece)
     {
-        AvailableSets.Add(name, design);
-        await Save();
+        _wardrobeItems[piece.Name] = piece;
+        _ = SaveAsync();
     }
 
-    private async Task Save()
+    public void DeletePiece(Guid id)
     {
-        if (Plugin.CharacterConfiguration is not null)
+        var piece = _wardrobeItems.Values.FirstOrDefault(p => p.Id == id);
+        if (piece != null)
         {
-            Plugin.CharacterConfiguration.WardrobeSets = AvailableSets;
-            Plugin.CharacterConfiguration.WardrobeItems = AvailableRestraints;
-            await Plugin.CharacterConfiguration.Save();
+            _wardrobeItems.Remove(piece.Name);
+            _ = SaveAsync();
         }
     }
 
-    public async Task ApplySet(string name)
+    public RestraintItem? GetPieceById(Guid id)
     {
-        if (!_glamourerService.ApiAvailable || !AvailableSets.ContainsKey(name))
+        return _wardrobeItems.Values.FirstOrDefault(p => p.Id == id);
+    }
+
+    public void AddSet(GlamourerDesign set)
+    {
+        _wardrobeSets[set.Name] = set;
+        _ = SaveAsync();
+    }
+
+    public void UpdateSet(GlamourerDesign set)
+    {
+        _wardrobeSets[set.Name] = set;
+        _ = SaveAsync();
+    }
+
+    public void DeleteSet(Guid id)
+    {
+        var set = _wardrobeSets.Values.FirstOrDefault(s => s.Identifier == id);
+        if (set != null)
         {
+            _wardrobeSets.Remove(set.Name);
+            _ = SaveAsync();
+        }
+    }
+
+    public GlamourerDesign? GetSetById(Guid id)
+    {
+        return _wardrobeSets.Values.FirstOrDefault(s => s.Identifier == id);
+    }
+
+    public GlamourerDesign? GetSetByName(string name)
+    {
+        return _wardrobeSets.TryGetValue(name, out var set) ? set : null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Plugin.CharacterConfiguration is { } config)
+        {
+            config.WardrobeSets = _wardrobeSets;
+            config.WardrobeItems = _wardrobeItems;
+            await config.Save();
+        }
+    }
+
+    public async Task RefreshGlamourerDesignsAsync()
+    {
+        SelectedGlamourerDesignId = Guid.Empty;
+
+        if (await _glamourerService.GetDesignList().ConfigureAwait(false) is not { } designs)
+            return;
+
+        GlamourerDesigns = designs.OrderBy(d => d.Path).ToList();
+    }
+
+    public void RefreshDesigns()
+    {
+        _ = RefreshGlamourerDesignsAsync();
+    }
+
+    public async Task<JToken?> GetDesignJObjectAsync(Guid designId)
+    {
+        return await _glamourerService.GetDesignJObjectAsync(designId);
+    }
+
+    public void FilterDesigns()
+    {
+        if (GlamourerDesigns == null)
+        {
+            _filteredGlamourerDesigns = null;
             return;
         }
-        SetLayer = AvailableSets[name];
-        // First set the mods
-        foreach (var modsettings in SetLayer.Mods)
+
+        if (string.IsNullOrEmpty(GlamourerSearchTerm))
         {
-            (Mod mod, ModSettings settings) = modsettings.ToTuple();
-            await _penumbraService.SetTemporaryModState(mod, settings, true);
+            _filteredGlamourerDesigns = null;
+            return;
         }
-        // Send the design
-        await _glamourerService.ApplyDesignAsync(SetLayer);
+
+        _filteredGlamourerDesigns = [.. GlamourerDesigns
+            .Where(d => d.Path.Contains(GlamourerSearchTerm, StringComparison.OrdinalIgnoreCase))];
     }
 
-    public async Task<bool> RemoveActiveSet()
+    public async Task ApplySetAsync(string name)
     {
-        if (!_glamourerService.ApiAvailable || SetLayer == null)
+        if (!_glamourerService.ApiAvailable)
         {
-            return false;
+            Plugin.Log.Warning("Cannot apply set: Glamourer API not available");
+            return;
         }
-        // First set the mods
-        foreach (var modsettings in SetLayer.Mods)
+
+        if (!_wardrobeSets.TryGetValue(name, out var set))
+        {
+            Plugin.Log.Warning($"Cannot apply set: Set '{name}' not found in wardrobe");
+            return;
+        }
+
+        ActiveSet = set;
+
+        foreach (var modsettings in set.Mods)
         {
             (Mod mod, ModSettings settings) = modsettings.ToTuple();
             await _penumbraService.SetTemporaryModState(mod, settings, true);
         }
-        // Send the design
-        // TODO: Allow this to be toggled via config
-        await _glamourerService.RevertToAutomation();
-        //await _glamourerService.RevertPlayerToGameP(0);
-        SetLayer = null;
-        return true;
+
+        await _glamourerService.ApplyDesignAsync(set);
     }
 
-    // TODO: Add in the stub functions for wardrobe management.
-    // Need to be able to add to the available sets as well as apply sets/items to the various layers
-    // Sets are easy, they only affect the layer, but the Restraints will need to be applied by slot.
-    // Finally, need to have a handler that is registered to a callback in here so that when the state is finalized it is restored
-    // Locks should be applied via a locking service and checked using it.
+    public async Task RemoveActiveSetAsync()
+    {
+        if (!_glamourerService.ApiAvailable || ActiveSet == null)
+        {
+            ActiveSet = null;
+            return;
+        }
+
+        foreach (var modsettings in ActiveSet.Mods)
+        {
+            (Mod mod, ModSettings settings) = modsettings.ToTuple();
+            await _penumbraService.SetTemporaryModState(mod, settings, true);
+        }
+
+        await _glamourerService.RevertToAutomation();
+        ActiveSet = null;
+    }
+
+    public void Dispose()
+    {
+        _glamourerService.IpcReady -= OnIpcReady;
+        GC.SuppressFinalize(this);
+    }
 }

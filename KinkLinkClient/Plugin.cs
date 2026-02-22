@@ -95,6 +95,7 @@ public sealed class Plugin : IDalamudPlugin
         services.AddSingleton<HonorificService>();
         services.AddSingleton<MoodlesService>();
         services.AddSingleton<PenumbraService>();
+        services.AddSingleton<WardrobeService>();
 
         // Managers
         services.AddSingleton<CharacterTransformationManager>();
