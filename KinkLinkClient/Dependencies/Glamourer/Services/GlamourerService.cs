@@ -11,6 +11,7 @@ using Glamourer.Api.Helpers;
 using Glamourer.Api.IpcSubscribers;
 using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Domain;
+using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Events;
 using KinkLinkClient.Domain.Interfaces;
 using KinkLinkCommon.Domain.Enums;
@@ -23,6 +24,8 @@ namespace KinkLinkClient.Dependencies.Glamourer.Services;
 /// </summary>
 public class GlamourerService : IExternalPlugin, IDisposable
 {
+    public const int PLAYER_ID = 0;
+
     // Default folder for designs without homes
     private const string Uncategorized = "Uncategorized";
 
@@ -53,6 +56,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
     private readonly GetStateBase64 _getStateBase64;
     private readonly RevertState _revertState;
     private readonly RevertToAutomation _revertToAutomation;
+    private readonly SetItem _setItem;
 
     // Glamourer Events
     private readonly EventSubscriber<IntPtr, StateChangeType> _stateChangedWithType;
@@ -88,6 +92,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
         _getDesignBase64 = new GetDesignBase64(Plugin.PluginInterface);
         _getDesignJObject = new GetDesignJObject(Plugin.PluginInterface);
         _getDesignListExtended = new GetDesignListExtended(Plugin.PluginInterface);
+        _setItem = new SetItem(Plugin.PluginInterface);
 
         _applyState = new ApplyState(Plugin.PluginInterface);
         _getState = new GetState(Plugin.PluginInterface);
@@ -237,7 +242,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
     ///     Reverts to original automation
     /// </summary>
     /// <param name="index">Object table index to revert</param>
-    public async Task<bool> RevertToGame(ushort index)
+    public async Task<bool> RevertToGame(ushort index = PLAYER_ID)
     {
         if (!ApiAvailable)
         {
@@ -267,7 +272,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
     ///     Reverts to original automation
     /// </summary>
     /// <param name="index">Object table index to revert</param>
-    public async Task<bool> RevertToAutomation(ushort index)
+    public async Task<bool> RevertToAutomation(ushort index = PLAYER_ID)
     {
         if (!ApiAvailable)
         {
@@ -333,6 +338,69 @@ public class GlamourerService : IExternalPlugin, IDisposable
                 $"[GlamourerService] [ApplyDesignAsync] Actor index {index} failed to apply design unexpectedly, {e}"
             );
             return false;
+        }
+    }
+
+    private void setSlot(
+        ushort index,
+        KinkLinkClient.Domain.Dependencies.Glamourer.Components.GlamourerItem item,
+        ApiEquipSlot slot
+    )
+    {
+        if (item.Apply)
+        {
+            var result = _setItem.Invoke(
+                index,
+                slot,
+                item.ItemId,
+                new List<byte>() { (byte)item.Stain, (byte)item.Stain2 }
+            );
+            LogAndProcessResult($"[ApplyDesign Async]", index, result);
+        }
+    }
+
+    /// <summary>
+    ///     Applies a given design to an object index
+    /// </summary>
+    /// <param name="glamourerData">Glamourer data to apply</param>
+    /// <param name="flags">How should this be applied?</param>
+    /// <param name="index">Object table index to revert</param>
+    public async Task ApplyDesignAsync(GlamourerDesign glamourerData, ushort index = PLAYER_ID)
+    {
+        // Check if we can call this
+        if (!ApiAvailable)
+        {
+            Plugin.Log.Warning(
+                $"[GlamourerService] [ApplyDesignAsync] Unable to apply design to actor index {index} because glamourer is not available"
+            );
+            return;
+        }
+
+        try
+        {
+            // Invoke the function
+            await Plugin
+                .RunOnFramework(() =>
+                {
+                    setSlot(index, glamourerData.Equipment.Head, ApiEquipSlot.Head);
+                    setSlot(index, glamourerData.Equipment.Body, ApiEquipSlot.Body);
+                    setSlot(index, glamourerData.Equipment.Hands, ApiEquipSlot.Hands);
+                    setSlot(index, glamourerData.Equipment.Legs, ApiEquipSlot.Legs);
+                    setSlot(index, glamourerData.Equipment.Feet, ApiEquipSlot.Feet);
+                    setSlot(index, glamourerData.Equipment.Ears, ApiEquipSlot.Ears);
+                    setSlot(index, glamourerData.Equipment.Neck, ApiEquipSlot.Neck);
+                    setSlot(index, glamourerData.Equipment.Wrists, ApiEquipSlot.Wrists);
+                    setSlot(index, glamourerData.Equipment.RFinger, ApiEquipSlot.RFinger);
+                    setSlot(index, glamourerData.Equipment.LFinger, ApiEquipSlot.LFinger);
+                })
+                .ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Error(
+                $"[GlamourerService] [ApplyDesignAsync] Actor index {index} failed to apply design unexpectedly, {e}"
+            );
+            return;
         }
     }
 

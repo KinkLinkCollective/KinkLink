@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KinkLinkClient;
+using KinkLinkClient.Dependencies.Glamourer.Services;
+using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Configurations;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
@@ -43,6 +45,10 @@ public class RestraintItem
 // look at dispatches commands to the glamourer API to ensure that we are set how we should be set.
 public class WardrobeService
 {
+    // Injected
+    private readonly PenumbraService _penumbraService;
+    private readonly GlamourerService _glamourerService;
+
     // Do we need these special layer restraints?
     private RestraintItem? InnerGag,
         Gag,
@@ -69,8 +75,10 @@ public class WardrobeService
     private Dictionary<string, RestraintItem> AvailableRestraints;
     private Dictionary<string, GlamourerDesign> AvailableSets;
 
-    public WardrobeService()
+    public WardrobeService(GlamourerService glamourerService, PenumbraService penumbraService)
     {
+        _penumbraService = penumbraService;
+        _glamourerService = glamourerService;
         if (Plugin.CharacterConfiguration is { } config)
         {
             AvailableSets = config.WardrobeSets;
@@ -104,6 +112,44 @@ public class WardrobeService
             await Plugin.CharacterConfiguration.Save();
         }
     }
+
+    public async Task ApplySet(string name)
+    {
+        if (!_glamourerService.ApiAvailable || !AvailableSets.ContainsKey(name))
+        {
+            return;
+        }
+        SetLayer = AvailableSets[name];
+        // First set the mods
+        foreach (var modsettings in SetLayer.Mods)
+        {
+            (Mod mod, ModSettings settings) = modsettings.ToTuple();
+            await _penumbraService.SetTemporaryModState(mod, settings, true);
+        }
+        // Send the design
+        await _glamourerService.ApplyDesignAsync(SetLayer);
+    }
+
+    public async Task<bool> RemoveActiveSet()
+    {
+        if (!_glamourerService.ApiAvailable || SetLayer == null)
+        {
+            return false;
+        }
+        // First set the mods
+        foreach (var modsettings in SetLayer.Mods)
+        {
+            (Mod mod, ModSettings settings) = modsettings.ToTuple();
+            await _penumbraService.SetTemporaryModState(mod, settings, true);
+        }
+        // Send the design
+        // TODO: Allow this to be toggled via config
+        await _glamourerService.RevertToAutomation();
+        //await _glamourerService.RevertPlayerToGameP(0);
+        SetLayer = null;
+        return true;
+    }
+
     // TODO: Add in the stub functions for wardrobe management.
     // Need to be able to add to the available sets as well as apply sets/items to the various layers
     // Sets are easy, they only affect the layer, but the Restraints will need to be applied by slot.

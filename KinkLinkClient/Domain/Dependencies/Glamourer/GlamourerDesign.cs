@@ -13,7 +13,16 @@ public record struct GlamourerMod(
     bool Enabled,
     bool ForceInherit = false,
     bool Remove = false
-);
+)
+{
+    public (Mod, ModSettings) ToTuple()
+    {
+        return (
+            new Mod(Name, DirectoryName),
+            new ModSettings(Settings, Priority, Enabled, ForceInherit, Remove)
+        );
+    }
+};
 
 public class GlamourerDesign
 {
