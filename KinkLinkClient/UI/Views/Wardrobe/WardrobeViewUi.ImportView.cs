@@ -13,7 +13,8 @@ using Newtonsoft.Json.Linq;
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
 public partial class WardrobeViewUi
-{    private void DrawImportView()
+{
+    private void DrawImportView()
     {
         var padding = ImGui.GetStyle().WindowPadding;
         var width = ImGui.GetWindowWidth() - padding.X * 2;

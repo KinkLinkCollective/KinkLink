@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
 using KinkLinkClient;
 using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Dependencies.Glamourer.Services;
@@ -10,6 +9,7 @@ using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Configurations;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using Newtonsoft.Json.Linq;
 
 public enum LayerLocks
 {
@@ -44,7 +44,7 @@ public class RestraintItem
     public Dictionary<string, GlamourerMaterial> Materials = [];
 }
 
-public class WardrobeService
+public class WardrobeService : IDisposable
 {
     private readonly PenumbraService _penumbraService;
     private readonly GlamourerService _glamourerService;
@@ -204,8 +204,12 @@ public class WardrobeService
             return;
         }
 
-        _filteredGlamourerDesigns = [.. GlamourerDesigns
-            .Where(d => d.Path.Contains(GlamourerSearchTerm, StringComparison.OrdinalIgnoreCase))];
+        _filteredGlamourerDesigns =
+        [
+            .. GlamourerDesigns.Where(d =>
+                d.Path.Contains(GlamourerSearchTerm, StringComparison.OrdinalIgnoreCase)
+            ),
+        ];
     }
 
     public async Task ApplySetAsync(string name)
@@ -244,16 +248,63 @@ public class WardrobeService
         foreach (var modsettings in ActiveSet.Mods)
         {
             (Mod mod, ModSettings settings) = modsettings.ToTuple();
-            await _penumbraService.SetTemporaryModState(mod, settings, true);
+            await _penumbraService.SetTemporaryModState(mod, settings, false);
         }
+        // Set the active set to null _before_ reverting to prevent it from reapplyign the equipment
+        ActiveSet = null;
 
         await _glamourerService.RevertToAutomation();
-        ActiveSet = null;
+    }
+
+    public async Task ReapplyIfChanged(GlamourerDesign design)
+    {
+        // If there's no active set, just don't bother with anything.
+        if (ActiveSet == null)
+            return;
+
+        if (!WardrobeService.EquippedItemsChanged(ActiveSet.Equipment, design.Equipment))
+            return;
+
+        await _glamourerService.ApplyDesignAsync(ActiveSet);
+    }
+
+    /// <summary>
+    ///     Tests to see if any equipment marked with 'apply' are different
+    /// </summary>
+    private static bool EquippedItemsChanged(
+        GlamourerEquipment activeset,
+        GlamourerEquipment newState
+    )
+    {
+        // Only check if the permanent transformation affects a certain item
+        if (activeset.Head.Apply && activeset.Head.IsEqualTo(newState.Head) is false)
+            return true;
+        if (activeset.Body.Apply && activeset.Body.IsEqualTo(newState.Body) is false)
+            return true;
+        if (activeset.Hands.Apply && activeset.Hands.IsEqualTo(newState.Hands) is false)
+            return true;
+        if (activeset.Legs.Apply && activeset.Legs.IsEqualTo(newState.Legs) is false)
+            return true;
+        if (activeset.Feet.Apply && activeset.Feet.IsEqualTo(newState.Feet) is false)
+            return true;
+        if (activeset.Ears.Apply && activeset.Ears.IsEqualTo(newState.Ears) is false)
+            return true;
+        if (activeset.Neck.Apply && activeset.Neck.IsEqualTo(newState.Neck) is false)
+            return true;
+        if (activeset.Wrists.Apply && activeset.Wrists.IsEqualTo(newState.Wrists) is false)
+            return true;
+        if (activeset.RFinger.Apply && activeset.RFinger.IsEqualTo(newState.RFinger) is false)
+            return true;
+        if (activeset.LFinger.Apply && activeset.LFinger.IsEqualTo(newState.LFinger) is false)
+            return true;
+        return false;
     }
 
     public void Dispose()
     {
         _glamourerService.IpcReady -= OnIpcReady;
+        // If the wardrobe is disposed all temporary mods should be unlocked
+        _penumbraService.ClearAllTemporaryMods();
         GC.SuppressFinalize(this);
     }
 }

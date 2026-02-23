@@ -179,7 +179,9 @@ public class PenumbraService : IExternalPlugin
                 switch (errorCode)
                 {
                     case PenumbraApiEc.ModMissing:
-                        Plugin.Log.Info($"[PenumbraService] Mod is missing");
+                        Plugin.Log.Info(
+                            $"[PenumbraService] Mod {mod.Name}, {mod.DirectoryName} is missing"
+                        );
                         return;
                     case PenumbraApiEc.CollectionMissing:
                         Plugin.Log.Info($"[PenumbraService] Collection is Missing");

@@ -58,13 +58,14 @@ public class GlamourerService : IExternalPlugin, IDisposable
     private readonly RevertToAutomation _revertToAutomation;
     private readonly SetItem _setItem;
 
-    // Glamourer Events
-    private readonly EventSubscriber<IntPtr, StateChangeType> _stateChangedWithType;
-    private readonly EventSubscriber<IntPtr, StateFinalizationType> _stateFinalizedWithType;
+    // Glamourer Events to be ingested by handlers
+    public EventSubscriber<IntPtr, StateChangeType> OnStateChangedWithType;
+    public EventSubscriber<IntPtr, StateFinalizationType> OnStateFinalizedWithType;
 
     /// <summary>
     ///     Event fired when the local player's character is reverted to game or automation
     /// </summary>
+    /// TODO: Remove
     public event EventHandler<GlamourerStateChangedEventArgs>? LocalPlayerResetOrReapply;
 
     /// <summary>
@@ -100,11 +101,11 @@ public class GlamourerService : IExternalPlugin, IDisposable
         _revertState = new RevertState(Plugin.PluginInterface);
         _revertToAutomation = new RevertToAutomation(Plugin.PluginInterface);
 
-        _stateChangedWithType = StateChangedWithType.Subscriber(Plugin.PluginInterface);
-        _stateChangedWithType.Event += OnGlamourerStateChanged;
+        OnStateChangedWithType = StateChangedWithType.Subscriber(Plugin.PluginInterface);
+        OnStateChangedWithType.Event += OnGlamourerStateChanged;
 
-        _stateFinalizedWithType = StateFinalized.Subscriber(Plugin.PluginInterface);
-        _stateFinalizedWithType.Event += OnGlamourerStateFinalized;
+        OnStateFinalizedWithType = StateFinalized.Subscriber(Plugin.PluginInterface);
+        OnStateFinalizedWithType.Event += OnGlamourerStateFinalized;
     }
 
     /// <summary>
@@ -858,11 +859,11 @@ public class GlamourerService : IExternalPlugin, IDisposable
 
     public void Dispose()
     {
-        _stateChangedWithType.Event -= OnGlamourerStateChanged;
-        _stateChangedWithType.Disable();
+        OnStateChangedWithType.Event -= OnGlamourerStateChanged;
+        OnStateChangedWithType.Disable();
 
-        _stateFinalizedWithType.Event -= OnGlamourerStateFinalized;
-        _stateFinalizedWithType.Disable();
+        OnStateFinalizedWithType.Event -= OnGlamourerStateFinalized;
+        OnStateFinalizedWithType.Disable();
         GC.SuppressFinalize(this);
     }
 }
