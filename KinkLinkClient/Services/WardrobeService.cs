@@ -41,6 +41,7 @@ public record WardrobeItem
     public string Description = string.Empty;
     public GlamourerEquipmentSlot Slot;
     public GlamourerItem? Item;
+    public List<GlamourerMod> Mods = [];
     public Dictionary<string, GlamourerMaterial> Materials = [];
 }
 
@@ -337,6 +338,16 @@ public class WardrobeService : IDisposable
             Plugin.Log.Warning("Failed to retrieve Glamourer designs - API not available");
             return new List<Design>();
         }
+    }
+
+    public async Task<List<(Mod, ModSettings)>> GetAvailableModsAsync()
+    {
+        if (!_penumbraService.ApiAvailable)
+        {
+            Plugin.Log.Information("Penumbra IPC is not available");
+            return new();
+        }
+        return await _penumbraService.GetAllMods();
     }
 
     public async Task<GlamourerItem?> GetGlamourSlotFromPlayer(GlamourerEquipmentSlot slot)

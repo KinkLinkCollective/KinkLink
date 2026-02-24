@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using KinkLinkClient.Dependencies.Glamourer.Domain;
+using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 
@@ -49,6 +50,9 @@ public class WardrobeViewUiController
     public bool IsNewItem => EditingPiece?.Id == Guid.Empty;
 
     public string ImportSlotName { get; set; } = "Head";
+
+    public List<(Mod, ModSettings)> AvailableMods { get; private set; } = [];
+    public Dictionary<string, ModSettings> SelectedModSettings { get; set; } = [];
 
     public List<Design>? GlamourerDesigns { get; private set; }
     private List<Design>? _filteredGlamourerDesigns;
@@ -113,6 +117,26 @@ public class WardrobeViewUiController
         EditingPiece.Description = EditedDescription;
         EditingPiece.Slot = slot;
         EditingPiece.Item = EditedItem;
+
+        EditingPiece.Mods = [];
+        foreach (var (dirName, settings) in SelectedModSettings)
+        {
+            var mod = AvailableMods.FirstOrDefault(m => m.Item1.DirectoryName == dirName);
+            if (mod.Item1 != null)
+            {
+                EditingPiece.Mods.Add(
+                    new GlamourerMod(
+                        mod.Item1.Name,
+                        dirName,
+                        settings.Settings,
+                        settings.Priority,
+                        settings.Enabled,
+                        settings.ForceInherit,
+                        settings.Remove
+                    )
+                );
+            }
+        }
     }
 
     public void LoadSlotData()
@@ -123,6 +147,7 @@ public class WardrobeViewUiController
         EditedName = EditingPiece.Name;
         EditedDescription = EditingPiece.Description;
         SelectedSlotName = EditingPiece.Slot.ToString();
+        LoadModsFromPiece();
     }
 
     public void LoadSetData()
@@ -144,6 +169,8 @@ public class WardrobeViewUiController
         EditedDye2 = 0;
         HasImportedItem = false;
         ImportSlotName = "Head";
+        AvailableMods = [];
+        SelectedModSettings = [];
     }
 
     public void SaveSetData()
@@ -285,6 +312,74 @@ public class WardrobeViewUiController
             SelectedSlotName = ImportSlotName;
             HasImportedItem = true;
         }
+    }
+
+    public async Task LoadAvailableModsAsync()
+    {
+        AvailableMods = await _wardrobeService.GetAvailableModsAsync();
+    }
+
+    public void LoadModsFromPiece()
+    {
+        SelectedModSettings = [];
+        if (EditingPiece?.Mods == null)
+            return;
+
+        foreach (var glamMod in EditingPiece.Mods)
+        {
+            var (mod, settings) = glamMod.ToTuple();
+            SelectedModSettings[mod.DirectoryName] = settings;
+        }
+    }
+
+    public void UpdateModSelection(string modDirectoryName, bool enabled, int priority)
+    {
+        if (enabled)
+        {
+            if (!SelectedModSettings.ContainsKey(modDirectoryName))
+            {
+                SelectedModSettings[modDirectoryName] = new ModSettings([], priority, true);
+            }
+            else
+            {
+                var existing = SelectedModSettings[modDirectoryName];
+                SelectedModSettings[modDirectoryName] = new ModSettings(
+                    existing.Settings,
+                    priority,
+                    true,
+                    existing.ForceInherit,
+                    existing.Remove
+                );
+            }
+        }
+        else
+        {
+            SelectedModSettings.Remove(modDirectoryName);
+        }
+    }
+
+    public void UpdateModSettings(string modDirectoryName, ModSettings settings)
+    {
+        SelectedModSettings[modDirectoryName] = settings;
+    }
+
+    public int GetSelectedModCount() => SelectedModSettings.Count;
+
+    public bool IsModSelected(string modDirectoryName) =>
+        SelectedModSettings.ContainsKey(modDirectoryName);
+
+    public int GetModPriority(string modDirectoryName)
+    {
+        return SelectedModSettings.TryGetValue(modDirectoryName, out var settings)
+            ? settings.Priority
+            : 0;
+    }
+
+    public ModSettings? GetModSettings(string modDirectoryName)
+    {
+        return SelectedModSettings.TryGetValue(modDirectoryName, out var settings)
+            ? settings
+            : null;
     }
 
     public void FilterDesigns()

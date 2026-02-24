@@ -100,14 +100,14 @@ public class PenumbraService : IExternalPlugin
         return true;
     }
 
-    public async Task<List<Mod>> GetAllMods()
+    public async Task<List<(Mod, ModSettings)>> GetAllMods()
     {
         if (!ApiAvailable)
         {
-            Plugin.Log.Info($"[PenumbraService] ApiIs not available");
-            return new List<Mod>();
+            Plugin.Log.Info($"[PenumbraService] Api is not available");
+            return new();
         }
-        await Plugin.RunOnFramework(() =>
+        List<(Mod, ModSettings)> settings = await Plugin.RunOnFramework(() =>
         {
             // Excessive comment because this is a wonky one and the intent may not be clear.
             // 1. Grab the current collection for the current player character (this can be many collections, but the one associated with the player is what we'll support for now)
@@ -116,7 +116,8 @@ public class PenumbraService : IExternalPlugin
             // 4. Sort through the settings to return only the ones that are valid.
             var collection = _getCollectionForObject!.Invoke(PLAYER_ID).EffectiveCollection.Id;
             var allMods = _getModList.Invoke();
-            var settings = allMods
+            var modSettings = new List<(Mod, ModSettings)>();
+            return allMods
                 .Select(m =>
                     (m.Key, m.Value, _getCurrentModSettings.Invoke(collection, m.Key, m.Value))
                 )
@@ -128,9 +129,9 @@ public class PenumbraService : IExternalPlugin
                     (
                         new Mod(
                             // Mod Name
-                            item.Value,
+                            item.Item2,
                             // Mod Directory
-                            item.Key
+                            item.Item1
                         ),
                         new ModSettings(
                             // Mod Settings
@@ -141,11 +142,12 @@ public class PenumbraService : IExternalPlugin
                             item.Item3.Item2!.Value.Item1
                         )
                     )
-                );
-            return settings;
+                )
+                .ToList();
         });
-        Plugin.Log.Warning($"[PenumbraService] Could not find any mod data");
-        return new List<Mod>();
+        if (settings.Count == 0)
+            Plugin.Log.Warning($"[PenumbraService] Could not find any mod data");
+        return settings;
     }
 
     public async Task SetTemporaryModState(Mod mod, ModSettings settings, bool enabled)

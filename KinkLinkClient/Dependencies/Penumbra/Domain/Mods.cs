@@ -1,10 +1,6 @@
 // Helper strutures
 using System;
 using System.Collections.Generic;
-using ModSettings = System.Collections.Generic.Dictionary<
-    string,
-    System.Collections.Generic.List<string>
->;
 
 namespace KinkLinkClient.Dependencies.Penumbra.Services;
 

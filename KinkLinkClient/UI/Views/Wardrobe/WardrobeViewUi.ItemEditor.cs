@@ -256,6 +256,83 @@ public partial class WardrobeViewUi
                     }
                 );
             }
+
+            SharedUserInterfaces.ContentBox(
+                "EditorMods",
+                KinkLinkStyle.PanelBackground,
+                true,
+                () =>
+                {
+                    var selectedCount = controller.GetSelectedModCount();
+                    SharedUserInterfaces.MediumText($"Mods ({selectedCount} selected)");
+
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
+
+                    var buttonWidth = 100f;
+                    var refreshWidth = 80f;
+
+                    ImGui.SetCursorPosX(contentWidth - buttonWidth - refreshWidth - padding.X);
+                    if (ImGui.Button("Refresh", new Vector2(refreshWidth, 24)))
+                    {
+                        _ = LoadModsWithErrorHandling();
+                    }
+
+                    ImGui.SameLine(contentWidth - buttonWidth);
+                    if (ImGui.Button("Add Mod", new Vector2(buttonWidth, 24)))
+                    {
+                        _ = ShowAddModPopup();
+                    }
+
+                    ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
+
+                    if (controller.AvailableMods.Count == 0)
+                    {
+                        ImGui.TextColored(ImGuiColors.DalamudGrey, "Click Refresh to load available mods.");
+                    }
+                    else
+                    {
+                        var listHeight = 150f;
+                        if (ImGui.BeginChild("##ModsList", new Vector2(contentWidth, listHeight), true))
+                        {
+                            foreach (var mod in controller.AvailableMods)
+                            {
+                                var isSelected = controller.IsModSelected(mod.Item1.DirectoryName);
+                                var priority = controller.GetModPriority(mod.Item1.DirectoryName);
+
+                                var checkboxLabel = $"##mod_{mod.Item1.DirectoryName}";
+                                var checkboxValue = isSelected;
+
+                                ImGui.SetCursorPosX(padding.X);
+                                if (ImGui.Checkbox(checkboxLabel, ref checkboxValue))
+                                {
+                                    controller.UpdateModSelection(mod.Item1.DirectoryName, checkboxValue, priority);
+                                }
+
+                                ImGui.SameLine(padding.X + 20);
+                                ImGui.Text(mod.Item1.Name);
+
+                                ImGui.SameLine(contentWidth - 100);
+
+                                var priorityStr = priority.ToString();
+                                ImGui.SetNextItemWidth(60);
+                                if (ImGui.InputText($"##priority_{mod.Item1.DirectoryName}", ref priorityStr, 10))
+                                {
+                                    if (int.TryParse(priorityStr, out var newPriority))
+                                    {
+                                        controller.UpdateModSelection(mod.Item1.DirectoryName, isSelected, newPriority);
+                                    }
+                                }
+
+                                ImGui.SameLine(contentWidth - 30);
+                                ImGui.Text("Prio");
+
+                                ImGui.Spacing();
+                            }
+                            ImGui.EndChild();
+                        }
+                    }
+                }
+            );
         }
         else if (controller.EditingSet != null)
         {
@@ -366,6 +443,35 @@ public partial class WardrobeViewUi
         {
             Plugin.Log.Error(ex, "Failed to import item from player");
             NotificationHelper.Error("Import", "Failed to import item. Check logs for details.");
+        }
+    }
+
+    private async Task LoadModsWithErrorHandling()
+    {
+        try
+        {
+            await controller.LoadAvailableModsAsync();
+            if (controller.AvailableMods.Count > 0)
+            {
+                NotificationHelper.Success("Load Mods", $"Loaded {controller.AvailableMods.Count} mods");
+            }
+            else
+            {
+                NotificationHelper.Error("Load Mods", "No mods found. Is Penumbra available?");
+            }
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Failed to load mods");
+            NotificationHelper.Error("Load Mods", "Failed to load mods. Check logs for details.");
+        }
+    }
+
+    private async Task ShowAddModPopup()
+    {
+        if (controller.AvailableMods.Count == 0)
+        {
+            await LoadModsWithErrorHandling();
         }
     }
 }
