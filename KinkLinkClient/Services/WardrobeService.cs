@@ -33,7 +33,16 @@ public enum LayerLocks
     SetLayer,
 }
 
-//
+/// This represents a collection of mod settings that can be toggled independently.
+public record CharacterItem
+{
+    public Guid Id;
+    public string Name = string.Empty;
+    public string Description = string.Empty;
+    public List<GlamourerMod> Mods = [];
+}
+
+/// This represents a single equipment item.
 public record WardrobeItem
 {
     public Guid Id;
@@ -48,7 +57,8 @@ public record WardrobeItem
 public class ActiveWardrobe
 {
     private GlamourerDesign? BaseLayer = null;
-    private readonly Dictionary<GlamourerEquipmentSlot, GlamourerItem?> _equipment = new();
+    private readonly Dictionary<GlamourerEquipmentSlot, WardrobeItem?> _equipment = new();
+    private readonly Dictionary<Guid, CharacterItem> _characterItems = new();
     private GlamourerShow? Hat = new();
     private GlamourerIsToggled? Visor = new();
 
@@ -70,7 +80,7 @@ public class ActiveWardrobe
         BaseLayer = null;
     }
 
-    public void SetIndividual(GlamourerEquipmentSlot slot, GlamourerItem item)
+    public void SetIndividual(GlamourerEquipmentSlot slot, WardrobeItem item)
     {
         _equipment[slot] = item;
     }
@@ -80,7 +90,18 @@ public class ActiveWardrobe
         _equipment[slot] = null;
     }
 
-    public GlamourerItem? GetIndividual(GlamourerEquipmentSlot slot)
+    public void AddCharacterItem(CharacterItem item)
+    {
+        _characterItems[item.Id] = item;
+    }
+
+    public void ClearCharacterItem(Guid id)
+    {
+        if (_characterItems.ContainsKey(id))
+            _characterItems.Remove(id);
+    }
+
+    public WardrobeItem? GetIndividual(GlamourerEquipmentSlot slot)
     {
         return _equipment.TryGetValue(slot, out var item) ? item : null;
     }
@@ -98,9 +119,9 @@ public class ActiveWardrobe
 
         foreach (var (slot, item) in _equipment)
         {
-            if (item is not null)
+            if (item is { } glamouritem && glamouritem.Item is { } slotitem)
             {
-                SetEquipmentSlot(final.Equipment, slot, item);
+                SetEquipmentSlot(final.Equipment, slot, slotitem);
                 // TODO: Handle the material states
             }
         }
@@ -120,6 +141,15 @@ public class ActiveWardrobe
         if (BaseLayer is { } baselayer)
         {
             modlist.AddRange(baselayer.Mods);
+        }
+        foreach (var kvp in _equipment)
+        {
+            if (kvp.Value != null)
+                modlist.AddRange(kvp.Value.Mods);
+        }
+        foreach (var item in _characterItems)
+        {
+            modlist.AddRange(item.Value.Mods);
         }
         return modlist;
     }
@@ -478,14 +508,6 @@ public class WardrobeService : IDisposable
 
     public async Task ApplyPieceAsync(WardrobeItem piece)
     {
-        if (!_glamourerService.ApiAvailable || piece.Item == null)
-        {
-            Plugin.Log.Warning(
-                "Cannot apply piece: Glamourer API not available or piece has no item"
-            );
-            return;
-        }
-
         Plugin.Log.Information(
             "Applying wardrobe piece: {PieceName} (ID: {PieceId}) to slot {Slot}",
             piece.Name,
@@ -493,7 +515,7 @@ public class WardrobeService : IDisposable
             piece.Slot
         );
 
-        ActiveSet.SetIndividual(piece.Slot, piece.Item);
+        ActiveSet.SetIndividual(piece.Slot, piece);
 
         foreach (var modsettings in ActiveSet.GetMods())
         {
@@ -504,6 +526,26 @@ public class WardrobeService : IDisposable
         await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
 
         Plugin.Log.Information("Successfully applied wardrobe piece: {PieceName}", piece.Name);
+    }
+
+    public async Task AddCharacterItem(CharacterItem item)
+    {
+        ActiveSet.AddCharacterItem(item);
+        foreach (var modsettings in ActiveSet.GetMods())
+        {
+            (Mod mod, ModSettings settings) = modsettings.ToTuple();
+            await _penumbraService.SetTemporaryModState(mod, settings, true);
+        }
+    }
+
+    public async Task RemoveCharacterItem(Guid id)
+    {
+        ActiveSet.ClearCharacterItem(id);
+        foreach (var modsettings in ActiveSet.GetMods())
+        {
+            (Mod mod, ModSettings settings) = modsettings.ToTuple();
+            await _penumbraService.SetTemporaryModState(mod, settings, false);
+        }
     }
 
     public async Task RemovePieceFromSlotAsync(GlamourerEquipmentSlot slot)
@@ -546,8 +588,8 @@ public class WardrobeService : IDisposable
         {
             var slot = GetSlotFromName(slotName);
             var item = ActiveSet.GetIndividual(slot);
-            var hasItem = item != null && item.ItemId != 0;
-            var itemDisplay = hasItem ? $"Item {item.ItemId}" : null;
+            var hasItem = item != null && item.Item != null && item.Item.ItemId != 0;
+            var itemDisplay = hasItem ? $"Item {item!.Item!.ItemId}" : null;
             statuses.Add(new SlotStatus(slotName, hasItem, itemDisplay, null));
         }
 
