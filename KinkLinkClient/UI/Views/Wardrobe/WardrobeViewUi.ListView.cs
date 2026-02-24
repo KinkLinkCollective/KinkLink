@@ -117,6 +117,80 @@ public partial class WardrobeViewUi
         ImGui.SameLine();
 
         DrawDetailsPane(listHeight);
+
+        DrawActiveSlotsPanel();
+    }
+
+    private void DrawActiveSlotsPanel()
+    {
+        var padding = ImGui.GetStyle().WindowPadding;
+        var windowWidth = ImGui.GetWindowWidth() - padding.X * 2;
+        var contentWidth = windowWidth - DetailsPaneWidth - padding.X;
+
+        ImGui.Spacing();
+
+        SharedUserInterfaces.ContentBox(
+            "ActiveSlotsPanel",
+            KinkLinkStyle.PanelBackground,
+            true,
+            () =>
+            {
+                SharedUserInterfaces.MediumText("Active Slots");
+                ImGui.Separator();
+
+                var slotStatuses = controller.GetActiveSlotStatuses();
+                var buttonWidth = 70f;
+                var labelWidth = contentWidth - buttonWidth - padding.X * 2;
+
+                foreach (var status in slotStatuses)
+                {
+                    var slotDisplayName =
+                        status.SlotName == "BaseSet"
+                            ? "BaseSet"
+                            : WardrobeViewUiController.GetSlotDisplayName(status.SlotName);
+
+                    ImGui.SetCursorPosX(padding.X);
+
+                    if (status.HasItem)
+                    {
+                        ImGui.TextColored(
+                            new Vector4(0, 1, 0, 1),
+                            $"{slotDisplayName}: {status.ItemDisplay}"
+                        );
+                    }
+                    else
+                    {
+                        ImGui.TextColored(ImGuiColors.DalamudGrey, $"{slotDisplayName}: Empty");
+                    }
+
+                    ImGui.SameLine(contentWidth - buttonWidth - padding.X);
+
+                    var buttonLabel = status.HasItem
+                        ? "Remove##" + status.SlotName
+                        : "##Empty" + status.SlotName;
+                    if (ImGui.Button(buttonLabel, new Vector2(buttonWidth, 24)))
+                    {
+                        _ = RemoveSlotWithErrorHandling(status.SlotName);
+                    }
+
+                    ImGui.Spacing();
+                }
+            }
+        );
+    }
+
+    private async Task RemoveSlotWithErrorHandling(string slotName)
+    {
+        try
+        {
+            await controller.RemoveSlotItemAsync(slotName);
+            NotificationHelper.Success("Remove Slot", $"Removed from {slotName}");
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Failed to remove slot item");
+            NotificationHelper.Error("Remove Slot", "Failed to remove. Check logs for details.");
+        }
     }
 
     private void DrawItemsList()
@@ -255,19 +329,43 @@ public partial class WardrobeViewUi
         ImGui.Spacing();
 
         var buttonWidth =
-            (ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X * 4) / 2
+            (ImGui.GetWindowWidth() - ImGui.GetStyle().WindowPadding.X * 4) / 3
             - ImGui.GetStyle().ItemSpacing.X;
+
+        if (ImGui.Button("Apply", new Vector2(buttonWidth, 30)))
+        {
+            _ = ApplyPieceWithErrorHandling(piece);
+        }
+
+        ImGui.SameLine(buttonWidth + ImGui.GetStyle().ItemSpacing.X);
 
         if (ImGui.Button("Edit", new Vector2(buttonWidth, 30)))
         {
             controller.OpenEditor(piece);
         }
 
-        ImGui.SameLine();
+        ImGui.SameLine((buttonWidth + ImGui.GetStyle().ItemSpacing.X) * 2);
 
         if (ImGui.Button("Delete", new Vector2(buttonWidth, 30)))
         {
             controller.DeletePiece(piece.Id);
+        }
+    }
+
+    private async Task ApplyPieceWithErrorHandling(WardrobeItem piece)
+    {
+        try
+        {
+            await controller.ApplyPieceAsync(piece);
+            NotificationHelper.Success("Apply Piece", $"Applied {piece.Name}");
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Failed to apply piece");
+            NotificationHelper.Error(
+                "Apply Piece",
+                "Failed to apply piece. Check logs for details."
+            );
         }
     }
 
@@ -315,12 +413,6 @@ public partial class WardrobeViewUi
     {
         try
         {
-            if (!wardrobeService.IsGlamourerApiAvailable)
-            {
-                NotificationHelper.Error("Apply Set", "Glamourer is not available.");
-                return;
-            }
-
             await controller.ApplySetAsync(name);
             NotificationHelper.Success("Apply Set", $"Applied set: {name}");
         }

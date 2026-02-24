@@ -21,6 +21,11 @@ public class GlamourerEquipment
     public GlamourerShow Weapon = new();
     public GlamourerIsToggled Visor = new();
 
+    public override string ToString()
+    {
+        return $"MainHand: {MainHand.ItemId}, OffHand: {OffHand.ItemId}, Head: {Head.ItemId}, Body: {Body.ItemId}, Hands: {Hands.ItemId}, Legs: {Legs.ItemId}, Feet: {Feet.ItemId}, Ears: {Ears.ItemId}, Neck: {Neck.ItemId}, Wrists: {Wrists.ItemId}, RFinger: {RFinger.ItemId}, LFinger: {LFinger.ItemId}, Hat: {Hat}, VieraEars: {VieraEars}, Weapon: {Weapon}, Visor: {Visor}";
+    }
+
     public GlamourerEquipment Clone()
     {
         var copy = (GlamourerEquipment)MemberwiseClone();

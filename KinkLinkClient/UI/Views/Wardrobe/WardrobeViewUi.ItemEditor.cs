@@ -66,7 +66,14 @@ public partial class WardrobeViewUi
 
                         SharedUserInterfaces.MediumText("Slot");
                         ImGui.SetNextItemWidth(contentWidth);
-                        if (ImGui.BeginCombo("##ImportSlotSelector", WardrobeViewUiController.GetSlotDisplayName(controller.ImportSlotName)))
+                        if (
+                            ImGui.BeginCombo(
+                                "##ImportSlotSelector",
+                                WardrobeViewUiController.GetSlotDisplayName(
+                                    controller.ImportSlotName
+                                )
+                            )
+                        )
                         {
                             foreach (var slotName in WardrobeViewUiController.AllSlotNames)
                             {
@@ -82,21 +89,9 @@ public partial class WardrobeViewUi
 
                         if (!controller.HasImportedItem)
                         {
-                            var canImport = controller.IsGlamourerApiAvailable;
-                            if (!canImport)
-                            {
-                                ImGui.BeginDisabled();
-                            }
-
                             if (ImGui.Button("Import from Player", new Vector2(contentWidth, 35)))
                             {
                                 _ = ImportFromPlayerWithErrorHandling();
-                            }
-
-                            if (!canImport)
-                            {
-                                ImGui.EndDisabled();
-                                ImGui.TextColored(ImGuiColors.DalamudGrey, "Glamourer is not available.");
                             }
                         }
                         else
@@ -105,18 +100,26 @@ public partial class WardrobeViewUi
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
                             SharedUserInterfaces.MediumText("Imported Item Details");
 
-                            ImGui.Text($"Slot: {WardrobeViewUiController.GetSlotDisplayName(controller.SelectedSlotName)}");
+                            ImGui.Text(
+                                $"Slot: {WardrobeViewUiController.GetSlotDisplayName(controller.SelectedSlotName)}"
+                            );
                             ImGui.Text($"Item ID: {controller.EditedItem.ItemId}");
                             ImGui.Text($"Dye 1: {controller.EditedDye1}");
                             ImGui.Text($"Dye 2: {controller.EditedDye2}");
                             ImGui.Text($"Apply: {(controller.EditedItem.Apply ? "Yes" : "No")}");
-                            ImGui.Text($"Apply Stain: {(controller.EditedItem.ApplyStain ? "Yes" : "No")}");
-                            ImGui.Text($"Apply Crest: {(controller.EditedItem.ApplyCrest ? "Yes" : "No")}");
+                            ImGui.Text(
+                                $"Apply Stain: {(controller.EditedItem.ApplyStain ? "Yes" : "No")}"
+                            );
+                            ImGui.Text(
+                                $"Apply Crest: {(controller.EditedItem.ApplyCrest ? "Yes" : "No")}"
+                            );
                             ImGui.Text($"Crest: {(controller.EditedItem.Crest ? "Yes" : "No")}");
 
                             ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
 
-                            if (ImGui.Button("Import Different Item", new Vector2(contentWidth, 30)))
+                            if (
+                                ImGui.Button("Import Different Item", new Vector2(contentWidth, 30))
+                            )
                             {
                                 controller.HasImportedItem = false;
                                 controller.EditedItem = new GlamourerItem();
@@ -137,7 +140,14 @@ public partial class WardrobeViewUi
                     {
                         SharedUserInterfaces.MediumText("Slot");
                         ImGui.SetNextItemWidth(contentWidth);
-                        if (ImGui.BeginCombo("##SlotSelector", WardrobeViewUiController.GetSlotDisplayName(controller.SelectedSlotName)))
+                        if (
+                            ImGui.BeginCombo(
+                                "##SlotSelector",
+                                WardrobeViewUiController.GetSlotDisplayName(
+                                    controller.SelectedSlotName
+                                )
+                            )
+                        )
                         {
                             foreach (var slotName in WardrobeViewUiController.AllSlotNames)
                             {
@@ -182,8 +192,14 @@ public partial class WardrobeViewUi
                     {
                         SharedUserInterfaces.MediumText("Dyes");
 
-                        var dye1Str = controller.EditedDye1 > 0 ? controller.EditedDye1.ToString() : string.Empty;
-                        var dye2Str = controller.EditedDye2 > 0 ? controller.EditedDye2.ToString() : string.Empty;
+                        var dye1Str =
+                            controller.EditedDye1 > 0
+                                ? controller.EditedDye1.ToString()
+                                : string.Empty;
+                        var dye2Str =
+                            controller.EditedDye2 > 0
+                                ? controller.EditedDye2.ToString()
+                                : string.Empty;
 
                         ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
                         if (ImGui.InputText("##Dye1", ref dye1Str, 10))
@@ -325,7 +341,10 @@ public partial class WardrobeViewUi
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Failed to save editor changes");
-            NotificationHelper.Error("Save Failed", "Unable to save changes. Check logs for details.");
+            NotificationHelper.Error(
+                "Save Failed",
+                "Unable to save changes. Check logs for details."
+            );
         }
     }
 
@@ -333,12 +352,6 @@ public partial class WardrobeViewUi
     {
         try
         {
-            if (!controller.IsGlamourerApiAvailable)
-            {
-                NotificationHelper.Error("Import", "Glamourer is not available.");
-                return;
-            }
-
             await controller.ImportFromPlayerAsync();
             if (controller.HasImportedItem)
             {

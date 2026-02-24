@@ -112,6 +112,7 @@ public class WardrobeViewUiController
         EditingPiece.Name = EditedName;
         EditingPiece.Description = EditedDescription;
         EditingPiece.Slot = slot;
+        EditingPiece.Item = EditedItem;
     }
 
     public void LoadSlotData()
@@ -252,6 +253,26 @@ public class WardrobeViewUiController
         await _wardrobeService.RemoveActiveSetAsync();
     }
 
+    public async Task ApplyPieceAsync(WardrobeItem piece)
+    {
+        await _wardrobeService.ApplyPieceAsync(piece);
+    }
+
+    public async Task RemoveSlotItemAsync(string slotName)
+    {
+        if (slotName == "BaseSet")
+        {
+            await _wardrobeService.RemoveActiveSetAsync();
+        }
+        else
+        {
+            var slot = GetSlotFromName(slotName);
+            await _wardrobeService.RemovePieceFromSlotAsync(slot);
+        }
+    }
+
+    public List<SlotStatus> GetActiveSlotStatuses() => _wardrobeService.GetActiveSlotStatuses();
+
     public async Task ImportFromPlayerAsync()
     {
         var slot = GetSlotFromName(ImportSlotName);
@@ -265,8 +286,6 @@ public class WardrobeViewUiController
             HasImportedItem = true;
         }
     }
-
-    public bool IsGlamourerApiAvailable => _wardrobeService.IsGlamourerApiAvailable;
 
     public void FilterDesigns()
     {

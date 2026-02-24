@@ -38,15 +38,15 @@ public class GlamourerEventHandler : IDisposable
         Glamourer.Api.Enums.StateChangeType state
     )
     {
+        Plugin.Log.Info(
+            $"OnStateChangedWithType: Object {address} has new {state} and we are already handling: {handlingStateChanged}"
+        );
         if (
             state is Glamourer.Api.Enums.StateChangeType.Equip
-            || state is not Glamourer.Api.Enums.StateChangeType.Stains
+            || state is Glamourer.Api.Enums.StateChangeType.Stains
         )
-            Plugin.Log.Debug(
-                $"OnStateChangedWithType: Object {address} has new {state} and we are already handling: {handlingStateChanged}"
-            );
-        if (!isLocalPlayer(address) || handlingStateChanged)
-            return;
+            if (!isLocalPlayer(address) || handlingStateChanged)
+                return;
         // Simply mutex lock to ensure that it doesn't infinitely recurse
         handlingStateChanged = true;
 
@@ -63,7 +63,7 @@ public class GlamourerEventHandler : IDisposable
         Glamourer.Api.Enums.StateFinalizationType state
     )
     {
-        Plugin.Log.Debug(
+        Plugin.Log.Info(
             $"OnStateFinalizedWithType: Object {address} has new {state} and we are already handling: {handlingStateFinalized}"
         );
         // Ignore everything that isn't the local player

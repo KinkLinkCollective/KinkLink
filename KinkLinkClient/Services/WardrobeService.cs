@@ -76,8 +76,15 @@ public class ActiveWardrobe
 
     public void ClearIndividual(GlamourerEquipmentSlot slot)
     {
-        _equipment.Remove(slot);
+        _equipment[slot] = null;
     }
+
+    public GlamourerItem? GetIndividual(GlamourerEquipmentSlot slot)
+    {
+        return _equipment.TryGetValue(slot, out var item) ? item : null;
+    }
+
+    public GlamourerDesign? GetBaseLayer() => BaseLayer;
 
     public GlamourerDesign GetCurrentState()
     {
@@ -86,7 +93,7 @@ public class ActiveWardrobe
             Plugin.Log.Error("There is nothing currently set. This should not have been called");
             return new();
         }
-        var final = BaseLayer ?? new();
+        var final = BaseLayer?.Clone() ?? new();
 
         foreach (var (slot, item) in _equipment)
         {
@@ -96,6 +103,12 @@ public class ActiveWardrobe
                 // TODO: Handle the material states
             }
         }
+
+        Plugin.Log.Information(
+            "Current equipment state: {EquipmentState}, FinalEquipmentState {FinalEquipmentState}",
+            _equipment,
+            final.Equipment
+        );
 
         return final;
     }
@@ -152,6 +165,8 @@ public class ActiveWardrobe
     }
 }
 
+public record SlotStatus(string SlotName, bool HasItem, string? ItemDisplay, Guid? PieceId);
+
 public class WardrobeService : IDisposable
 {
     private readonly PenumbraService _penumbraService;
@@ -165,8 +180,6 @@ public class WardrobeService : IDisposable
     public IReadOnlyList<WardrobeItem> WardrobePieces => [.. _wardrobeItems.Values];
     public IReadOnlyList<GlamourerDesign> ImportedSets => [.. _wardrobeSets.Values];
 
-    public bool IsGlamourerApiAvailable => _glamourerService.ApiAvailable;
-
     public WardrobeService(GlamourerService glamourerService, PenumbraService penumbraService)
     {
         _penumbraService = penumbraService;
@@ -174,6 +187,12 @@ public class WardrobeService : IDisposable
         ActiveSet = new();
 
         LoadFromConfiguration();
+
+        Plugin.Log.Information(
+            "WardrobeService initialized: {ItemCount} items, {SetCount} sets",
+            _wardrobeItems.Count,
+            _wardrobeSets.Count
+        );
 
         _glamourerService.IpcReady += OnIpcReady;
         if (_glamourerService.ApiAvailable)
@@ -184,6 +203,7 @@ public class WardrobeService : IDisposable
 
     private void OnIpcReady(object? sender, EventArgs e)
     {
+        Plugin.Log.Information("Glamourer IPC became ready, refreshing designs");
         _ = RefreshGlamourerDesignsAsync();
     }
 
@@ -199,17 +219,33 @@ public class WardrobeService : IDisposable
             _wardrobeItems = [];
             _wardrobeSets = [];
         }
+
+        Plugin.Log.Debug(
+            "Loaded wardrobe configuration: {ItemCount} items, {SetCount} sets",
+            _wardrobeItems.Count,
+            _wardrobeSets.Count
+        );
     }
 
     public void AddPiece(WardrobeItem piece)
     {
         _wardrobeItems[piece.Name] = piece;
+        Plugin.Log.Information(
+            "Added wardrobe piece: {PieceName} (ID: {PieceId})",
+            piece.Name,
+            piece.Id
+        );
         _ = SaveAsync();
     }
 
     public void UpdatePiece(WardrobeItem piece)
     {
         _wardrobeItems[piece.Name] = piece;
+        Plugin.Log.Information(
+            "Updated wardrobe piece: {PieceName} (ID: {PieceId})",
+            piece.Name,
+            piece.Id
+        );
         _ = SaveAsync();
     }
 
@@ -219,6 +255,11 @@ public class WardrobeService : IDisposable
         if (piece != null)
         {
             _wardrobeItems.Remove(piece.Name);
+            Plugin.Log.Information(
+                "Deleted wardrobe piece: {PieceName} (ID: {PieceId})",
+                piece.Name,
+                id
+            );
             _ = SaveAsync();
         }
     }
@@ -231,12 +272,22 @@ public class WardrobeService : IDisposable
     public void AddSet(GlamourerDesign set)
     {
         _wardrobeSets[set.Name] = set;
+        Plugin.Log.Information(
+            "Added wardrobe set: {SetName} (ID: {SetId})",
+            set.Name,
+            set.Identifier
+        );
         _ = SaveAsync();
     }
 
     public void UpdateSet(GlamourerDesign set)
     {
         _wardrobeSets[set.Name] = set;
+        Plugin.Log.Information(
+            "Updated wardrobe set: {SetName} (ID: {SetId})",
+            set.Name,
+            set.Identifier
+        );
         _ = SaveAsync();
     }
 
@@ -246,6 +297,7 @@ public class WardrobeService : IDisposable
         if (set != null)
         {
             _wardrobeSets.Remove(set.Name);
+            Plugin.Log.Information("Deleted wardrobe set: {SetName} (ID: {SetId})", set.Name, id);
             _ = SaveAsync();
         }
     }
@@ -276,13 +328,21 @@ public class WardrobeService : IDisposable
             _glamourerService.ApiAvailable
             && await _glamourerService.GetDesignList().ConfigureAwait(false) is { } designs
         )
+        {
+            Plugin.Log.Information("Retrieved {DesignCount} Glamourer designs", designs.Count);
             return designs.OrderBy(d => d.Path).ToList();
+        }
         else
+        {
+            Plugin.Log.Warning("Failed to retrieve Glamourer designs - API not available");
             return new List<Design>();
+        }
     }
 
     public async Task<GlamourerItem?> GetGlamourSlotFromPlayer(GlamourerEquipmentSlot slot)
     {
+        Plugin.Log.Debug("Getting Glamourer slot {Slot} from player", slot);
+
         var designJson = await _glamourerService.GetDesignComponentsAsync(
             GlamourerService.PLAYER_ID
         );
@@ -299,35 +359,35 @@ public class WardrobeService : IDisposable
             return null;
         }
 
-        switch (slot)
+        var item = slot switch
         {
-            case GlamourerEquipmentSlot.Head:
-                return glamourerDesign.Equipment.Head;
-            case GlamourerEquipmentSlot.Body:
-                return glamourerDesign.Equipment.Body;
-            case GlamourerEquipmentSlot.Hands:
-                return glamourerDesign.Equipment.Hands;
-            case GlamourerEquipmentSlot.Legs:
-                return glamourerDesign.Equipment.Legs;
-            case GlamourerEquipmentSlot.Feet:
-                return glamourerDesign.Equipment.Feet;
-            case GlamourerEquipmentSlot.Ears:
-                return glamourerDesign.Equipment.Ears;
-            case GlamourerEquipmentSlot.Neck:
-                return glamourerDesign.Equipment.Neck;
-            case GlamourerEquipmentSlot.Wrists:
-                return glamourerDesign.Equipment.Wrists;
-            case GlamourerEquipmentSlot.RFinger:
-                return glamourerDesign.Equipment.RFinger;
-            case GlamourerEquipmentSlot.LFinger:
-                return glamourerDesign.Equipment.LFinger;
-            default:
-                return null;
-        }
+            GlamourerEquipmentSlot.Head => glamourerDesign.Equipment.Head,
+            GlamourerEquipmentSlot.Body => glamourerDesign.Equipment.Body,
+            GlamourerEquipmentSlot.Hands => glamourerDesign.Equipment.Hands,
+            GlamourerEquipmentSlot.Legs => glamourerDesign.Equipment.Legs,
+            GlamourerEquipmentSlot.Feet => glamourerDesign.Equipment.Feet,
+            GlamourerEquipmentSlot.Ears => glamourerDesign.Equipment.Ears,
+            GlamourerEquipmentSlot.Neck => glamourerDesign.Equipment.Neck,
+            GlamourerEquipmentSlot.Wrists => glamourerDesign.Equipment.Wrists,
+            GlamourerEquipmentSlot.RFinger => glamourerDesign.Equipment.RFinger,
+            GlamourerEquipmentSlot.LFinger => glamourerDesign.Equipment.LFinger,
+            _ => null,
+        };
+
+        Plugin.Log.Debug(
+            "Retrieved slot {Slot}: ItemId={ItemId}, Apply={Apply}",
+            slot,
+            item?.ItemId ?? 0,
+            item?.Apply ?? false
+        );
+
+        return item;
     }
 
     public async Task<GlamourerDesign?> GetDesignAsync(Guid designId)
     {
+        Plugin.Log.Debug("Getting Glamourer design {DesignId}", designId);
+
         var designJson = await _glamourerService.GetDesignJObjectAsync(designId);
         if (designJson is not JObject jObject)
         {
@@ -339,7 +399,15 @@ public class WardrobeService : IDisposable
         if (glamourerDesign == null)
         {
             Plugin.Log.Error("Failed to convert design JSON to GlamourerDesign");
+            return null;
         }
+
+        Plugin.Log.Debug(
+            "Retrieved design {DesignName} (ID: {DesignId})",
+            glamourerDesign.Name,
+            designId
+        );
+
         return glamourerDesign;
     }
 
@@ -353,9 +421,15 @@ public class WardrobeService : IDisposable
 
         if (!_wardrobeSets.TryGetValue(name, out var set))
         {
-            Plugin.Log.Warning($"Cannot apply set: Set '{name}' not found in wardrobe");
+            Plugin.Log.Warning("Cannot apply set: Set '{SetName}' not found in wardrobe", name);
             return;
         }
+
+        Plugin.Log.Information(
+            "Applying wardrobe set: {SetName} (ID: {SetId})",
+            name,
+            set.Identifier
+        );
 
         ActiveSet.SetBaseLayer(set);
 
@@ -366,6 +440,8 @@ public class WardrobeService : IDisposable
         }
 
         await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
+
+        Plugin.Log.Information("Successfully applied wardrobe set: {SetName}", name);
     }
 
     public async Task RemoveActiveSetAsync()
@@ -375,26 +451,126 @@ public class WardrobeService : IDisposable
             return;
         }
 
+        Plugin.Log.Information("Removing active wardrobe set");
+
         foreach (var modsettings in ActiveSet.GetMods())
         {
             (Mod mod, ModSettings settings) = modsettings.ToTuple();
             await _penumbraService.SetTemporaryModState(mod, settings, false);
         }
-        // Set the active set to null _before_ reverting to prevent it from reapplyign the equipment
         ActiveSet.ClearBaseLayer();
 
         await _glamourerService.RevertToAutomation();
+
+        Plugin.Log.Information("Successfully removed active wardrobe set");
+    }
+
+    public async Task ApplyPieceAsync(WardrobeItem piece)
+    {
+        if (!_glamourerService.ApiAvailable || piece.Item == null)
+        {
+            Plugin.Log.Warning(
+                "Cannot apply piece: Glamourer API not available or piece has no item"
+            );
+            return;
+        }
+
+        Plugin.Log.Information(
+            "Applying wardrobe piece: {PieceName} (ID: {PieceId}) to slot {Slot}",
+            piece.Name,
+            piece.Id,
+            piece.Slot
+        );
+
+        ActiveSet.SetIndividual(piece.Slot, piece.Item);
+
+        foreach (var modsettings in ActiveSet.GetMods())
+        {
+            (Mod mod, ModSettings settings) = modsettings.ToTuple();
+            await _penumbraService.SetTemporaryModState(mod, settings, true);
+        }
+
+        await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
+
+        Plugin.Log.Information("Successfully applied wardrobe piece: {PieceName}", piece.Name);
+    }
+
+    public async Task RemovePieceFromSlotAsync(GlamourerEquipmentSlot slot)
+    {
+        if (!_glamourerService.ApiAvailable || !ActiveSet.IsActive())
+        {
+            return;
+        }
+
+        Plugin.Log.Information("Removing piece from slot: {Slot}", slot);
+
+        ActiveSet.ClearIndividual(slot);
+        //.await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
+        await _glamourerService.RevertToAutomation();
+
+        Plugin.Log.Information("Successfully removed piece from slot: {Slot}", slot);
+    }
+
+    public List<SlotStatus> GetActiveSlotStatuses()
+    {
+        var statuses = new List<SlotStatus>();
+
+        var baseLayer = ActiveSet.GetBaseLayer();
+        statuses.Add(new SlotStatus("BaseSet", baseLayer != null, baseLayer?.Name, null));
+
+        var slotNames = new[]
+        {
+            "Head",
+            "Body",
+            "Hands",
+            "Legs",
+            "Feet",
+            "Ears",
+            "Neck",
+            "Wrists",
+            "RFinger",
+            "LFinger",
+        };
+        foreach (var slotName in slotNames)
+        {
+            var slot = GetSlotFromName(slotName);
+            var item = ActiveSet.GetIndividual(slot);
+            var hasItem = item != null && item.ItemId != 0;
+            var itemDisplay = hasItem ? $"Item {item.ItemId}" : null;
+            statuses.Add(new SlotStatus(slotName, hasItem, itemDisplay, null));
+        }
+
+        return statuses;
+    }
+
+    private static GlamourerEquipmentSlot GetSlotFromName(string slotName)
+    {
+        return slotName switch
+        {
+            "Head" => GlamourerEquipmentSlot.Head,
+            "Body" => GlamourerEquipmentSlot.Body,
+            "Hands" => GlamourerEquipmentSlot.Hands,
+            "Legs" => GlamourerEquipmentSlot.Legs,
+            "Feet" => GlamourerEquipmentSlot.Feet,
+            "Ears" => GlamourerEquipmentSlot.Ears,
+            "Neck" => GlamourerEquipmentSlot.Neck,
+            "Wrists" => GlamourerEquipmentSlot.Wrists,
+            "RFinger" => GlamourerEquipmentSlot.RFinger,
+            "LFinger" => GlamourerEquipmentSlot.LFinger,
+            _ => GlamourerEquipmentSlot.None,
+        };
     }
 
     public async Task ReapplyIfChanged(GlamourerDesign design)
     {
-        // If there's no active set, just don't bother with anything.
         if (!ActiveSet.IsActive())
             return;
 
         var currentState = ActiveSet.GetCurrentState();
-        if (!WardrobeService.EquippedItemsChanged(currentState.Equipment, design.Equipment))
+        if (!WardrobeService.EquippedItemsChanged(design.Equipment, currentState.Equipment))
             return;
+
+        Plugin.Log.Information("Detected equipment change, reapplying wardrobe");
 
         await _glamourerService.ApplyDesignAsync(currentState);
     }

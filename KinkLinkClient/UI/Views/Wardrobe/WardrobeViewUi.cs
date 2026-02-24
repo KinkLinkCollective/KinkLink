@@ -116,12 +116,6 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
     {
         try
         {
-            if (!wardrobeService.IsGlamourerApiAvailable)
-            {
-                NotificationHelper.Error("Remove Set", "Glamourer is not available.");
-                return;
-            }
-
             await controller.RemoveActiveSetAsync();
             NotificationHelper.Success("Remove Set", "Removed active set");
         }

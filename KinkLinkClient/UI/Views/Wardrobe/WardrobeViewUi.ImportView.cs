@@ -1,14 +1,10 @@
 using System;
 using System.Linq;
 using System.Numerics;
-using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using KinkLinkClient.Dependencies.Glamourer.Domain;
-using KinkLinkClient.Services;
 using KinkLinkClient.Utils;
-using Newtonsoft.Json.Linq;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
