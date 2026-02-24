@@ -28,17 +28,17 @@ public partial class WardrobeViewUi
                 SharedUserInterfaces.MediumText("Search Design to Import");
 
                 ImGui.SetNextItemWidth(width - padding.X * 4 - ImGui.GetFontSize());
-                var searchTerm = wardrobeService.GlamourerSearchTerm;
+                var searchTerm = controller.GlamourerSearchTerm;
                 if (ImGui.InputTextWithHint("##ImportSearchBar", "Search", ref searchTerm, 32))
                 {
-                    wardrobeService.GlamourerSearchTerm = searchTerm;
-                    wardrobeService.FilterDesigns();
+                    controller.GlamourerSearchTerm = searchTerm;
+                    controller.FilterDesigns();
                 }
 
                 ImGui.SameLine();
 
                 if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Sync, null, "Refresh Designs"))
-                    wardrobeService.RefreshDesigns();
+                    controller.RefreshDesigns();
             }
         );
 
@@ -79,21 +79,28 @@ public partial class WardrobeViewUi
             true,
             () =>
             {
-                if (ImGui.BeginChild("##ImportDesignsList", new Vector2(0, designBoxHeight), true, ImGuiWindowFlags.AlwaysVerticalScrollbar))
+                if (
+                    ImGui.BeginChild(
+                        "##ImportDesignsList",
+                        new Vector2(0, designBoxHeight),
+                        true,
+                        ImGuiWindowFlags.AlwaysVerticalScrollbar
+                    )
+                )
                 {
-                    var designs = wardrobeService.FilteredGlamourerDesigns;
+                    var designs = controller.FilteredGlamourerDesigns;
                     if (designs != null)
                     {
                         foreach (var design in designs)
                         {
-                            var isSelected = wardrobeService.SelectedGlamourerDesignId == design.Id;
+                            var isSelected = controller.SelectedGlamourerDesignId == design.Id;
 
                             if (isSelected)
                             {
                                 ImGui.PushStyleColor(ImGuiCol.Header, KinkLinkStyle.PrimaryColor);
                                 if (ImGui.Selectable($"{design.Path}##{design.Id}", true))
                                 {
-                                    wardrobeService.SelectedGlamourerDesignId = design.Id;
+                                    controller.SelectedGlamourerDesignId = design.Id;
                                 }
                                 ImGui.PopStyleColor();
                             }
@@ -101,7 +108,7 @@ public partial class WardrobeViewUi
                             {
                                 if (ImGui.Selectable($"{design.Path}##{design.Id}"))
                                 {
-                                    wardrobeService.SelectedGlamourerDesignId = design.Id;
+                                    controller.SelectedGlamourerDesignId = design.Id;
                                 }
                             }
                         }
@@ -110,7 +117,10 @@ public partial class WardrobeViewUi
                     if (designs == null || designs.Count == 0)
                     {
                         ImGui.TextColored(ImGuiColors.DalamudGrey, "No designs found.");
-                        ImGui.TextColored(ImGuiColors.DalamudGrey, "Make sure Glamourer is installed and has designs.");
+                        ImGui.TextColored(
+                            ImGuiColors.DalamudGrey,
+                            "Make sure Glamourer is installed and has designs."
+                        );
                     }
 
                     ImGui.EndChild();
@@ -124,12 +134,15 @@ public partial class WardrobeViewUi
             false,
             () =>
             {
-                var canImport = wardrobeService.SelectedGlamourerDesignId != Guid.Empty;
+                var canImport = controller.SelectedGlamourerDesignId != Guid.Empty;
 
                 if (!canImport)
                 {
                     ImGui.BeginDisabled();
-                    ImGui.Button("Select a design to import", new Vector2(width, ImportButtonHeight));
+                    ImGui.Button(
+                        "Select a design to import",
+                        new Vector2(width, ImportButtonHeight)
+                    );
                     ImGui.EndDisabled();
                 }
                 else
@@ -145,15 +158,17 @@ public partial class WardrobeViewUi
 
     private async void ImportSelectedDesign()
     {
-        if (wardrobeService.SelectedGlamourerDesignId == Guid.Empty)
+        if (controller.SelectedGlamourerDesignId == Guid.Empty)
             return;
 
-        var designs = wardrobeService.FilteredGlamourerDesigns;
-        var design = designs?.FirstOrDefault(d => d.Id == wardrobeService.SelectedGlamourerDesignId);
+        var designs = controller.FilteredGlamourerDesigns;
+        var design = designs?.FirstOrDefault(d => d.Id == controller.SelectedGlamourerDesignId);
         if (design == null)
             return;
 
-        var name = string.IsNullOrWhiteSpace(controller.EditedName) ? design.Name : controller.EditedName;
+        var name = string.IsNullOrWhiteSpace(controller.EditedName)
+            ? design.Name
+            : controller.EditedName;
         var description = controller.EditedDescription ?? string.Empty;
 
         var designJson = await wardrobeService.GetDesignJObjectAsync(design.Id);

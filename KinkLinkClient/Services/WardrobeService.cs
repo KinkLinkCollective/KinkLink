@@ -44,6 +44,114 @@ public class RestraintItem
     public Dictionary<string, GlamourerMaterial> Materials = [];
 }
 
+public class ActiveWardrobe
+{
+    private GlamourerDesign? BaseLayer = null;
+    private readonly Dictionary<GlamourerEquipmentSlot, GlamourerItem?> _equipment = new();
+    private GlamourerShow? Hat = new();
+    private GlamourerIsToggled? Visor = new();
+
+    public bool IsActive()
+    {
+        return BaseLayer != null
+            || _equipment.Values.Any(v => v != null)
+            || Hat != null
+            || Visor != null;
+    }
+
+    public void SetBaseLayer(GlamourerDesign design)
+    {
+        BaseLayer = design;
+    }
+
+    public void ClearBaseLayer()
+    {
+        BaseLayer = null;
+    }
+
+    public void SetIndividual(GlamourerEquipmentSlot slot, GlamourerItem item)
+    {
+        _equipment[slot] = item;
+    }
+
+    public void ClearIndividual(GlamourerEquipmentSlot slot)
+    {
+        _equipment.Remove(slot);
+    }
+
+    public GlamourerDesign GetCurrentState()
+    {
+        if (!IsActive())
+        {
+            Plugin.Log.Error("There is nothing currently set. This should not have been called");
+            return new();
+        }
+        var final = BaseLayer ?? new();
+
+        foreach (var (slot, item) in _equipment)
+        {
+            if (item is not null)
+            {
+                SetEquipmentSlot(final.Equipment, slot, item);
+                // TODO: Handle the material states
+            }
+        }
+
+        return final;
+    }
+
+    public List<GlamourerMod> GetMods()
+    {
+        var modlist = new List<GlamourerMod>();
+        if (BaseLayer is { } baselayer)
+        {
+            modlist.AddRange(baselayer.Mods);
+        }
+        return modlist;
+    }
+
+    private static void SetEquipmentSlot(
+        GlamourerEquipment equipment,
+        GlamourerEquipmentSlot slot,
+        GlamourerItem item
+    )
+    {
+        switch (slot)
+        {
+            case GlamourerEquipmentSlot.Head:
+                equipment.Head = item;
+                break;
+            case GlamourerEquipmentSlot.Body:
+                equipment.Body = item;
+                break;
+            case GlamourerEquipmentSlot.Hands:
+                equipment.Hands = item;
+                break;
+            case GlamourerEquipmentSlot.Legs:
+                equipment.Legs = item;
+                break;
+            case GlamourerEquipmentSlot.Feet:
+                equipment.Feet = item;
+                break;
+            case GlamourerEquipmentSlot.Ears:
+                equipment.Ears = item;
+                break;
+            case GlamourerEquipmentSlot.Neck:
+                equipment.Neck = item;
+                break;
+            case GlamourerEquipmentSlot.Wrists:
+                equipment.Wrists = item;
+                break;
+            case GlamourerEquipmentSlot.RFinger:
+                equipment.RFinger = item;
+                break;
+            case GlamourerEquipmentSlot.LFinger:
+                equipment.LFinger = item;
+                break;
+        }
+    }
+}
+
 public class WardrobeService : IDisposable
 {
     private readonly PenumbraService _penumbraService;
@@ -52,19 +160,10 @@ public class WardrobeService : IDisposable
     private Dictionary<string, RestraintItem> _wardrobeItems = [];
     private Dictionary<string, GlamourerDesign> _wardrobeSets = [];
 
-    public GlamourerDesign? ActiveSet { get; private set; }
+    public ActiveWardrobe ActiveSet { get; private set; }
 
     public IReadOnlyList<RestraintItem> WardrobePieces => [.. _wardrobeItems.Values];
     public IReadOnlyList<GlamourerDesign> ImportedSets => [.. _wardrobeSets.Values];
-
-    public List<Design>? GlamourerDesigns { get; private set; }
-    private List<Design>? _filteredGlamourerDesigns;
-
-    public string GlamourerSearchTerm { get; set; } = string.Empty;
-    public Guid SelectedGlamourerDesignId { get; set; } = Guid.Empty;
-
-    public List<Design>? FilteredGlamourerDesigns =>
-        string.IsNullOrEmpty(GlamourerSearchTerm) ? GlamourerDesigns : _filteredGlamourerDesigns;
 
     public bool IsGlamourerApiAvailable => _glamourerService.ApiAvailable;
 
@@ -72,6 +171,7 @@ public class WardrobeService : IDisposable
     {
         _penumbraService = penumbraService;
         _glamourerService = glamourerService;
+        ActiveSet = new();
 
         LoadFromConfiguration();
 
@@ -170,46 +270,20 @@ public class WardrobeService : IDisposable
         }
     }
 
-    public async Task RefreshGlamourerDesignsAsync()
+    public async Task<List<Design>> RefreshGlamourerDesignsAsync()
     {
-        SelectedGlamourerDesignId = Guid.Empty;
-
-        if (await _glamourerService.GetDesignList().ConfigureAwait(false) is not { } designs)
-            return;
-
-        GlamourerDesigns = designs.OrderBy(d => d.Path).ToList();
-    }
-
-    public void RefreshDesigns()
-    {
-        _ = RefreshGlamourerDesignsAsync();
+        if (
+            _glamourerService.ApiAvailable
+            && await _glamourerService.GetDesignList().ConfigureAwait(false) is { } designs
+        )
+            return designs.OrderBy(d => d.Path).ToList();
+        else
+            return new List<Design>();
     }
 
     public async Task<JToken?> GetDesignJObjectAsync(Guid designId)
     {
         return await _glamourerService.GetDesignJObjectAsync(designId);
-    }
-
-    public void FilterDesigns()
-    {
-        if (GlamourerDesigns == null)
-        {
-            _filteredGlamourerDesigns = null;
-            return;
-        }
-
-        if (string.IsNullOrEmpty(GlamourerSearchTerm))
-        {
-            _filteredGlamourerDesigns = null;
-            return;
-        }
-
-        _filteredGlamourerDesigns =
-        [
-            .. GlamourerDesigns.Where(d =>
-                d.Path.Contains(GlamourerSearchTerm, StringComparison.OrdinalIgnoreCase)
-            ),
-        ];
     }
 
     public async Task ApplySetAsync(string name)
@@ -226,32 +300,31 @@ public class WardrobeService : IDisposable
             return;
         }
 
-        ActiveSet = set;
+        ActiveSet.SetBaseLayer(set);
 
-        foreach (var modsettings in set.Mods)
+        foreach (var modsettings in ActiveSet.GetMods())
         {
             (Mod mod, ModSettings settings) = modsettings.ToTuple();
             await _penumbraService.SetTemporaryModState(mod, settings, true);
         }
 
-        await _glamourerService.ApplyDesignAsync(set);
+        await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
     }
 
     public async Task RemoveActiveSetAsync()
     {
         if (!_glamourerService.ApiAvailable || ActiveSet == null)
         {
-            ActiveSet = null;
             return;
         }
 
-        foreach (var modsettings in ActiveSet.Mods)
+        foreach (var modsettings in ActiveSet.GetMods())
         {
             (Mod mod, ModSettings settings) = modsettings.ToTuple();
             await _penumbraService.SetTemporaryModState(mod, settings, false);
         }
         // Set the active set to null _before_ reverting to prevent it from reapplyign the equipment
-        ActiveSet = null;
+        ActiveSet.ClearBaseLayer();
 
         await _glamourerService.RevertToAutomation();
     }
@@ -259,13 +332,14 @@ public class WardrobeService : IDisposable
     public async Task ReapplyIfChanged(GlamourerDesign design)
     {
         // If there's no active set, just don't bother with anything.
-        if (ActiveSet == null)
+        if (!ActiveSet.IsActive())
             return;
 
-        if (!WardrobeService.EquippedItemsChanged(ActiveSet.Equipment, design.Equipment))
+        var currentState = ActiveSet.GetCurrentState();
+        if (!WardrobeService.EquippedItemsChanged(currentState.Equipment, design.Equipment))
             return;
 
-        await _glamourerService.ApplyDesignAsync(ActiveSet);
+        await _glamourerService.ApplyDesignAsync(currentState);
     }
 
     /// <summary>

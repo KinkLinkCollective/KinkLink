@@ -1,10 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
-using KinkLinkClient.Services;
-using KinkLinkCommon.Domain.Enums;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
@@ -44,6 +44,14 @@ public class WardrobeViewUiController
     public uint EditedDye1 { get; set; }
     public uint EditedDye2 { get; set; }
 
+    public List<Design>? GlamourerDesigns { get; private set; }
+    private List<Design>? _filteredGlamourerDesigns;
+
+    public string GlamourerSearchTerm { get; set; } = string.Empty;
+    public Guid SelectedGlamourerDesignId { get; set; } = Guid.Empty;
+
+    public List<Design>? FilteredGlamourerDesigns =>
+        string.IsNullOrEmpty(GlamourerSearchTerm) ? GlamourerDesigns : _filteredGlamourerDesigns;
     public static string[] AllSlotNames =>
         ["Head", "Body", "Hands", "Legs", "Feet", "Ears", "Neck", "Wrists", "RFinger", "LFinger"];
 
@@ -144,14 +152,10 @@ public class WardrobeViewUiController
     }
 
     public RestraintItem? GetSelectedPiece() =>
-        SelectedPieceId.HasValue
-            ? _wardrobeService.GetPieceById(SelectedPieceId.Value)
-            : null;
+        SelectedPieceId.HasValue ? _wardrobeService.GetPieceById(SelectedPieceId.Value) : null;
 
     public GlamourerDesign? GetSelectedSet() =>
-        SelectedSetId.HasValue
-            ? _wardrobeService.GetSetById(SelectedSetId.Value)
-            : null;
+        SelectedSetId.HasValue ? _wardrobeService.GetSetById(SelectedSetId.Value) : null;
 
     public void OpenEditor(RestraintItem? piece = null)
     {
@@ -240,11 +244,29 @@ public class WardrobeViewUiController
 
     public void FilterDesigns()
     {
-        _wardrobeService.FilterDesigns();
+        if (GlamourerDesigns == null)
+        {
+            _filteredGlamourerDesigns = null;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(GlamourerSearchTerm))
+        {
+            _filteredGlamourerDesigns = null;
+            return;
+        }
+
+        _filteredGlamourerDesigns =
+        [
+            .. GlamourerDesigns.Where(d =>
+                d.Path.Contains(GlamourerSearchTerm, StringComparison.OrdinalIgnoreCase)
+            ),
+        ];
     }
 
-    public void RefreshDesigns()
+    public async void RefreshDesigns()
     {
-        _ = _wardrobeService.RefreshGlamourerDesignsAsync();
+        SelectedGlamourerDesignId = Guid.Empty;
+        GlamourerDesigns = await _wardrobeService.RefreshGlamourerDesignsAsync();
     }
 }

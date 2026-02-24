@@ -88,8 +88,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
 
     private void DrawStatusBar()
     {
-        var activeSet = wardrobeService.ActiveSet;
-        if (activeSet == null)
+        if (!wardrobeService.ActiveSet.IsActive())
             return;
 
         var padding = ImGui.GetStyle().WindowPadding;
@@ -101,7 +100,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
             false,
             () =>
             {
-                ImGui.Text($"Currently Applied: {activeSet.Name}");
+                ImGui.Text($"Set currently applied");
 
                 ImGui.SameLine(width - 80);
 
