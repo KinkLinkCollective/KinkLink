@@ -33,7 +33,7 @@ public class WardrobeViewUiController
     public Guid? SelectedPieceId { get; set; }
     public Guid? SelectedSetId { get; set; }
 
-    public RestraintItem? EditingPiece { get; set; }
+    public WardrobeItem? EditingPiece { get; set; }
     public GlamourerDesign? EditingSet { get; set; }
 
     public string EditedName { get; set; } = string.Empty;
@@ -43,6 +43,12 @@ public class WardrobeViewUiController
     public GlamourerItem EditedItem { get; set; } = new();
     public uint EditedDye1 { get; set; }
     public uint EditedDye2 { get; set; }
+
+    public bool HasImportedItem { get; set; }
+
+    public bool IsNewItem => EditingPiece?.Id == Guid.Empty;
+
+    public string ImportSlotName { get; set; } = "Head";
 
     public List<Design>? GlamourerDesigns { get; private set; }
     private List<Design>? _filteredGlamourerDesigns;
@@ -102,12 +108,10 @@ public class WardrobeViewUiController
             return;
 
         var slot = GetSlotFromName(SelectedSlotName);
+        EditingPiece.Id = Guid.NewGuid();
         EditingPiece.Name = EditedName;
         EditingPiece.Description = EditedDescription;
         EditingPiece.Slot = slot;
-        EditingPiece.Item = EditedItem.Clone();
-        EditingPiece.Dye1 = EditedDye1 > 0 ? EditedDye1 : null;
-        EditingPiece.Dye2 = EditedDye2 > 0 ? EditedDye2 : null;
     }
 
     public void LoadSlotData()
@@ -118,9 +122,6 @@ public class WardrobeViewUiController
         EditedName = EditingPiece.Name;
         EditedDescription = EditingPiece.Description;
         SelectedSlotName = EditingPiece.Slot.ToString();
-        EditedItem = EditingPiece.Item?.Clone() ?? new GlamourerItem();
-        EditedDye1 = EditingPiece.Dye1 ?? 0;
-        EditedDye2 = EditingPiece.Dye2 ?? 0;
     }
 
     public void LoadSetData()
@@ -140,6 +141,8 @@ public class WardrobeViewUiController
         EditedItem = new GlamourerItem();
         EditedDye1 = 0;
         EditedDye2 = 0;
+        HasImportedItem = false;
+        ImportSlotName = "Head";
     }
 
     public void SaveSetData()
@@ -151,19 +154,20 @@ public class WardrobeViewUiController
         EditingSet.Description = EditedDescription;
     }
 
-    public RestraintItem? GetSelectedPiece() =>
+    public WardrobeItem? GetSelectedPiece() =>
         SelectedPieceId.HasValue ? _wardrobeService.GetPieceById(SelectedPieceId.Value) : null;
 
     public GlamourerDesign? GetSelectedSet() =>
         SelectedSetId.HasValue ? _wardrobeService.GetSetById(SelectedSetId.Value) : null;
 
-    public void OpenEditor(RestraintItem? piece = null)
+    public void OpenEditor(WardrobeItem? piece = null)
     {
+        var isNew = piece == null;
         EditingPiece =
             piece
-            ?? new RestraintItem
+            ?? new WardrobeItem
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Empty,
                 Name = "New Piece",
                 Description = string.Empty,
                 Slot = GlamourerEquipmentSlot.Head,
@@ -179,7 +183,11 @@ public class WardrobeViewUiController
                 },
             };
         EditingSet = null;
-        LoadSlotData();
+        HasImportedItem = false;
+        if (isNew)
+            LoadSlotData();
+        else
+            LoadSlotData();
         CurrentView = SubView.Editor;
     }
 
@@ -200,10 +208,13 @@ public class WardrobeViewUiController
         CurrentView = SubView.List;
     }
 
-    public async Task SaveEditorAsync()
+    public async Task<bool> SaveEditorAsync()
     {
         if (EditingPiece != null)
         {
+            if (IsNewItem && !HasImportedItem)
+                return false;
+
             SaveSlotData();
             _wardrobeService.AddPiece(EditingPiece);
         }
@@ -214,6 +225,7 @@ public class WardrobeViewUiController
         }
 
         CloseEditor();
+        return true;
     }
 
     public void DeletePiece(Guid id)
@@ -238,6 +250,20 @@ public class WardrobeViewUiController
     public async Task RemoveActiveSetAsync()
     {
         await _wardrobeService.RemoveActiveSetAsync();
+    }
+
+    public async Task ImportFromPlayerAsync()
+    {
+        var slot = GetSlotFromName(ImportSlotName);
+        var item = await _wardrobeService.GetGlamourSlotFromPlayer(slot);
+        if (item != null)
+        {
+            EditedItem = item;
+            EditedDye1 = item.Stain;
+            EditedDye2 = item.Stain2;
+            SelectedSlotName = ImportSlotName;
+            HasImportedItem = true;
+        }
     }
 
     public bool IsGlamourerApiAvailable => _wardrobeService.IsGlamourerApiAvailable;

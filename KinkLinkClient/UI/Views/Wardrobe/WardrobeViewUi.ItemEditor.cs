@@ -3,7 +3,9 @@ using System.Numerics;
 using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using KinkLinkClient.Domain;
+using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 using KinkLinkClient.Utils;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
@@ -52,116 +54,192 @@ public partial class WardrobeViewUi
                 }
             );
 
-            SharedUserInterfaces.ContentBox(
-                "EditorSlot",
-                KinkLinkStyle.PanelBackground,
-                true,
-                () =>
-                {
-                    SharedUserInterfaces.MediumText("Slot");
-                    ImGui.SetNextItemWidth(contentWidth);
-                    if (ImGui.BeginCombo("##SlotSelector", WardrobeViewUiController.GetSlotDisplayName(controller.SelectedSlotName)))
+            if (controller.IsNewItem)
+            {
+                SharedUserInterfaces.ContentBox(
+                    "EditorImportFromPlayer",
+                    KinkLinkStyle.PanelBackground,
+                    true,
+                    () =>
                     {
-                        foreach (var slotName in WardrobeViewUiController.AllSlotNames)
+                        SharedUserInterfaces.MediumText("Import from Player");
+
+                        SharedUserInterfaces.MediumText("Slot");
+                        ImGui.SetNextItemWidth(contentWidth);
+                        if (ImGui.BeginCombo("##ImportSlotSelector", WardrobeViewUiController.GetSlotDisplayName(controller.ImportSlotName)))
                         {
-                            if (ImGui.Selectable(slotName))
+                            foreach (var slotName in WardrobeViewUiController.AllSlotNames)
                             {
-                                controller.SelectedSlotName = slotName;
+                                if (ImGui.Selectable(slotName))
+                                {
+                                    controller.ImportSlotName = slotName;
+                                }
+                            }
+                            ImGui.EndCombo();
+                        }
+
+                        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
+
+                        if (!controller.HasImportedItem)
+                        {
+                            var canImport = controller.IsGlamourerApiAvailable;
+                            if (!canImport)
+                            {
+                                ImGui.BeginDisabled();
+                            }
+
+                            if (ImGui.Button("Import from Player", new Vector2(contentWidth, 35)))
+                            {
+                                _ = ImportFromPlayerWithErrorHandling();
+                            }
+
+                            if (!canImport)
+                            {
+                                ImGui.EndDisabled();
+                                ImGui.TextColored(ImGuiColors.DalamudGrey, "Glamourer is not available.");
                             }
                         }
-                        ImGui.EndCombo();
-                    }
-                }
-            );
+                        else
+                        {
+                            ImGui.Separator();
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
+                            SharedUserInterfaces.MediumText("Imported Item Details");
 
-            SharedUserInterfaces.ContentBox(
-                "EditorItemId",
-                KinkLinkStyle.PanelBackground,
-                true,
-                () =>
-                {
-                    SharedUserInterfaces.MediumText("Item ID");
-                    ImGui.SetNextItemWidth(contentWidth);
-                    var itemIdStr = controller.EditedItem.ItemId.ToString();
-                    if (ImGui.InputText("##ItemId", ref itemIdStr, 20))
+                            ImGui.Text($"Slot: {WardrobeViewUiController.GetSlotDisplayName(controller.SelectedSlotName)}");
+                            ImGui.Text($"Item ID: {controller.EditedItem.ItemId}");
+                            ImGui.Text($"Dye 1: {controller.EditedDye1}");
+                            ImGui.Text($"Dye 2: {controller.EditedDye2}");
+                            ImGui.Text($"Apply: {(controller.EditedItem.Apply ? "Yes" : "No")}");
+                            ImGui.Text($"Apply Stain: {(controller.EditedItem.ApplyStain ? "Yes" : "No")}");
+                            ImGui.Text($"Apply Crest: {(controller.EditedItem.ApplyCrest ? "Yes" : "No")}");
+                            ImGui.Text($"Crest: {(controller.EditedItem.Crest ? "Yes" : "No")}");
+
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
+
+                            if (ImGui.Button("Import Different Item", new Vector2(contentWidth, 30)))
+                            {
+                                controller.HasImportedItem = false;
+                                controller.EditedItem = new GlamourerItem();
+                                controller.EditedDye1 = 0;
+                                controller.EditedDye2 = 0;
+                            }
+                        }
+                    }
+                );
+            }
+            else
+            {
+                SharedUserInterfaces.ContentBox(
+                    "EditorSlot",
+                    KinkLinkStyle.PanelBackground,
+                    true,
+                    () =>
                     {
-                        if (string.IsNullOrWhiteSpace(itemIdStr))
+                        SharedUserInterfaces.MediumText("Slot");
+                        ImGui.SetNextItemWidth(contentWidth);
+                        if (ImGui.BeginCombo("##SlotSelector", WardrobeViewUiController.GetSlotDisplayName(controller.SelectedSlotName)))
                         {
-                            controller.EditedItem.ItemId = 0;
-                        }
-                        else if (uint.TryParse(itemIdStr, out var result))
-                        {
-                            controller.EditedItem.ItemId = result;
+                            foreach (var slotName in WardrobeViewUiController.AllSlotNames)
+                            {
+                                if (ImGui.Selectable(slotName))
+                                {
+                                    controller.SelectedSlotName = slotName;
+                                }
+                            }
+                            ImGui.EndCombo();
                         }
                     }
-                }
-            );
+                );
 
-            SharedUserInterfaces.ContentBox(
-                "EditorDyes",
-                KinkLinkStyle.PanelBackground,
-                true,
-                () =>
-                {
-                    SharedUserInterfaces.MediumText("Dyes");
-
-                    var dye1Str = controller.EditedDye1 > 0 ? controller.EditedDye1.ToString() : string.Empty;
-                    var dye2Str = controller.EditedDye2 > 0 ? controller.EditedDye2.ToString() : string.Empty;
-
-                    ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
-                    if (ImGui.InputText("##Dye1", ref dye1Str, 10))
+                SharedUserInterfaces.ContentBox(
+                    "EditorItemId",
+                    KinkLinkStyle.PanelBackground,
+                    true,
+                    () =>
                     {
-                        if (string.IsNullOrWhiteSpace(dye1Str))
+                        SharedUserInterfaces.MediumText("Item ID");
+                        ImGui.SetNextItemWidth(contentWidth);
+                        var itemIdStr = controller.EditedItem.ItemId.ToString();
+                        if (ImGui.InputText("##ItemId", ref itemIdStr, 20))
                         {
-                            controller.EditedDye1 = 0;
-                        }
-                        else if (uint.TryParse(dye1Str, out var result))
-                        {
-                            controller.EditedDye1 = result;
+                            if (string.IsNullOrWhiteSpace(itemIdStr))
+                            {
+                                controller.EditedItem.ItemId = 0;
+                            }
+                            else if (uint.TryParse(itemIdStr, out var result))
+                            {
+                                controller.EditedItem.ItemId = result;
+                            }
                         }
                     }
+                );
 
-                    ImGui.SameLine(contentWidth * 0.5f);
-                    ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
-                    if (ImGui.InputText("##Dye2", ref dye2Str, 10))
+                SharedUserInterfaces.ContentBox(
+                    "EditorDyes",
+                    KinkLinkStyle.PanelBackground,
+                    true,
+                    () =>
                     {
-                        if (string.IsNullOrWhiteSpace(dye2Str))
+                        SharedUserInterfaces.MediumText("Dyes");
+
+                        var dye1Str = controller.EditedDye1 > 0 ? controller.EditedDye1.ToString() : string.Empty;
+                        var dye2Str = controller.EditedDye2 > 0 ? controller.EditedDye2.ToString() : string.Empty;
+
+                        ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
+                        if (ImGui.InputText("##Dye1", ref dye1Str, 10))
                         {
-                            controller.EditedDye2 = 0;
+                            if (string.IsNullOrWhiteSpace(dye1Str))
+                            {
+                                controller.EditedDye1 = 0;
+                            }
+                            else if (uint.TryParse(dye1Str, out var result))
+                            {
+                                controller.EditedDye1 = result;
+                            }
                         }
-                        else if (uint.TryParse(dye2Str, out var result))
+
+                        ImGui.SameLine(contentWidth * 0.5f);
+                        ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
+                        if (ImGui.InputText("##Dye2", ref dye2Str, 10))
                         {
-                            controller.EditedDye2 = result;
+                            if (string.IsNullOrWhiteSpace(dye2Str))
+                            {
+                                controller.EditedDye2 = 0;
+                            }
+                            else if (uint.TryParse(dye2Str, out var result))
+                            {
+                                controller.EditedDye2 = result;
+                            }
                         }
                     }
-                }
-            );
+                );
 
-            SharedUserInterfaces.ContentBox(
-                "EditorProperties",
-                KinkLinkStyle.PanelBackground,
-                true,
-                () =>
-                {
-                    SharedUserInterfaces.MediumText("Properties");
+                SharedUserInterfaces.ContentBox(
+                    "EditorProperties",
+                    KinkLinkStyle.PanelBackground,
+                    true,
+                    () =>
+                    {
+                        SharedUserInterfaces.MediumText("Properties");
 
-                    var apply = controller.EditedItem.Apply;
-                    if (ImGui.Checkbox("Apply Item", ref apply))
-                        controller.EditedItem.Apply = apply;
+                        var apply = controller.EditedItem.Apply;
+                        if (ImGui.Checkbox("Apply Item", ref apply))
+                            controller.EditedItem.Apply = apply;
 
-                    var applyStain = controller.EditedItem.ApplyStain;
-                    if (ImGui.Checkbox("Apply Stain", ref applyStain))
-                        controller.EditedItem.ApplyStain = applyStain;
+                        var applyStain = controller.EditedItem.ApplyStain;
+                        if (ImGui.Checkbox("Apply Stain", ref applyStain))
+                            controller.EditedItem.ApplyStain = applyStain;
 
-                    var applyCrest = controller.EditedItem.ApplyCrest;
-                    if (ImGui.Checkbox("Apply Crest", ref applyCrest))
-                        controller.EditedItem.ApplyCrest = applyCrest;
+                        var applyCrest = controller.EditedItem.ApplyCrest;
+                        if (ImGui.Checkbox("Apply Crest", ref applyCrest))
+                            controller.EditedItem.ApplyCrest = applyCrest;
 
-                    var crest = controller.EditedItem.Crest;
-                    if (ImGui.Checkbox("Crest", ref crest))
-                        controller.EditedItem.Crest = crest;
-                }
-            );
+                        var crest = controller.EditedItem.Crest;
+                        if (ImGui.Checkbox("Crest", ref crest))
+                            controller.EditedItem.Crest = crest;
+                    }
+                );
+            }
         }
         else if (controller.EditingSet != null)
         {
@@ -232,12 +310,49 @@ public partial class WardrobeViewUi
     {
         try
         {
-            await controller.SaveEditorAsync();
+            if (controller.IsNewItem && !controller.HasImportedItem)
+            {
+                NotificationHelper.Error("Save Failed", "Please import item from player first.");
+                return;
+            }
+
+            var success = await controller.SaveEditorAsync();
+            if (!success)
+            {
+                NotificationHelper.Error("Save Failed", "Unable to save changes.");
+            }
         }
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Failed to save editor changes");
             NotificationHelper.Error("Save Failed", "Unable to save changes. Check logs for details.");
+        }
+    }
+
+    private async Task ImportFromPlayerWithErrorHandling()
+    {
+        try
+        {
+            if (!controller.IsGlamourerApiAvailable)
+            {
+                NotificationHelper.Error("Import", "Glamourer is not available.");
+                return;
+            }
+
+            await controller.ImportFromPlayerAsync();
+            if (controller.HasImportedItem)
+            {
+                NotificationHelper.Success("Import", "Item imported successfully");
+            }
+            else
+            {
+                NotificationHelper.Error("Import", "Failed to import item. No item in that slot?");
+            }
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Error(ex, "Failed to import item from player");
+            NotificationHelper.Error("Import", "Failed to import item. Check logs for details.");
         }
     }
 }

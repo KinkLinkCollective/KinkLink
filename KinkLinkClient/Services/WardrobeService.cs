@@ -9,6 +9,7 @@ using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Configurations;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using KinkLinkClient.Utils;
 using Newtonsoft.Json.Linq;
 
 public enum LayerLocks
@@ -32,15 +33,14 @@ public enum LayerLocks
     SetLayer,
 }
 
-public class RestraintItem
+//
+public record WardrobeItem
 {
     public Guid Id;
     public string Name = string.Empty;
     public string Description = string.Empty;
     public GlamourerEquipmentSlot Slot;
     public GlamourerItem? Item;
-    public uint? Dye1;
-    public uint? Dye2;
     public Dictionary<string, GlamourerMaterial> Materials = [];
 }
 
@@ -157,12 +157,12 @@ public class WardrobeService : IDisposable
     private readonly PenumbraService _penumbraService;
     private readonly GlamourerService _glamourerService;
 
-    private Dictionary<string, RestraintItem> _wardrobeItems = [];
+    private Dictionary<string, WardrobeItem> _wardrobeItems = [];
     private Dictionary<string, GlamourerDesign> _wardrobeSets = [];
 
     public ActiveWardrobe ActiveSet { get; private set; }
 
-    public IReadOnlyList<RestraintItem> WardrobePieces => [.. _wardrobeItems.Values];
+    public IReadOnlyList<WardrobeItem> WardrobePieces => [.. _wardrobeItems.Values];
     public IReadOnlyList<GlamourerDesign> ImportedSets => [.. _wardrobeSets.Values];
 
     public bool IsGlamourerApiAvailable => _glamourerService.ApiAvailable;
@@ -201,13 +201,13 @@ public class WardrobeService : IDisposable
         }
     }
 
-    public void AddPiece(RestraintItem piece)
+    public void AddPiece(WardrobeItem piece)
     {
         _wardrobeItems[piece.Name] = piece;
         _ = SaveAsync();
     }
 
-    public void UpdatePiece(RestraintItem piece)
+    public void UpdatePiece(WardrobeItem piece)
     {
         _wardrobeItems[piece.Name] = piece;
         _ = SaveAsync();
@@ -223,7 +223,7 @@ public class WardrobeService : IDisposable
         }
     }
 
-    public RestraintItem? GetPieceById(Guid id)
+    public WardrobeItem? GetPieceById(Guid id)
     {
         return _wardrobeItems.Values.FirstOrDefault(p => p.Id == id);
     }
@@ -281,9 +281,66 @@ public class WardrobeService : IDisposable
             return new List<Design>();
     }
 
-    public async Task<JToken?> GetDesignJObjectAsync(Guid designId)
+    public async Task<GlamourerItem?> GetGlamourSlotFromPlayer(GlamourerEquipmentSlot slot)
     {
-        return await _glamourerService.GetDesignJObjectAsync(designId);
+        var designJson = await _glamourerService.GetDesignComponentsAsync(
+            GlamourerService.PLAYER_ID
+        );
+        if (designJson is not JObject jObject)
+        {
+            Plugin.Log.Error("Design JSON is not a valid JObject");
+            return null;
+        }
+
+        var glamourerDesign = GlamourerDesignHelper.FromJObject(jObject);
+        if (glamourerDesign == null)
+        {
+            Plugin.Log.Error("Failed to convert design JSON to GlamourerDesign");
+            return null;
+        }
+
+        switch (slot)
+        {
+            case GlamourerEquipmentSlot.Head:
+                return glamourerDesign.Equipment.Head;
+            case GlamourerEquipmentSlot.Body:
+                return glamourerDesign.Equipment.Body;
+            case GlamourerEquipmentSlot.Hands:
+                return glamourerDesign.Equipment.Hands;
+            case GlamourerEquipmentSlot.Legs:
+                return glamourerDesign.Equipment.Legs;
+            case GlamourerEquipmentSlot.Feet:
+                return glamourerDesign.Equipment.Feet;
+            case GlamourerEquipmentSlot.Ears:
+                return glamourerDesign.Equipment.Ears;
+            case GlamourerEquipmentSlot.Neck:
+                return glamourerDesign.Equipment.Neck;
+            case GlamourerEquipmentSlot.Wrists:
+                return glamourerDesign.Equipment.Wrists;
+            case GlamourerEquipmentSlot.RFinger:
+                return glamourerDesign.Equipment.RFinger;
+            case GlamourerEquipmentSlot.LFinger:
+                return glamourerDesign.Equipment.LFinger;
+            default:
+                return null;
+        }
+    }
+
+    public async Task<GlamourerDesign?> GetDesignAsync(Guid designId)
+    {
+        var designJson = await _glamourerService.GetDesignJObjectAsync(designId);
+        if (designJson is not JObject jObject)
+        {
+            Plugin.Log.Error("Design JSON is not a valid JObject");
+            return null;
+        }
+
+        var glamourerDesign = GlamourerDesignHelper.FromJObject(jObject);
+        if (glamourerDesign == null)
+        {
+            Plugin.Log.Error("Failed to convert design JSON to GlamourerDesign");
+        }
+        return glamourerDesign;
     }
 
     public async Task ApplySetAsync(string name)

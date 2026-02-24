@@ -54,7 +54,7 @@ public class CharacterConfiguration
         .Kinkster;
 
     // Individual pieces in the wardrobe organized by name
-    public Dictionary<string, RestraintItem> WardrobeItems = new();
+    public Dictionary<string, WardrobeItem> WardrobeItems = new();
 
     // Individual Full sets imported from glamourer
     public Dictionary<string, GlamourerDesign> WardrobeSets = new();

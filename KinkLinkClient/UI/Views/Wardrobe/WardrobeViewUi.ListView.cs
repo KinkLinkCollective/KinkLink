@@ -167,7 +167,13 @@ public partial class WardrobeViewUi
         }
     }
 
-    private void DrawSelectableItem(string name, string id, bool isSelected, Action onSelect, string? tooltip)
+    private void DrawSelectableItem(
+        string name,
+        string id,
+        bool isSelected,
+        Action onSelect,
+        string? tooltip
+    )
     {
         var label = $"{name}##{id}";
 
@@ -230,7 +236,7 @@ public partial class WardrobeViewUi
         }
     }
 
-    private void DrawPieceDetails(RestraintItem piece)
+    private void DrawPieceDetails(WardrobeItem piece)
     {
         ImGui.Spacing();
         SharedUserInterfaces.MediumText(piece.Name);
@@ -245,16 +251,6 @@ public partial class WardrobeViewUi
         ImGui.Text($"Slot: {piece.Slot}");
         ImGui.Text($"Item ID: {piece.Item?.ItemId ?? 0}");
         ImGui.Text($"Apply: {(piece.Item?.Apply == true ? "Yes" : "No")}");
-
-        if (piece.Dye1.HasValue)
-            ImGui.Text($"Dye 1: {piece.Dye1}");
-        else
-            ImGui.Text("Dye 1: None");
-
-        if (piece.Dye2.HasValue)
-            ImGui.Text($"Dye 2: {piece.Dye2}");
-        else
-            ImGui.Text("Dye 2: None");
 
         ImGui.Spacing();
 

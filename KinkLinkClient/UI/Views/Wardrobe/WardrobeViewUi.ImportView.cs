@@ -171,15 +171,7 @@ public partial class WardrobeViewUi
             : controller.EditedName;
         var description = controller.EditedDescription ?? string.Empty;
 
-        var designJson = await wardrobeService.GetDesignJObjectAsync(design.Id);
-        if (designJson is not JObject jObject)
-        {
-            Plugin.Log.Error("Design JSON is not a valid JObject");
-            NotificationHelper.Error("Import", "Failed to import design.");
-            return;
-        }
-
-        var glamourerDesign = GlamourerDesignHelper.FromJObject(jObject);
+        var glamourerDesign = await wardrobeService.GetDesignAsync(design.Id);
         if (glamourerDesign == null)
         {
             Plugin.Log.Error("Failed to convert design JSON to GlamourerDesign");
