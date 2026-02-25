@@ -8,6 +8,7 @@ using KinkLinkClient.Dependencies.Glamourer.Services;
 using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Events;
+using KinkLinkClient.Services;
 using KinkLinkClient.Utils;
 
 namespace KinkLinkClient.Handlers;

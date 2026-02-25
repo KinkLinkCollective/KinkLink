@@ -12,6 +12,9 @@ using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 using KinkLinkClient.Utils;
 using Newtonsoft.Json.Linq;
 
+namespace KinkLinkClient.Services;
+
+[Obsolete("Reserved for future use - not currently implemented")]
 public enum LayerLocks
 {
     InnerGag,
@@ -37,22 +40,40 @@ public enum LayerLocks
 /// Special Case: If the Equipment slot is `None` and `GlamourItem` is null it functions as just a mod settings container
 public record WardrobeItem
 {
-    public Guid Id;
-    public string Name = string.Empty;
-    public string Description = string.Empty;
-    public GlamourerEquipmentSlot Slot;
-    public GlamourerItem? Item;
-    public List<GlamourerMod> Mods = [];
-    public Dictionary<string, GlamourerMaterial> Materials = [];
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public GlamourerEquipmentSlot Slot { get; set; }
+    public GlamourerItem? Item { get; set; }
+    public List<GlamourerMod> Mods { get; set; } = [];
+    public Dictionary<string, GlamourerMaterial> Materials { get; set; } = [];
 }
 
 public class ActiveWardrobe
 {
-    private GlamourerDesign? BaseLayer = null;
+    private GlamourerDesign? _baseLayer;
     private readonly Dictionary<GlamourerEquipmentSlot, WardrobeItem?> _equipment = new();
     private readonly Dictionary<Guid, WardrobeItem> _characterItems = new();
-    private GlamourerShow? Hat = new();
-    private GlamourerIsToggled? Visor = new();
+    private GlamourerShow? _hat;
+    private GlamourerIsToggled? _visor;
+
+    public GlamourerDesign? BaseLayer
+    {
+        get => _baseLayer;
+        private set => _baseLayer = value;
+    }
+
+    public GlamourerShow? Hat
+    {
+        get => _hat;
+        private set => _hat = value;
+    }
+
+    public GlamourerIsToggled? Visor
+    {
+        get => _visor;
+        private set => _visor = value;
+    }
 
     public bool IsActive()
     {
@@ -204,6 +225,10 @@ public class WardrobeService : IDisposable
     private Dictionary<string, GlamourerDesign> _wardrobeSets = [];
     private Dictionary<string, WardrobeItem> _modItems = [];
 
+    private Dictionary<Guid, WardrobeItem> _wardrobeItemsById = [];
+    private Dictionary<Guid, GlamourerDesign> _wardrobeSetsById = [];
+    private Dictionary<Guid, WardrobeItem> _modItemsById = [];
+
     public ActiveWardrobe ActiveSet { get; private set; }
 
     public IReadOnlyList<WardrobeItem> WardrobePieces => [.. _wardrobeItems.Values];
@@ -253,6 +278,8 @@ public class WardrobeService : IDisposable
             _modItems = [];
         }
 
+        RebuildIdDictionaries();
+
         Plugin.Log.Debug(
             "Loaded wardrobe configuration: {ItemCount} items, {SetCount} sets, {CharacterItemCount} character items",
             _wardrobeItems.Count,
@@ -261,9 +288,17 @@ public class WardrobeService : IDisposable
         );
     }
 
+    private void RebuildIdDictionaries()
+    {
+        _wardrobeItemsById = _wardrobeItems.Values.ToDictionary(p => p.Id);
+        _wardrobeSetsById = _wardrobeSets.Values.ToDictionary(s => s.Identifier);
+        _modItemsById = _modItems.Values.ToDictionary(m => m.Id);
+    }
+
     public void AddPiece(WardrobeItem piece)
     {
         _wardrobeItems[piece.Name] = piece;
+        _wardrobeItemsById[piece.Id] = piece;
         Plugin.Log.Information(
             "Added wardrobe piece: {PieceName} (ID: {PieceId})",
             piece.Name,
@@ -275,6 +310,7 @@ public class WardrobeService : IDisposable
     public void UpdatePiece(WardrobeItem piece)
     {
         _wardrobeItems[piece.Name] = piece;
+        _wardrobeItemsById[piece.Id] = piece;
         Plugin.Log.Information(
             "Updated wardrobe piece: {PieceName} (ID: {PieceId})",
             piece.Name,
@@ -285,10 +321,10 @@ public class WardrobeService : IDisposable
 
     public void DeletePiece(Guid id)
     {
-        var piece = _wardrobeItems.Values.FirstOrDefault(p => p.Id == id);
-        if (piece != null)
+        if (_wardrobeItemsById.TryGetValue(id, out var piece))
         {
             _wardrobeItems.Remove(piece.Name);
+            _wardrobeItemsById.Remove(id);
             Plugin.Log.Information(
                 "Deleted wardrobe piece: {PieceName} (ID: {PieceId})",
                 piece.Name,
@@ -300,12 +336,13 @@ public class WardrobeService : IDisposable
 
     public WardrobeItem? GetPieceById(Guid id)
     {
-        return _wardrobeItems.Values.FirstOrDefault(p => p.Id == id);
+        return _wardrobeItemsById.TryGetValue(id, out var item) ? item : null;
     }
 
     public void AddSet(GlamourerDesign set)
     {
         _wardrobeSets[set.Name] = set;
+        _wardrobeSetsById[set.Identifier] = set;
         Plugin.Log.Information(
             "Added wardrobe set: {SetName} (ID: {SetId})",
             set.Name,
@@ -317,6 +354,7 @@ public class WardrobeService : IDisposable
     public void UpdateSet(GlamourerDesign set)
     {
         _wardrobeSets[set.Name] = set;
+        _wardrobeSetsById[set.Identifier] = set;
         Plugin.Log.Information(
             "Updated wardrobe set: {SetName} (ID: {SetId})",
             set.Name,
@@ -327,10 +365,10 @@ public class WardrobeService : IDisposable
 
     public void DeleteSet(Guid id)
     {
-        var set = _wardrobeSets.Values.FirstOrDefault(s => s.Identifier == id);
-        if (set != null)
+        if (_wardrobeSetsById.TryGetValue(id, out var set))
         {
             _wardrobeSets.Remove(set.Name);
+            _wardrobeSetsById.Remove(id);
             Plugin.Log.Information("Deleted wardrobe set: {SetName} (ID: {SetId})", set.Name, id);
             _ = SaveAsync();
         }
@@ -338,7 +376,7 @@ public class WardrobeService : IDisposable
 
     public GlamourerDesign? GetSetById(Guid id)
     {
-        return _wardrobeSets.Values.FirstOrDefault(s => s.Identifier == id);
+        return _wardrobeSetsById.TryGetValue(id, out var set) ? set : null;
     }
 
     public GlamourerDesign? GetSetByName(string name)
@@ -352,7 +390,7 @@ public class WardrobeService : IDisposable
         {
             config.WardrobeSets = _wardrobeSets;
             config.WardrobeItems = _wardrobeItems;
-            config.WardrobeItems = _modItems;
+            config.ModItems = _modItems;
             await config.Save();
         }
     }
@@ -360,6 +398,7 @@ public class WardrobeService : IDisposable
     public void AddModItem(WardrobeItem item)
     {
         _modItems[item.Name] = item;
+        _modItemsById[item.Id] = item;
         Plugin.Log.Information(
             "Added character item: {ItemName} (ID: {ItemId})",
             item.Name,
@@ -371,6 +410,7 @@ public class WardrobeService : IDisposable
     public void UpdateModItem(WardrobeItem item)
     {
         _modItems[item.Name] = item;
+        _modItemsById[item.Id] = item;
         Plugin.Log.Information(
             "Updated character item: {ItemName} (ID: {ItemId})",
             item.Name,
@@ -381,10 +421,10 @@ public class WardrobeService : IDisposable
 
     public void DeleteModItem(Guid id)
     {
-        var item = _modItems.Values.FirstOrDefault(c => c.Id == id);
-        if (item != null)
+        if (_modItemsById.TryGetValue(id, out var item))
         {
             _modItems.Remove(item.Name);
+            _modItemsById.Remove(id);
             Plugin.Log.Information(
                 "Deleted character item: {ItemName} (ID: {ItemId})",
                 item.Name,
@@ -396,8 +436,18 @@ public class WardrobeService : IDisposable
 
     public WardrobeItem? GetModItemById(Guid id)
     {
-        return _modItems.Values.FirstOrDefault(c => c.Id == id);
+        return _modItemsById.TryGetValue(id, out var item) ? item : null;
     }
+
+    public WardrobeItem? GetCharacterItemById(Guid id) => GetModItemById(id);
+
+    public void AddCharacterItem(WardrobeItem item) => AddModItem(item);
+
+    public void UpdateCharacterItem(WardrobeItem item) => UpdateModItem(item);
+
+    public void DeleteCharacterItem(Guid id) => DeleteModItem(id);
+
+    public async Task ApplyCharacterItem(WardrobeItem item) => await ApplyWardrobeItem(item);
 
     public async Task<List<Design>> RefreshGlamourerDesignsAsync()
     {
@@ -498,6 +548,15 @@ public class WardrobeService : IDisposable
         return glamourerDesign;
     }
 
+    private async Task ApplyModsAsync(bool enabled)
+    {
+        foreach (var modsettings in ActiveSet.GetMods())
+        {
+            (Mod mod, ModSettings settings) = modsettings.ToTuple();
+            await _penumbraService.SetTemporaryModState(mod, settings, enabled);
+        }
+    }
+
     public async Task ApplySetAsync(string name)
     {
         if (!_glamourerService.ApiAvailable)
@@ -520,11 +579,7 @@ public class WardrobeService : IDisposable
 
         ActiveSet.SetBaseLayer(set);
 
-        foreach (var modsettings in ActiveSet.GetMods())
-        {
-            (Mod mod, ModSettings settings) = modsettings.ToTuple();
-            await _penumbraService.SetTemporaryModState(mod, settings, true);
-        }
+        await ApplyModsAsync(true);
 
         await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
 
@@ -540,11 +595,7 @@ public class WardrobeService : IDisposable
 
         Plugin.Log.Information("Removing active wardrobe set");
 
-        foreach (var modsettings in ActiveSet.GetMods())
-        {
-            (Mod mod, ModSettings settings) = modsettings.ToTuple();
-            await _penumbraService.SetTemporaryModState(mod, settings, false);
-        }
+        await ApplyModsAsync(false);
         ActiveSet.ClearBaseLayer();
 
         await _glamourerService.RevertToAutomation();
@@ -563,11 +614,7 @@ public class WardrobeService : IDisposable
 
         ActiveSet.SetIndividual(piece.Slot, piece);
 
-        foreach (var modsettings in ActiveSet.GetMods())
-        {
-            (Mod mod, ModSettings settings) = modsettings.ToTuple();
-            await _penumbraService.SetTemporaryModState(mod, settings, true);
-        }
+        await ApplyModsAsync(true);
 
         await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
 
@@ -577,21 +624,13 @@ public class WardrobeService : IDisposable
     public async Task ApplyWardrobeItem(WardrobeItem item)
     {
         ActiveSet.AddModItem(item);
-        foreach (var modsettings in ActiveSet.GetMods())
-        {
-            (Mod mod, ModSettings settings) = modsettings.ToTuple();
-            await _penumbraService.SetTemporaryModState(mod, settings, true);
-        }
+        await ApplyModsAsync(true);
     }
 
     public async Task RemoveWardrobeItemFromActive(Guid id)
     {
         ActiveSet.ClearModItem(id);
-        foreach (var modsettings in ActiveSet.GetMods())
-        {
-            (Mod mod, ModSettings settings) = modsettings.ToTuple();
-            await _penumbraService.SetTemporaryModState(mod, settings, false);
-        }
+        await ApplyModsAsync(false);
     }
 
     public async Task RemovePieceFromSlotAsync(GlamourerEquipmentSlot slot)
