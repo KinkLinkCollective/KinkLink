@@ -59,6 +59,9 @@ public class CharacterConfiguration
     // Individual Full sets imported from glamourer
     public Dictionary<string, GlamourerDesign> WardrobeSets = new();
 
+    // Character items - collections of mod settings
+    public Dictionary<string, WardrobeItem> ModItems = new();
+
     /// <summary>
     ///     Save the configuration
     /// </summary>
