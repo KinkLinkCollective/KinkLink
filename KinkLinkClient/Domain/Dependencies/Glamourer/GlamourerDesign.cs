@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using KinkLinkCommon.Domain.Enums;
 
 namespace KinkLinkClient.Domain.Dependencies.Glamourer;
 
@@ -45,6 +46,7 @@ public class GlamourerDesign
     public GlamourerParameter Parameters = new();
     public Dictionary<string, GlamourerMaterial> Materials = [];
     public List<GlamourerMod> Mods = [];
+    public RelationshipPriority Priority { get; set; } = RelationshipPriority.Casual;
 
     public GlamourerDesign Clone()
     {

@@ -10,10 +10,10 @@ namespace KinkLinkClient.UI.Views.Wardrobe;
 
 public partial class WardrobeViewUi
 {
-    private void DrawImportView()
+    private void DrawImportView(float columnWidth)
     {
         var padding = ImGui.GetStyle().WindowPadding;
-        var width = ImGui.GetWindowWidth() - padding.X * 2;
+        var contentWidth = columnWidth - padding.X * 2;
 
         SharedUserInterfaces.ContentBox(
             "ImportDesignSearch",
@@ -23,7 +23,7 @@ public partial class WardrobeViewUi
             {
                 SharedUserInterfaces.MediumText("Search Design to Import");
 
-                ImGui.SetNextItemWidth(width - padding.X * 4 - ImGui.GetFontSize());
+                ImGui.SetNextItemWidth(contentWidth - padding.X * 4 - ImGui.GetFontSize());
                 var searchTerm = controller.GlamourerSearchTerm;
                 if (ImGui.InputTextWithHint("##ImportSearchBar", "Search", ref searchTerm, 32))
                 {
@@ -45,7 +45,7 @@ public partial class WardrobeViewUi
             () =>
             {
                 SharedUserInterfaces.MediumText("Name");
-                ImGui.SetNextItemWidth(width - padding.X * 2);
+                ImGui.SetNextItemWidth(contentWidth - padding.X * 2);
                 var name = controller.EditedName;
                 if (ImGui.InputText("##ImportName", ref name, 64))
                     controller.EditedName = name;
@@ -59,7 +59,7 @@ public partial class WardrobeViewUi
             () =>
             {
                 SharedUserInterfaces.MediumText("Description");
-                ImGui.SetNextItemWidth(width - padding.X * 2);
+                ImGui.SetNextItemWidth(contentWidth - padding.X * 2);
                 var description = controller.EditedDescription;
                 if (ImGui.InputText("##ImportDescription", ref description, 256))
                     controller.EditedDescription = description;
@@ -137,13 +137,13 @@ public partial class WardrobeViewUi
                     ImGui.BeginDisabled();
                     ImGui.Button(
                         "Select a design to import",
-                        new Vector2(width, ImportButtonHeight)
+                        new Vector2(contentWidth, ImportButtonHeight)
                     );
                     ImGui.EndDisabled();
                 }
                 else
                 {
-                    if (ImGui.Button("Import Design", new Vector2(width, ImportButtonHeight)))
+                    if (ImGui.Button("Import Design", new Vector2(contentWidth, ImportButtonHeight)))
                     {
                         ImportSelectedDesign();
                     }

@@ -10,6 +10,7 @@ using KinkLinkClient.Domain.Configurations;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 using KinkLinkClient.Utils;
+using KinkLinkCommon.Domain.Enums;
 using Newtonsoft.Json.Linq;
 
 namespace KinkLinkClient.Services;
@@ -47,6 +48,7 @@ public record WardrobeItem
     public GlamourerItem? Item { get; set; }
     public List<GlamourerMod> Mods { get; set; } = [];
     public Dictionary<string, GlamourerMaterial> Materials { get; set; } = [];
+    public RelationshipPriority Priority { get; set; } = RelationshipPriority.Casual;
 }
 
 public class ActiveWardrobe
@@ -106,11 +108,6 @@ public class ActiveWardrobe
     public void AddModItem(WardrobeItem item)
     {
         _characterItems[item.Id] = item;
-    }
-
-    public WardrobeItem? GetModItem(Guid id)
-    {
-        return _characterItems.TryGetValue(id, out var item) ? item : null;
     }
 
     public void ClearModItem(Guid id)
@@ -337,6 +334,26 @@ public class WardrobeService : IDisposable
     public WardrobeItem? GetPieceById(Guid id)
     {
         return _wardrobeItemsById.TryGetValue(id, out var item) ? item : null;
+    }
+
+    public bool IsPieceInActiveSet(Guid pieceId)
+    {
+        var piece = GetPieceById(pieceId);
+        if (piece == null)
+            return false;
+
+        var activeItem = ActiveSet.GetIndividual(piece.Slot);
+        return activeItem?.Id == pieceId;
+    }
+
+    public bool IsSetActive(Guid setId)
+    {
+        var set = GetSetById(setId);
+        if (set == null)
+            return false;
+
+        var currentBaseLayer = ActiveSet.GetBaseLayer();
+        return currentBaseLayer?.Identifier == setId;
     }
 
     public void AddSet(GlamourerDesign set)

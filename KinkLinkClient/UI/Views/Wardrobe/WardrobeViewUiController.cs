@@ -6,6 +6,8 @@ using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using KinkLinkClient.Services;
+using KinkLinkCommon.Domain.Enums;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
@@ -14,12 +16,21 @@ public enum SubView
     List,
     Import,
     Editor,
+    Active,
 }
 
 public enum ListTab
 {
-    Items,
+    IndividualItems,
     Sets,
+}
+
+public enum PairAccessFilter
+{
+    All,
+    Casual,
+    Serious,
+    Devotional,
 }
 
 public class WardrobeViewUiController
@@ -29,10 +40,15 @@ public class WardrobeViewUiController
     public WardrobeService WardrobeService => _wardrobeService;
 
     public SubView CurrentView { get; set; } = SubView.List;
-    public ListTab CurrentTab { get; set; } = ListTab.Items;
+    public ListTab CurrentTab { get; set; } = ListTab.IndividualItems;
 
     public Guid? SelectedPieceId { get; set; }
     public Guid? SelectedSetId { get; set; }
+
+    public Guid? HoveredPieceId { get; set; }
+    public Guid? HoveredSetId { get; set; }
+
+    public string ModFilter { get; set; } = string.Empty;
 
     public WardrobeItem? EditingPiece { get; set; }
     public GlamourerDesign? EditingSet { get; set; }
@@ -59,6 +75,72 @@ public class WardrobeViewUiController
 
     public string GlamourerSearchTerm { get; set; } = string.Empty;
     public Guid SelectedGlamourerDesignId { get; set; } = Guid.Empty;
+
+    public string SearchFilter { get; set; } = string.Empty;
+    public PairAccessFilter PairAccessFilter { get; set; } = PairAccessFilter.All;
+
+    public RelationshipPriority EditedPriority { get; set; } = RelationshipPriority.Casual;
+
+    private List<WardrobeItem>? _filteredItems;
+    private List<GlamourerDesign>? _filteredSets;
+
+    public List<WardrobeItem>? FilteredItems
+    {
+        get
+        {
+            var items = _wardrobeService.WardrobePieces.ToList();
+            if (!string.IsNullOrEmpty(SearchFilter))
+            {
+                items = items.Where(i =>
+                    i.Name.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase) ||
+                    i.Description.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+            }
+
+            if (PairAccessFilter != PairAccessFilter.All)
+            {
+                var priority = PairAccessFilter switch
+                {
+                    PairAccessFilter.Casual => RelationshipPriority.Casual,
+                    PairAccessFilter.Serious => RelationshipPriority.Serious,
+                    PairAccessFilter.Devotional => RelationshipPriority.Devotional,
+                    _ => RelationshipPriority.Casual,
+                };
+                items = items.Where(i => i.Priority == priority).ToList();
+            }
+
+            return items;
+        }
+    }
+
+    public List<GlamourerDesign>? FilteredSets
+    {
+        get
+        {
+            var sets = _wardrobeService.ImportedSets.ToList();
+            if (!string.IsNullOrEmpty(SearchFilter))
+            {
+                sets = sets.Where(s =>
+                    s.Name.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase) ||
+                    s.Description.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+            }
+
+            if (PairAccessFilter != PairAccessFilter.All)
+            {
+                var priority = PairAccessFilter switch
+                {
+                    PairAccessFilter.Casual => RelationshipPriority.Casual,
+                    PairAccessFilter.Serious => RelationshipPriority.Serious,
+                    PairAccessFilter.Devotional => RelationshipPriority.Devotional,
+                    _ => RelationshipPriority.Casual,
+                };
+                sets = sets.Where(s => s.Priority == priority).ToList();
+            }
+
+            return sets;
+        }
+    }
 
     public List<Design>? FilteredGlamourerDesigns =>
         string.IsNullOrEmpty(GlamourerSearchTerm) ? GlamourerDesigns : _filteredGlamourerDesigns;
@@ -116,7 +198,8 @@ public class WardrobeViewUiController
         EditingPiece.Name = EditedName;
         EditingPiece.Description = EditedDescription;
         EditingPiece.Slot = slot;
-        EditingPiece.Item = EditedItem;
+        EditingPiece.Item = HasImportedItem ? EditedItem : null;
+        EditingPiece.Priority = EditedPriority;
 
         EditingPiece.Mods = [];
         foreach (var (dirName, settings) in SelectedModSettings)
@@ -147,6 +230,7 @@ public class WardrobeViewUiController
         EditedName = EditingPiece.Name;
         EditedDescription = EditingPiece.Description;
         SelectedSlotName = EditingPiece.Slot.ToString();
+        EditedPriority = EditingPiece.Priority;
         LoadModsFromPiece();
     }
 
@@ -157,6 +241,17 @@ public class WardrobeViewUiController
 
         EditedName = EditingSet.Name;
         EditedDescription = EditingSet.Description;
+        EditedPriority = EditingSet.Priority;
+    }
+
+    public void SaveSetData()
+    {
+        if (EditingSet == null)
+            return;
+
+        EditingSet.Name = EditedName;
+        EditingSet.Description = EditedDescription;
+        EditingSet.Priority = EditedPriority;
     }
 
     public void ResetEditorFields()
@@ -171,15 +266,7 @@ public class WardrobeViewUiController
         ImportSlotName = "Head";
         AvailableMods = [];
         SelectedModSettings = [];
-    }
-
-    public void SaveSetData()
-    {
-        if (EditingSet == null)
-            return;
-
-        EditingSet.Name = EditedName;
-        EditingSet.Description = EditedDescription;
+        EditedPriority = RelationshipPriority.Casual;
     }
 
     public WardrobeItem? GetSelectedPiece() =>
@@ -261,6 +348,16 @@ public class WardrobeViewUiController
         _wardrobeService.DeletePiece(id);
         if (SelectedPieceId == id)
             SelectedPieceId = null;
+    }
+
+    public bool IsPieceEquipped(Guid pieceId)
+    {
+        return _wardrobeService.IsPieceInActiveSet(pieceId);
+    }
+
+    public bool IsSetEquipped(Guid setId)
+    {
+        return _wardrobeService.IsSetActive(setId);
     }
 
     public void DeleteSet(Guid id)
@@ -380,6 +477,25 @@ public class WardrobeViewUiController
         return SelectedModSettings.TryGetValue(modDirectoryName, out var settings)
             ? settings
             : null;
+    }
+
+    public void AddMod(string modDirectoryName)
+    {
+        if (!SelectedModSettings.ContainsKey(modDirectoryName))
+        {
+            SelectedModSettings[modDirectoryName] = new ModSettings([], 0, true);
+        }
+    }
+
+    public void RemoveMod(string modDirectoryName)
+    {
+        SelectedModSettings.Remove(modDirectoryName);
+    }
+
+    public string? GetModName(string modDirectoryName)
+    {
+        var mod = AvailableMods.FirstOrDefault(m => m.Item1.DirectoryName == modDirectoryName);
+        return string.IsNullOrEmpty(mod.Item1.Name) ? null : mod.Item1.Name;
     }
 
     public void FilterDesigns()

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
@@ -7,12 +8,13 @@ using Dalamud.Interface.Colors;
 using KinkLinkClient.Domain;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 using KinkLinkClient.Utils;
+using KinkLinkCommon.Domain.Enums;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
 public partial class WardrobeViewUi
 {
-    private void DrawEditorView()
+    private void DrawEditorView(float columnWidth)
     {
         if (controller.EditingPiece is null && controller.EditingSet is null)
         {
@@ -21,8 +23,7 @@ public partial class WardrobeViewUi
         }
 
         var padding = ImGui.GetStyle().WindowPadding;
-        var width = ImGui.GetWindowWidth() - padding.X * 2;
-        var contentWidth = width - padding.X * 2;
+        var contentWidth = columnWidth - padding.X * 2;
 
         if (controller.EditingPiece is not null)
         {
@@ -51,6 +52,27 @@ public partial class WardrobeViewUi
                     var description = controller.EditedDescription;
                     if (ImGui.InputText("##Description", ref description, 256))
                         controller.EditedDescription = description;
+                }
+            );
+
+            SharedUserInterfaces.ContentBox(
+                "EditorPriority",
+                KinkLinkStyle.PanelBackground,
+                true,
+                () =>
+                {
+                    SharedUserInterfaces.MediumText("Pair Access Priority");
+                    ImGui.SetNextItemWidth(contentWidth);
+                    var currentPriority = controller.EditedPriority.ToString();
+                    if (ImGui.BeginCombo("##PrioritySelector", currentPriority))
+                    {
+                        foreach (RelationshipPriority priority in Enum.GetValues<RelationshipPriority>())
+                        {
+                            if (ImGui.Selectable(priority.ToString()))
+                                controller.EditedPriority = priority;
+                        }
+                        ImGui.EndCombo();
+                    }
                 }
             );
 
@@ -161,100 +183,66 @@ public partial class WardrobeViewUi
                     }
                 );
 
-                SharedUserInterfaces.ContentBox(
-                    "EditorItemId",
-                    KinkLinkStyle.PanelBackground,
-                    true,
-                    () =>
-                    {
-                        SharedUserInterfaces.MediumText("Item ID");
-                        ImGui.SetNextItemWidth(contentWidth);
-                        var itemIdStr = controller.EditedItem.ItemId.ToString();
-                        if (ImGui.InputText("##ItemId", ref itemIdStr, 20))
+                if (controller.EditingPiece?.Item != null)
+                {
+                    SharedUserInterfaces.ContentBox(
+                        "EditorImportedItem",
+                        KinkLinkStyle.PanelBackground,
+                        true,
+                        () =>
                         {
-                            if (string.IsNullOrWhiteSpace(itemIdStr))
+                            SharedUserInterfaces.MediumText("Imported Item Details");
+                            ImGui.Text(
+                                $"Slot: {WardrobeViewUiController.GetSlotDisplayName(controller.SelectedSlotName)}"
+                            );
+                            ImGui.Text($"Item ID: {controller.EditingPiece.Item.ItemId}");
+                            ImGui.Text($"Dye 1: {controller.EditingPiece.Item.Stain}");
+                            ImGui.Text($"Dye 2: {controller.EditingPiece.Item.Stain2}");
+                            ImGui.Text($"Apply: {(controller.EditingPiece.Item.Apply ? "Yes" : "No")}");
+                            ImGui.Text(
+                                $"Apply Stain: {(controller.EditingPiece.Item.ApplyStain ? "Yes" : "No")}"
+                            );
+                            ImGui.Text(
+                                $"Apply Crest: {(controller.EditingPiece.Item.ApplyCrest ? "Yes" : "No")}"
+                            );
+                            ImGui.Text($"Crest: {(controller.EditingPiece.Item.Crest ? "Yes" : "No")}");
+
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
+
+                            SharedUserInterfaces.MediumText("Re-import from Player");
+
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
+
+                            SharedUserInterfaces.MediumText("Slot");
+                            ImGui.SetNextItemWidth(contentWidth);
+                            if (
+                                ImGui.BeginCombo(
+                                    "##ReImportSlotSelector",
+                                    WardrobeViewUiController.GetSlotDisplayName(
+                                        controller.ImportSlotName
+                                    )
+                                )
+                            )
                             {
-                                controller.EditedItem.ItemId = 0;
+                                foreach (var slotName in WardrobeViewUiController.AllSlotNames)
+                                {
+                                    if (ImGui.Selectable(slotName))
+                                    {
+                                        controller.ImportSlotName = slotName;
+                                    }
+                                }
+                                ImGui.EndCombo();
                             }
-                            else if (uint.TryParse(itemIdStr, out var result))
+
+                            ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
+
+                            if (ImGui.Button("Import from Player", new Vector2(contentWidth, 35)))
                             {
-                                controller.EditedItem.ItemId = result;
+                                _ = ImportFromPlayerWithErrorHandling();
                             }
                         }
-                    }
-                );
-
-                SharedUserInterfaces.ContentBox(
-                    "EditorDyes",
-                    KinkLinkStyle.PanelBackground,
-                    true,
-                    () =>
-                    {
-                        SharedUserInterfaces.MediumText("Dyes");
-
-                        var dye1Str =
-                            controller.EditedDye1 > 0
-                                ? controller.EditedDye1.ToString()
-                                : string.Empty;
-                        var dye2Str =
-                            controller.EditedDye2 > 0
-                                ? controller.EditedDye2.ToString()
-                                : string.Empty;
-
-                        ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
-                        if (ImGui.InputText("##Dye1", ref dye1Str, 10))
-                        {
-                            if (string.IsNullOrWhiteSpace(dye1Str))
-                            {
-                                controller.EditedDye1 = 0;
-                            }
-                            else if (uint.TryParse(dye1Str, out var result))
-                            {
-                                controller.EditedDye1 = result;
-                            }
-                        }
-
-                        ImGui.SameLine(contentWidth * 0.5f);
-                        ImGui.SetNextItemWidth(contentWidth * 0.5f - padding.X);
-                        if (ImGui.InputText("##Dye2", ref dye2Str, 10))
-                        {
-                            if (string.IsNullOrWhiteSpace(dye2Str))
-                            {
-                                controller.EditedDye2 = 0;
-                            }
-                            else if (uint.TryParse(dye2Str, out var result))
-                            {
-                                controller.EditedDye2 = result;
-                            }
-                        }
-                    }
-                );
-
-                SharedUserInterfaces.ContentBox(
-                    "EditorProperties",
-                    KinkLinkStyle.PanelBackground,
-                    true,
-                    () =>
-                    {
-                        SharedUserInterfaces.MediumText("Properties");
-
-                        var apply = controller.EditedItem.Apply;
-                        if (ImGui.Checkbox("Apply Item", ref apply))
-                            controller.EditedItem.Apply = apply;
-
-                        var applyStain = controller.EditedItem.ApplyStain;
-                        if (ImGui.Checkbox("Apply Stain", ref applyStain))
-                            controller.EditedItem.ApplyStain = applyStain;
-
-                        var applyCrest = controller.EditedItem.ApplyCrest;
-                        if (ImGui.Checkbox("Apply Crest", ref applyCrest))
-                            controller.EditedItem.ApplyCrest = applyCrest;
-
-                        var crest = controller.EditedItem.Crest;
-                        if (ImGui.Checkbox("Crest", ref crest))
-                            controller.EditedItem.Crest = crest;
-                    }
-                );
+                    );
+                }
             }
 
             SharedUserInterfaces.ContentBox(
@@ -264,67 +252,124 @@ public partial class WardrobeViewUi
                 () =>
                 {
                     var selectedCount = controller.GetSelectedModCount();
-                    SharedUserInterfaces.MediumText($"Mods ({selectedCount} selected)");
+                    SharedUserInterfaces.MediumText($"Mods ({selectedCount} added)");
 
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
 
                     var buttonWidth = 100f;
-                    var refreshWidth = 80f;
+                    var iconButtonWidth = 26f;
 
-                    ImGui.SetCursorPosX(contentWidth - buttonWidth - refreshWidth - padding.X);
-                    if (ImGui.Button("Refresh", new Vector2(refreshWidth, 24)))
+                    ImGui.SetCursorPosX(contentWidth - buttonWidth - iconButtonWidth - padding.X);
+                    if (SharedUserInterfaces.IconButton(FontAwesomeIcon.Sync, new Vector2(iconButtonWidth, 24), "Refresh Mods"))
                     {
                         _ = LoadModsWithErrorHandling();
                     }
 
                     ImGui.SameLine(contentWidth - buttonWidth);
-                    if (ImGui.Button("Add Mod", new Vector2(buttonWidth, 24)))
+
+                    if (controller.AvailableMods.Count == 0)
                     {
-                        _ = ShowAddModPopup();
+                        if (ImGui.Button("Add Mod", new Vector2(buttonWidth, 24)))
+                        {
+                            _ = LoadModsWithErrorHandling();
+                        }
+                    }
+                    else
+                    {
+                        if (ImGui.Button("Add Mod##open", new Vector2(buttonWidth, 24)))
+                        {
+                            controller.ModFilter = string.Empty;
+                            ImGui.OpenPopup("##AddModPopup");
+                        }
+
+                        if (ImGui.BeginPopup("##AddModPopup"))
+                        {
+                            ImGui.SetNextItemWidth(contentWidth - padding.X * 2);
+                            var filter = controller.ModFilter;
+                            if (ImGui.InputTextWithHint("##ModFilter", "Filter mods...", ref filter, 64))
+                            {
+                                controller.ModFilter = filter;
+                            }
+
+                            var filteredMods = controller.AvailableMods
+                                .Where(m => !controller.IsModSelected(m.Item1.DirectoryName))
+                                .Where(m => string.IsNullOrEmpty(controller.ModFilter) ||
+                                           m.Item1.Name.Contains(controller.ModFilter, StringComparison.OrdinalIgnoreCase))
+                                .ToList();
+
+                            if (filteredMods.Count == 0)
+                            {
+                                ImGui.TextColored(ImGuiColors.DalamudGrey, "No mods available.");
+                            }
+                            else
+                            {
+                                var listHeight = Math.Min(200f, filteredMods.Count * 20f + 20f);
+                                if (ImGui.BeginChild("##ModSelectList", new Vector2(contentWidth - padding.X * 2, listHeight), true))
+                                {
+                                    foreach (var mod in filteredMods)
+                                    {
+                                        if (ImGui.Selectable(mod.Item1.Name))
+                                        {
+                                            controller.AddMod(mod.Item1.DirectoryName);
+                                            ImGui.CloseCurrentPopup();
+                                        }
+                                    }
+                                    ImGui.EndChild();
+                                }
+                            }
+
+                            ImGui.EndPopup();
+                        }
                     }
 
                     ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
 
-                    if (controller.AvailableMods.Count == 0)
+                    if (selectedCount == 0)
                     {
-                        ImGui.TextColored(ImGuiColors.DalamudGrey, "Click Refresh to load available mods.");
+                        ImGui.TextColored(ImGuiColors.DalamudGrey, "No mods added. Click 'Add Mod' to add mods.");
                     }
                     else
                     {
                         var listHeight = 150f;
                         if (ImGui.BeginChild("##ModsList", new Vector2(contentWidth, listHeight), true))
                         {
-                            foreach (var mod in controller.AvailableMods)
+                            foreach (var kvp in controller.SelectedModSettings)
                             {
-                                var isSelected = controller.IsModSelected(mod.Item1.DirectoryName);
-                                var priority = controller.GetModPriority(mod.Item1.DirectoryName);
+                                var modName = controller.GetModName(kvp.Key);
+                                var settings = kvp.Value;
 
-                                var checkboxLabel = $"##mod_{mod.Item1.DirectoryName}";
-                                var checkboxValue = isSelected;
+                                var checkboxLabel = $"##mod_{kvp.Key}";
+                                var checkboxValue = settings.Enabled;
 
                                 ImGui.SetCursorPosX(padding.X);
                                 if (ImGui.Checkbox(checkboxLabel, ref checkboxValue))
                                 {
-                                    controller.UpdateModSelection(mod.Item1.DirectoryName, checkboxValue, priority);
+                                    controller.UpdateModSelection(kvp.Key, checkboxValue, settings.Priority);
                                 }
 
                                 ImGui.SameLine(padding.X + 20);
-                                ImGui.Text(mod.Item1.Name);
+                                ImGui.Text(modName ?? kvp.Key);
 
-                                ImGui.SameLine(contentWidth - 100);
+                                ImGui.SameLine(contentWidth - 130);
 
-                                var priorityStr = priority.ToString();
+                                var priorityStr = settings.Priority.ToString();
                                 ImGui.SetNextItemWidth(60);
-                                if (ImGui.InputText($"##priority_{mod.Item1.DirectoryName}", ref priorityStr, 10))
+                                if (ImGui.InputText($"##priority_{kvp.Key}", ref priorityStr, 10))
                                 {
                                     if (int.TryParse(priorityStr, out var newPriority))
                                     {
-                                        controller.UpdateModSelection(mod.Item1.DirectoryName, isSelected, newPriority);
+                                        controller.UpdateModSelection(kvp.Key, settings.Enabled, newPriority);
                                     }
                                 }
 
-                                ImGui.SameLine(contentWidth - 30);
+                                ImGui.SameLine(contentWidth - 60);
                                 ImGui.Text("Prio");
+
+                                ImGui.SameLine(contentWidth - 30);
+                                if (ImGui.Button($"X##{kvp.Key}", new Vector2(20, 20)))
+                                {
+                                    controller.RemoveMod(kvp.Key);
+                                }
 
                                 ImGui.Spacing();
                             }
@@ -361,6 +406,27 @@ public partial class WardrobeViewUi
                     var description = controller.EditedDescription;
                     if (ImGui.InputText("##Description", ref description, 256))
                         controller.EditedDescription = description;
+                }
+            );
+
+            SharedUserInterfaces.ContentBox(
+                "EditorSetPriority",
+                KinkLinkStyle.PanelBackground,
+                true,
+                () =>
+                {
+                    SharedUserInterfaces.MediumText("Pair Access Priority");
+                    ImGui.SetNextItemWidth(contentWidth);
+                    var currentPriority = controller.EditedPriority.ToString();
+                    if (ImGui.BeginCombo("##SetPrioritySelector", currentPriority))
+                    {
+                        foreach (RelationshipPriority priority in Enum.GetValues<RelationshipPriority>())
+                        {
+                            if (ImGui.Selectable(priority.ToString()))
+                                controller.EditedPriority = priority;
+                        }
+                        ImGui.EndCombo();
+                    }
                 }
             );
 
