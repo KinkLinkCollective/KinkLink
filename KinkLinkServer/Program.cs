@@ -109,9 +109,9 @@ public class Program
             builder
                 .Services.AddSignalR(options => options.EnableDetailedErrors = true)
                 .AddMessagePackProtocol(options =>
-                    options.SerializerOptions = MessagePackSerializerOptions.Standard.WithSecurity(
-                        MessagePackSecurity.UntrustedData
-                    )
+                    options.SerializerOptions = MessagePackSerializerOptions.Standard
+                        .WithSecurity(MessagePackSecurity.UntrustedData)
+                        .WithJsonElementSupport()
                 );
             builder.Services.AddSingleton(configuration);
 

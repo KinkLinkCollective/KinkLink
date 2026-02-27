@@ -210,6 +210,9 @@ public sealed class Plugin : IDalamudPlugin
         // Services
         _services.GetRequiredService<ActionQueueService>();
 
+        // Wire up services
+        _services.GetRequiredService<WardrobeNetworkService>().SetWardrobeService(_services.GetRequiredService<WardrobeService>());
+
         Task.Run(SharedUserInterfaces.InitializeFonts);
     }
 

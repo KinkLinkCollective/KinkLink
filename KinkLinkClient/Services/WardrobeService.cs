@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using KinkLinkClient;
 using KinkLinkClient.Dependencies.Glamourer.Domain;
@@ -488,6 +489,66 @@ public class WardrobeService : IDisposable
 
     public void DeleteCharacterItem(Guid id) => DeleteModItem(id);
 
+    public void ApplySetByIdSync(Guid setId)
+    {
+        var set = GetSetById(setId);
+        if (set != null)
+        {
+            ActiveSet.SetBaseLayer(set);
+            Plugin.Log.Information("[WardrobeService] Applied set from sync: {SetName} (ID: {SetId})", set.Name, setId);
+        }
+    }
+
+    public void ApplyPieceSync(GlamourerEquipmentSlot slot, WardrobeItem piece)
+    {
+        ActiveSet.SetIndividual(slot, piece);
+        Plugin.Log.Information("[WardrobeService] Applied piece from sync: {PieceName} (ID: {PieceId}) to slot {Slot}", piece.Name, piece.Id, slot);
+    }
+
+    public void ApplyCharacterItemSync(WardrobeItem item)
+    {
+        ActiveSet.AddModItem(item);
+        Plugin.Log.Information("[WardrobeService] Applied character item from sync: {ItemName} (ID: {ItemId})", item.Name, item.Id);
+    }
+
+    private async Task SyncActiveSetToServerAsync()
+    {
+        var baseLayer = ActiveSet.GetBaseLayer();
+        Dictionary<string, object?>? baseLayerDict = null;
+        var equipment = new Dictionary<string, object?>();
+        var characterItems = new Dictionary<string, object?>();
+
+        if (baseLayer != null)
+        {
+            baseLayerDict = new Dictionary<string, object?>
+            {
+                ["Identifier"] = baseLayer.Identifier,
+                ["Name"] = baseLayer.Name
+            };
+        }
+
+        var slotNames = new[] { "Head", "Body", "Hands", "Legs", "Feet", "Ears", "Neck", "Wrists", "RFinger", "LFinger" };
+        foreach (var slotName in slotNames)
+        {
+            var slot = GetSlotFromName(slotName);
+            var item = ActiveSet.GetIndividual(slot);
+            if (item != null && item.Item != null && item.Item.ItemId != 0)
+            {
+                equipment[slotName] = new Dictionary<string, object?> { ["Id"] = item.Id };
+            }
+        }
+
+        var mods = ActiveSet.GetMods();
+        foreach (var mod in mods)
+        {
+            characterItems[mod.Name] = mod.Name;
+        }
+
+        var state = new WardrobeStateDto(baseLayerDict, equipment, characterItems);
+
+        await _wardrobeNetworkService.SetWardrobeStatusAsync(state);
+    }
+
     public async Task ApplyCharacterItem(WardrobeItem item) => await ApplyWardrobeItem(item);
 
     public async Task<List<Design>> RefreshGlamourerDesignsAsync()
@@ -624,6 +685,8 @@ public class WardrobeService : IDisposable
 
         await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
 
+        await SyncActiveSetToServerAsync();
+
         Plugin.Log.Information("Successfully applied wardrobe set: {SetName}", name);
     }
 
@@ -640,6 +703,8 @@ public class WardrobeService : IDisposable
         ActiveSet.ClearBaseLayer();
 
         await _glamourerService.RevertToAutomation();
+
+        await SyncActiveSetToServerAsync();
 
         Plugin.Log.Information("Successfully removed active wardrobe set");
     }
@@ -659,6 +724,8 @@ public class WardrobeService : IDisposable
 
         await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
 
+        await SyncActiveSetToServerAsync();
+
         Plugin.Log.Information("Successfully applied wardrobe piece: {PieceName}", piece.Name);
     }
 
@@ -666,12 +733,14 @@ public class WardrobeService : IDisposable
     {
         ActiveSet.AddModItem(item);
         await ApplyModsAsync(true);
+        await SyncActiveSetToServerAsync();
     }
 
     public async Task RemoveWardrobeItemFromActive(Guid id)
     {
         ActiveSet.ClearModItem(id);
         await ApplyModsAsync(false);
+        await SyncActiveSetToServerAsync();
     }
 
     public async Task RemovePieceFromSlotAsync(GlamourerEquipmentSlot slot)
@@ -686,6 +755,8 @@ public class WardrobeService : IDisposable
         ActiveSet.ClearIndividual(slot);
         //.await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
         await _glamourerService.RevertToAutomation();
+
+        await SyncActiveSetToServerAsync();
 
         Plugin.Log.Information("Successfully removed piece from slot: {Slot}", slot);
     }

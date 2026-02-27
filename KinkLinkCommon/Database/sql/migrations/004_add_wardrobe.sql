@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS wardrobe (
 
 CREATE TABLE IF NOT EXISTS activewardrobe (
     id bigserial PRIMARY KEY,
-    profile_id INTEGER NOT NULL REFERENCES Profiles(id) ON DELETE CASCADE,
+    profile_id INTEGER UNIQUE NOT NULL REFERENCES Profiles(id) ON DELETE CASCADE,
     glamourerset JSONB,
     head JSONB,
     body JSONB,
