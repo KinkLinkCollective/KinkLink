@@ -156,7 +156,7 @@ public class WardrobeNetworkService : IDisposable
         try
         {
             var response = await _networkService
-                .InvokeAsync<ActionResult<WardrobeStateDto>>(HubMethod.GetWardrobeStatus, Array.Empty<byte>())
+                .InvokeAsync<ActionResult<WardrobeStateDto>>(HubMethod.GetWardrobeStatus)
                 .ConfigureAwait(false);
 
             return response;

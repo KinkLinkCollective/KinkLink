@@ -175,6 +175,32 @@ public class NetworkService : IDisposable
         }
     }
 
+    /// <summary>
+    ///     Invokes a method on the server with no arguments and awaits a result
+    /// </summary>
+    /// <param name="method">The name of the method to call</param>
+    /// <returns></returns>
+    public async Task<T> InvokeAsync<T>(string method)
+    {
+        if (Connection.State is not HubConnectionState.Connected)
+        {
+            Plugin.Log.Warning("[NetworkService] No connection established");
+            return Activator.CreateInstance<T>();
+        }
+
+        try
+        {
+            var response = await Connection.InvokeAsync<T>(method);
+            Plugin.Log.Verbose($"[NetworkService] Response: {response}");
+            return response;
+        }
+        catch (Exception e)
+        {
+            Plugin.Log.Warning($"[NetworkService] [InvokeAsync] {e}");
+            return Activator.CreateInstance<T>();
+        }
+    }
+
     private Task OnReconnected(string? arg)
     {
         Connected?.Invoke();

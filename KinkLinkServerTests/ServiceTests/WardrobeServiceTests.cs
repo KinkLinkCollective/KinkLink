@@ -181,16 +181,18 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111117, "WARDTEST7");
 
         var itemId = Guid.NewGuid();
-        var dto = new WardrobeDto
-        {
-            Id = itemId,
-            Name = "Created Item",
-            Description = "Test description",
-            Type = "item",
-            Slot = GlamourerEquipmentSlot.Head,
-            Item = new GlamourerItem { ItemId = 11111, Apply = true },
-            Priority = RelationshipPriority.Casual
-        };
+        var dto = new WardrobeDto(
+            itemId,
+            "Created Item",
+            "Test description",
+            "item",
+            GlamourerEquipmentSlot.Head,
+            new GlamourerItem { ItemId = 11111, Apply = true },
+            null,
+            [],
+            [],
+            RelationshipPriority.Casual
+        );
 
         var result = await _wardrobeService.CreateOrUpdateWardrobeItemsByNameAsync(profileId, itemId, dto);
 
@@ -220,16 +222,18 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             Data = CreateItemData(new GlamourerItem { ItemId = 11111, Apply = true })
         });
 
-        var dto = new WardrobeDto
-        {
-            Id = itemId,
-            Name = "Updated Name",
-            Description = "Updated description",
-            Type = "item",
-            Slot = GlamourerEquipmentSlot.Body,
-            Item = new GlamourerItem { ItemId = 22222, Apply = false },
-            Priority = RelationshipPriority.Devotional
-        };
+        var dto = new WardrobeDto(
+            itemId,
+            "Updated Name",
+            "Updated description",
+            "item",
+            GlamourerEquipmentSlot.Body,
+            new GlamourerItem { ItemId = 22222, Apply = false },
+            null,
+            [],
+            [],
+            RelationshipPriority.Devotional
+        );
 
         var result = await _wardrobeService.CreateOrUpdateWardrobeItemsByNameAsync(profileId, itemId, dto);
 
@@ -249,13 +253,18 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111119, "WARDTEST9");
 
         var setId = Guid.NewGuid();
-        var dto = new WardrobeDto
-        {
-            Id = setId,
-            Name = "Created Set",
-            Type = "set",
-            Priority = RelationshipPriority.Casual
-        };
+        var dto = new WardrobeDto(
+            setId,
+            "Created Set",
+            string.Empty,
+            "set",
+            GlamourerEquipmentSlot.None,
+            null,
+            null,
+            [],
+            [],
+            RelationshipPriority.Casual
+        );
 
         var result = await _wardrobeService.CreateOrUpdateWardrobeItemsByNameAsync(profileId, setId, dto);
 
@@ -284,13 +293,18 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             Data = CreateSetData(new GlamourerDesign())
         });
 
-        var dto = new WardrobeDto
-        {
-            Id = setId,
-            Name = "Updated Set",
-            Type = "set",
-            Priority = RelationshipPriority.Devotional
-        };
+        var dto = new WardrobeDto(
+            setId,
+            "Updated Set",
+            string.Empty,
+            "set",
+            GlamourerEquipmentSlot.None,
+            null,
+            null,
+            [],
+            [],
+            RelationshipPriority.Devotional
+        );
 
         var result = await _wardrobeService.CreateOrUpdateWardrobeItemsByNameAsync(profileId, setId, dto);
 
@@ -309,14 +323,18 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111121, "WARDTEST11");
 
         var modItemId = Guid.NewGuid();
-        var dto = new WardrobeDto
-        {
-            Id = modItemId,
-            Name = "Created ModItem",
-            Type = "moditem",
-            Mods = [new GlamourerMod { Name = "TestMod", Enabled = true }],
-            Priority = RelationshipPriority.Casual
-        };
+        var dto = new WardrobeDto(
+            modItemId,
+            "Created ModItem",
+            string.Empty,
+            "moditem",
+            GlamourerEquipmentSlot.None,
+            null,
+            null,
+            [new GlamourerMod { Name = "TestMod", Enabled = true }],
+            [],
+            RelationshipPriority.Casual
+        );
 
         var result = await _wardrobeService.CreateOrUpdateWardrobeItemsByNameAsync(profileId, modItemId, dto);
 
@@ -345,14 +363,18 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             Data = CreateModItemData([new GlamourerMod { Name = "OldMod", Enabled = false }])
         });
 
-        var dto = new WardrobeDto
-        {
-            Id = modItemId,
-            Name = "Updated ModItem",
-            Type = "moditem",
-            Mods = [new GlamourerMod { Name = "NewMod", Enabled = true }],
-            Priority = RelationshipPriority.Devotional
-        };
+        var dto = new WardrobeDto(
+            modItemId,
+            "Updated ModItem",
+            string.Empty,
+            "moditem",
+            GlamourerEquipmentSlot.None,
+            null,
+            null,
+            [new GlamourerMod { Name = "NewMod", Enabled = true }],
+            [],
+            RelationshipPriority.Devotional
+        );
 
         var result = await _wardrobeService.CreateOrUpdateWardrobeItemsByNameAsync(profileId, modItemId, dto);
 
@@ -374,15 +396,14 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111123, "WARDTEST13");
 
-        var state = new WardrobeStateDto
-        {
-            _baseLayer = new GlamourerDesign(),
-            _equipment = new Dictionary<GlamourerEquipmentSlot, WardrobeItem?>
+        var state = new WardrobeStateDto(
+            new GlamourerDesign(),
+            new Dictionary<GlamourerEquipmentSlot, WardrobeItem?>
             {
                 [GlamourerEquipmentSlot.Head] = new WardrobeItem { Id = Guid.NewGuid(), ItemId = 1000, Name = "Head Item" }
             },
-            _characterItems = new Dictionary<Guid, WardrobeItem>()
-        };
+            new Dictionary<Guid, WardrobeItem>()
+        );
 
         var result = await _wardrobeService.UpdateWardrobeStateAsync(profileId, state);
 
@@ -401,28 +422,26 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111124, "WARDTEST14");
 
-        var initialState = new WardrobeStateDto
-        {
-            _baseLayer = null,
-            _equipment = new Dictionary<GlamourerEquipmentSlot, WardrobeItem?>
+        var initialState = new WardrobeStateDto(
+            null,
+            new Dictionary<GlamourerEquipmentSlot, WardrobeItem?>
             {
                 [GlamourerEquipmentSlot.Head] = new WardrobeItem { Id = Guid.NewGuid(), ItemId = 1000, Name = "Original Head" }
             },
-            _characterItems = new Dictionary<Guid, WardrobeItem>()
-        };
+            new Dictionary<Guid, WardrobeItem>()
+        );
 
         await _wardrobeService.UpdateWardrobeStateAsync(profileId, initialState);
 
-        var updatedState = new WardrobeStateDto
-        {
-            _baseLayer = new GlamourerDesign(),
-            _equipment = new Dictionary<GlamourerEquipmentSlot, WardrobeItem?>
+        var updatedState = new WardrobeStateDto(
+            new GlamourerDesign(),
+            new Dictionary<GlamourerEquipmentSlot, WardrobeItem?>
             {
                 [GlamourerEquipmentSlot.Head] = new WardrobeItem { Id = Guid.NewGuid(), ItemId = 2000, Name = "Updated Head" },
                 [GlamourerEquipmentSlot.Body] = new WardrobeItem { Id = Guid.NewGuid(), ItemId = 2001, Name = "Body Item" }
             },
-            _characterItems = new Dictionary<Guid, WardrobeItem>()
-        };
+            new Dictionary<Guid, WardrobeItem>()
+        );
 
         var result = await _wardrobeService.UpdateWardrobeStateAsync(profileId, updatedState);
 

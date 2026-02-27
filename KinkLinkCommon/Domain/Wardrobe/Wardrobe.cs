@@ -1,26 +1,26 @@
 using KinkLinkCommon.Dependencies.Glamourer;
-using KinkLinkCommon.Dependencies.Glamourer.Components;
 using KinkLinkCommon.Domain.Enums;
+using MessagePack;
 
 namespace KinkLinkCommon.Domain.Wardrobe;
 
-public record WardrobeDto
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string Type;
-    public GlamourerEquipmentSlot Slot { get; set; }
-    public GlamourerItem? Item { get; set; }
-    public GlamourerDesign Design { get; set; }
-    public List<GlamourerMod> Mods { get; set; } = [];
-    public Dictionary<string, GlamourerMaterial> Materials { get; set; } = [];
-    public RelationshipPriority Priority { get; set; } = RelationshipPriority.Casual;
-}
+[MessagePackObject]
+public record WardrobeDto(
+    [property: Key(0)] Guid Id,
+    [property: Key(1)] string Name,
+    [property: Key(2)] string Description,
+    [property: Key(3)] string Type,
+    [property: Key(4)] GlamourerEquipmentSlot Slot,
+    [property: Key(5)] Dictionary<string, object?>? Item,
+    [property: Key(6)] Dictionary<string, object?>? Design,
+    [property: Key(7)] List<object?>? Mods,
+    [property: Key(8)] Dictionary<string, object?>? Materials,
+    [property: Key(9)] RelationshipPriority Priority
+);
 
-public record WardrobeStateDto
-{
-    public GlamourerDesign? _baseLayer;
-    public Dictionary<GlamourerEquipmentSlot, WardrobeItem?> _equipment = new();
-    public Dictionary<Guid, WardrobeItem> _characterItems = new();
-}
+[MessagePackObject]
+public record WardrobeStateDto(
+    [property: Key(0)] Dictionary<string, object?>? BaseLayer,
+    [property: Key(1)] Dictionary<string, object?>? Equipment,
+    [property: Key(2)] Dictionary<string, object?>? CharacterItems
+);

@@ -36,23 +36,24 @@ public class WardrobeDataService
             type
         );
 
-        return rows.Select(row => new WardrobeDto
-            {
-                Id = row.Id,
-                Name = row.Name ?? string.Empty,
-                Description = row.Description ?? string.Empty,
-                Slot = (GlamourerEquipmentSlot)(row.Slot ?? 0),
-                Item = row.Data.TryGetProperty("item", out var item)
-                    ? DeserializeNullable<GlamourerItem>(item)
+        return rows.Select(row => new WardrobeDto(
+                row.Id,
+                row.Name ?? string.Empty,
+                row.Description ?? string.Empty,
+                row.Type ?? string.Empty,
+                (GlamourerEquipmentSlot)(row.Slot ?? 0),
+                row.Data.TryGetProperty("item", out var item)
+                    ? DeserializeToDict<GlamourerItem>(item)
                     : null,
-                Mods = row.Data.TryGetProperty("mods", out var mods)
-                    ? DeserializeList<GlamourerMod>(mods)
-                    : [],
-                Materials = row.Data.TryGetProperty("materials", out var materials)
-                    ? DeserializeDict<string, GlamourerMaterial>(materials)
-                    : [],
-                Priority = (RelationshipPriority)(row.RelationshipPriority ?? 0),
-            })
+                null,
+                row.Data.TryGetProperty("mods", out var mods)
+                    ? DeserializeToDictList(mods)
+                    : null,
+                row.Data.TryGetProperty("materials", out var materials)
+                    ? DeserializeToDict<GlamourerMaterial>(materials)
+                    : null,
+                (RelationshipPriority)(row.RelationshipPriority ?? 0)
+            ))
             .ToList();
     }
 
@@ -83,23 +84,24 @@ public class WardrobeDataService
             wardrobeId
         );
 
-        return new WardrobeDto
-        {
-            Id = row.Value.Id,
-            Name = row.Value.Name ?? string.Empty,
-            Description = row.Value.Description ?? string.Empty,
-            Slot = (GlamourerEquipmentSlot)(row.Value.Slot ?? 0),
-            Item = row.Value.Data.TryGetProperty("item", out var item)
-                ? DeserializeNullable<GlamourerItem>(item)
+        return new WardrobeDto(
+            row.Value.Id,
+            row.Value.Name ?? string.Empty,
+            row.Value.Description ?? string.Empty,
+            row.Value.Type ?? string.Empty,
+            (GlamourerEquipmentSlot)(row.Value.Slot ?? 0),
+            row.Value.Data.TryGetProperty("item", out var item)
+                ? DeserializeToDict<GlamourerItem>(item)
                 : null,
-            Mods = row.Value.Data.TryGetProperty("mods", out var mods)
-                ? DeserializeList<GlamourerMod>(mods)
-                : [],
-            Materials = row.Value.Data.TryGetProperty("materials", out var materials)
-                ? DeserializeDict<string, GlamourerMaterial>(materials)
-                : [],
-            Priority = (RelationshipPriority)(row.Value.RelationshipPriority ?? 0),
-        };
+            null,
+            row.Value.Data.TryGetProperty("mods", out var mods)
+                ? DeserializeToDictList(mods)
+                : null,
+            row.Value.Data.TryGetProperty("materials", out var materials)
+                ? DeserializeToDict<GlamourerMaterial>(materials)
+                : null,
+            (RelationshipPriority)(row.Value.RelationshipPriority ?? 0)
+        );
     }
 
     public async Task<bool> CreateOrUpdateWardrobeItemsByNameAsync(
@@ -192,45 +194,25 @@ public class WardrobeDataService
         _logger.LogInformation(
             "UpdateWardrobeStateAsync called with profileId: {ProfileId}, equipment count: {EquipmentCount}, characterItems count: {CharacterItemsCount}",
             profileId,
-            state._equipment.Count,
-            state._characterItems.Count
+            state.Equipment?.Count ?? 0,
+            state.CharacterItems?.Count ?? 0
         );
 
         var result = await _wardrobeSql.UpdateWardrobeStateAsync(
             new(
                 profileId,
-                SerializeToJsonElement(state._baseLayer),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.Head)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.Body)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.Hands)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.Legs)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.Feet)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.Ears)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.Neck)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.Wrists)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.LFinger)
-                ),
-                SerializeToJsonElement(
-                    state._equipment.GetValueOrDefault(GlamourerEquipmentSlot.RFinger)
-                ),
-                SerializeToJsonElement(state._characterItems.Values)
+                SerializeToJsonElement(state.BaseLayer),
+                SerializeToJsonElement(state.Equipment?["Head"]),
+                SerializeToJsonElement(state.Equipment?["Body"]),
+                SerializeToJsonElement(state.Equipment?["Hands"]),
+                SerializeToJsonElement(state.Equipment?["Legs"]),
+                SerializeToJsonElement(state.Equipment?["Feet"]),
+                SerializeToJsonElement(state.Equipment?["Ears"]),
+                SerializeToJsonElement(state.Equipment?["Neck"]),
+                SerializeToJsonElement(state.Equipment?["Wrists"]),
+                SerializeToJsonElement(state.Equipment?["LFinger"]),
+                SerializeToJsonElement(state.Equipment?["RFinger"]),
+                SerializeToJsonElement(state.CharacterItems?.Values)
             )
         );
 
@@ -271,49 +253,29 @@ public class WardrobeDataService
 
         _logger.LogDebug("GetWardrobeStateAsync found state for profileId: {ProfileId}", profileId);
 
-        var equipment = new Dictionary<GlamourerEquipmentSlot, WardrobeItem?>();
-        var characterItems = new Dictionary<Guid, WardrobeItem>();
+        var equipment = new Dictionary<string, object?>();
+        var characterItems = new Dictionary<string, object?>();
 
         if (row.Value.Head.HasValue)
-            equipment[GlamourerEquipmentSlot.Head] = DeserializeNullable<WardrobeItem>(
-                row.Value.Head.Value
-            );
+            equipment["Head"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Head.Value));
         if (row.Value.Body.HasValue)
-            equipment[GlamourerEquipmentSlot.Body] = DeserializeNullable<WardrobeItem>(
-                row.Value.Body.Value
-            );
+            equipment["Body"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Body.Value));
         if (row.Value.Hand.HasValue)
-            equipment[GlamourerEquipmentSlot.Hands] = DeserializeNullable<WardrobeItem>(
-                row.Value.Hand.Value
-            );
+            equipment["Hands"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Hand.Value));
         if (row.Value.Legs.HasValue)
-            equipment[GlamourerEquipmentSlot.Legs] = DeserializeNullable<WardrobeItem>(
-                row.Value.Legs.Value
-            );
+            equipment["Legs"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Legs.Value));
         if (row.Value.Feet.HasValue)
-            equipment[GlamourerEquipmentSlot.Feet] = DeserializeNullable<WardrobeItem>(
-                row.Value.Feet.Value
-            );
+            equipment["Feet"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Feet.Value));
         if (row.Value.Earring.HasValue)
-            equipment[GlamourerEquipmentSlot.Ears] = DeserializeNullable<WardrobeItem>(
-                row.Value.Earring.Value
-            );
+            equipment["Ears"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Earring.Value));
         if (row.Value.Neck.HasValue)
-            equipment[GlamourerEquipmentSlot.Neck] = DeserializeNullable<WardrobeItem>(
-                row.Value.Neck.Value
-            );
+            equipment["Neck"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Neck.Value));
         if (row.Value.Bracelet.HasValue)
-            equipment[GlamourerEquipmentSlot.Wrists] = DeserializeNullable<WardrobeItem>(
-                row.Value.Bracelet.Value
-            );
+            equipment["Wrists"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Bracelet.Value));
         if (row.Value.Lring.HasValue)
-            equipment[GlamourerEquipmentSlot.LFinger] = DeserializeNullable<WardrobeItem>(
-                row.Value.Lring.Value
-            );
+            equipment["LFinger"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Lring.Value));
         if (row.Value.Rring.HasValue)
-            equipment[GlamourerEquipmentSlot.RFinger] = DeserializeNullable<WardrobeItem>(
-                row.Value.Rring.Value
-            );
+            equipment["RFinger"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Rring.Value));
 
         if (row.Value.Moditems.HasValue)
         {
@@ -323,19 +285,25 @@ public class WardrobeDataService
                 foreach (var item in modItems)
                 {
                     if (item != null)
-                        characterItems[item.Id] = item;
+                        characterItems[item.Id.ToString()] = SerializeToJsonElement(item);
                 }
             }
         }
 
-        return new()
-        {
-            _baseLayer = row.Value.Glamourerset.HasValue
-                ? DeserializeNullable<GlamourerDesign>(row.Value.Glamourerset.Value)
+        return new WardrobeStateDto(
+            row.Value.Glamourerset.HasValue
+                ? ObjectToDict(DeserializeNullable<GlamourerDesign>(row.Value.Glamourerset.Value))
                 : null,
-            _equipment = equipment,
-            _characterItems = characterItems,
-        };
+            equipment,
+            characterItems
+        );
+    }
+
+    private static Dictionary<string, object?>? ObjectToDict<T>(T? obj) where T : class
+    {
+        if (obj == null) return null;
+        var json = JsonSerializer.Serialize(obj);
+        return JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
     }
 
     private static JsonElement? SerializeToJsonElement<T>(T? value)
@@ -380,6 +348,34 @@ public class WardrobeDataService
         catch
         {
             return [];
+        }
+    }
+
+    private static Dictionary<string, object?>? DeserializeToDict<T>(JsonElement element)
+        where T : class
+    {
+        try
+        {
+            var obj = JsonSerializer.Deserialize<T>(element.GetRawText());
+            if (obj == null) return null;
+            return JsonSerializer.Deserialize<Dictionary<string, object?>>(JsonSerializer.Serialize(obj));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static List<object?>? DeserializeToDictList(JsonElement element)
+    {
+        try
+        {
+            var list = JsonSerializer.Deserialize<List<object>>(element.GetRawText());
+            return list?.Cast<object?>().ToList();
+        }
+        catch
+        {
+            return null;
         }
     }
 }

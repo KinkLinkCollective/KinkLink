@@ -11,6 +11,7 @@ using KinkLinkClient.Domain.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 using KinkLinkClient.Utils;
 using KinkLinkCommon.Domain.Enums;
+using KinkLinkCommon.Domain.Wardrobe;
 using Newtonsoft.Json.Linq;
 
 namespace KinkLinkClient.Services;
@@ -217,6 +218,7 @@ public class WardrobeService : IDisposable
 {
     private readonly PenumbraService _penumbraService;
     private readonly GlamourerService _glamourerService;
+    private readonly WardrobeNetworkService _wardrobeNetworkService;
 
     private Dictionary<string, WardrobeItem> _wardrobeItems = [];
     private Dictionary<string, GlamourerDesign> _wardrobeSets = [];
@@ -232,10 +234,11 @@ public class WardrobeService : IDisposable
     public IReadOnlyList<GlamourerDesign> ImportedSets => [.. _wardrobeSets.Values];
     public IReadOnlyList<WardrobeItem> ModItems => [.. _modItems.Values];
 
-    public WardrobeService(GlamourerService glamourerService, PenumbraService penumbraService)
+    public WardrobeService(GlamourerService glamourerService, PenumbraService penumbraService, WardrobeNetworkService wardrobeNetworkService)
     {
         _penumbraService = penumbraService;
         _glamourerService = glamourerService;
+        _wardrobeNetworkService = wardrobeNetworkService;
         ActiveSet = new();
 
         LoadFromConfiguration();
@@ -292,6 +295,18 @@ public class WardrobeService : IDisposable
         _modItemsById = _modItems.Values.ToDictionary(m => m.Id);
     }
 
+    private async Task SyncPieceToServerAsync(WardrobeItem item, string type)
+    {
+        var dto = WardrobeItemToDto(item, type);
+        await _wardrobeNetworkService.AddWardrobeItemAsync(dto);
+    }
+
+    private async Task SyncSetToServerAsync(GlamourerDesign set)
+    {
+        var dto = GlamourerDesignToDto(set);
+        await _wardrobeNetworkService.AddWardrobeItemAsync(dto);
+    }
+
     public void AddPiece(WardrobeItem piece)
     {
         _wardrobeItems[piece.Name] = piece;
@@ -302,6 +317,7 @@ public class WardrobeService : IDisposable
             piece.Id
         );
         _ = SaveAsync();
+        _ = SyncPieceToServerAsync(piece, "item");
     }
 
     public void UpdatePiece(WardrobeItem piece)
@@ -314,6 +330,7 @@ public class WardrobeService : IDisposable
             piece.Id
         );
         _ = SaveAsync();
+        _ = SyncPieceToServerAsync(piece, "item");
     }
 
     public void DeletePiece(Guid id)
@@ -328,6 +345,7 @@ public class WardrobeService : IDisposable
                 id
             );
             _ = SaveAsync();
+            _ = _wardrobeNetworkService.RemoveWardrobeItemAsync(id);
         }
     }
 
@@ -366,6 +384,7 @@ public class WardrobeService : IDisposable
             set.Identifier
         );
         _ = SaveAsync();
+        _ = SyncSetToServerAsync(set);
     }
 
     public void UpdateSet(GlamourerDesign set)
@@ -378,6 +397,7 @@ public class WardrobeService : IDisposable
             set.Identifier
         );
         _ = SaveAsync();
+        _ = SyncSetToServerAsync(set);
     }
 
     public void DeleteSet(Guid id)
@@ -388,6 +408,7 @@ public class WardrobeService : IDisposable
             _wardrobeSetsById.Remove(id);
             Plugin.Log.Information("Deleted wardrobe set: {SetName} (ID: {SetId})", set.Name, id);
             _ = SaveAsync();
+            _ = _wardrobeNetworkService.RemoveWardrobeItemAsync(id);
         }
     }
 
@@ -422,6 +443,7 @@ public class WardrobeService : IDisposable
             item.Id
         );
         _ = SaveAsync();
+        _ = SyncPieceToServerAsync(item, "moditem");
     }
 
     public void UpdateModItem(WardrobeItem item)
@@ -434,6 +456,7 @@ public class WardrobeService : IDisposable
             item.Id
         );
         _ = SaveAsync();
+        _ = SyncPieceToServerAsync(item, "moditem");
     }
 
     public void DeleteModItem(Guid id)
@@ -448,6 +471,7 @@ public class WardrobeService : IDisposable
                 id
             );
             _ = SaveAsync();
+            _ = _wardrobeNetworkService.RemoveWardrobeItemAsync(id);
         }
     }
 
@@ -760,6 +784,38 @@ public class WardrobeService : IDisposable
         if (activeset.LFinger.Apply && activeset.LFinger.IsEqualTo(newState.LFinger) is false)
             return true;
         return false;
+    }
+
+    private static WardrobeDto WardrobeItemToDto(WardrobeItem item, string type)
+    {
+        return new WardrobeDto(
+            item.Id,
+            item.Name,
+            item.Description,
+            type,
+            KinkLinkCommon.Dependencies.Glamourer.GlamourerEquipmentSlot.Head,
+            null,
+            null,
+            [],
+            [],
+            item.Priority
+        );
+    }
+
+    private static WardrobeDto GlamourerDesignToDto(GlamourerDesign design)
+    {
+        return new WardrobeDto(
+            design.Identifier,
+            design.Name,
+            design.Description,
+            "set",
+            KinkLinkCommon.Dependencies.Glamourer.GlamourerEquipmentSlot.None,
+            null,
+            null,
+            [],
+            [],
+            design.Priority
+        );
     }
 
     public void Dispose()
