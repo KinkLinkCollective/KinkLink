@@ -1,6 +1,6 @@
 using System;
 using System.Globalization;
-using KinkLinkClient.Domain.Dependencies.Glamourer;
+using KinkLinkCommon.Dependencies.Glamourer;
 using Newtonsoft.Json.Linq;
 
 namespace KinkLinkClient.Utils;

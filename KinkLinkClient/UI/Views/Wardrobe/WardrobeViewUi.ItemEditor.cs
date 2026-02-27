@@ -6,7 +6,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using KinkLinkClient.Domain;
-using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using KinkLinkCommon.Dependencies.Glamourer.Components;
 using KinkLinkClient.Utils;
 using KinkLinkCommon.Domain.Enums;
 

@@ -2,15 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using KinkLinkClient.Domain.Dependencies.Glamourer;
-using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using KinkLinkCommon.Dependencies.Glamourer;
+using KinkLinkCommon.Dependencies.Glamourer.Components;
 using KinkLinkClient.Utils;
 using KinkLinkCommon.Domain.Enums;
 using KinkLinkCommon.Domain.Network;
 using KinkLinkCommon.Domain.Wardrobe;
-using GlamourerSlot = KinkLinkCommon.Dependencies.Glamourer.GlamourerEquipmentSlot;
-using ClientSlot = KinkLinkClient.Domain.Dependencies.Glamourer.GlamourerEquipmentSlot;
-using ClientDesign = KinkLinkClient.Domain.Dependencies.Glamourer.GlamourerDesign;
 
 namespace KinkLinkClient.Services;
 
@@ -49,7 +46,11 @@ public class WardrobeNetworkService : IDisposable
                     {
                         ApplyWardrobeDto(dto);
                     }
-                    Plugin.Log.Information("[WardrobeNetworkService] Synced {Count} {Type} items from server", result.Value.Count, type);
+                    Plugin.Log.Information(
+                        "[WardrobeNetworkService] Synced {Count} {Type} items from server",
+                        result.Value.Count,
+                        type
+                    );
                 }
             }
 
@@ -57,7 +58,9 @@ public class WardrobeNetworkService : IDisposable
             if (statusResult.Result == ActionResultEc.Success && statusResult.Value != null)
             {
                 ApplyWardrobeState(statusResult.Value);
-                Plugin.Log.Information("[WardrobeNetworkService] Synced wardrobe status from server");
+                Plugin.Log.Information(
+                    "[WardrobeNetworkService] Synced wardrobe status from server"
+                );
             }
 
             NotificationHelper.Success("Wardrobe Sync", "Synced wardrobe from server");
@@ -93,25 +96,24 @@ public class WardrobeNetworkService : IDisposable
 
     private static WardrobeItem DtoToWardrobeItem(WardrobeDto dto)
     {
-        var slot = ConvertSlot(dto.Slot);
         return new WardrobeItem
         {
             Id = dto.Id,
             Name = dto.Name,
             Description = dto.Description,
-            Slot = slot,
-            Priority = dto.Priority
+            Slot = (GlamourerEquipmentSlot)dto.Slot,
+            Priority = dto.Priority,
         };
     }
 
-    private static ClientDesign DtoToGlamourerDesign(WardrobeDto dto)
+    private static GlamourerDesign DtoToGlamourerDesign(WardrobeDto dto)
     {
-        return new ClientDesign
+        return new GlamourerDesign
         {
             Identifier = dto.Id,
             Name = dto.Name,
             Description = dto.Description,
-            Priority = dto.Priority
+            Priority = dto.Priority,
         };
     }
 
@@ -120,15 +122,13 @@ public class WardrobeNetworkService : IDisposable
         if (_wardrobeService == null)
             return;
 
-        if (state.BaseLayer != null && state.BaseLayer.TryGetValue("Identifier", out var baseLayerIdObj))
+        if (state.BaseLayer != null)
         {
-            if (baseLayerIdObj is Guid baseLayerId)
+            var baseLayerId = state.BaseLayer.Identifier;
+            var set = _wardrobeService.GetSetById(baseLayerId);
+            if (set != null)
             {
-                var set = _wardrobeService.GetSetById(baseLayerId);
-                if (set != null)
-                {
-                    _wardrobeService.ApplySetByIdSync(baseLayerId);
-                }
+                _wardrobeService.ApplySetByIdSync(baseLayerId);
             }
         }
 
@@ -136,73 +136,62 @@ public class WardrobeNetworkService : IDisposable
         {
             foreach (var kvp in state.Equipment)
             {
-                if (kvp.Value is Dictionary<string, object?> itemDict && itemDict.TryGetValue("Id", out var itemIdObj))
+                var itemData = kvp.Value;
+                var slot = ConvertSlotKey(kvp.Key);
+                if (slot != GlamourerEquipmentSlot.None)
                 {
-                    if (itemIdObj is Guid itemId)
+                    var piece = new WardrobeItem
                     {
-                        var piece = _wardrobeService.GetPieceById(itemId);
-                        if (piece != null)
-                        {
-                            var slot = ConvertSlotKey(kvp.Key);
-                            if (slot != ClientSlot.None)
-                            {
-                                _wardrobeService.ApplyPieceSync(slot, piece);
-                            }
-                        }
-                    }
+                        Id = itemData.Id,
+                        Name = itemData.Name,
+                        Description = itemData.Description,
+                        Slot = itemData.Slot,
+                        Item = itemData.Item,
+                        Mods = itemData.Mods ?? [],
+                        Materials = itemData.Materials ?? new Dictionary<string, GlamourerMaterial>(),
+                        Priority = itemData.Priority,
+                    };
+                    _wardrobeService.ApplyPieceSync(slot, piece);
                 }
             }
         }
 
-        if (state.CharacterItems != null)
+        if (state.ModSettings != null)
         {
-            foreach (var kvp in state.CharacterItems)
+            foreach (var kvp in state.ModSettings)
             {
-                if (kvp.Value is Guid charItemId)
+                var itemData = kvp.Value;
+                var modItem = new WardrobeItem
                 {
-                    var modItem = _wardrobeService.GetModItemById(charItemId);
-                    if (modItem != null)
-                    {
-                        _wardrobeService.ApplyCharacterItemSync(modItem);
-                    }
-                }
+                    Id = itemData.Id,
+                    Name = itemData.Name,
+                    Description = itemData.Description,
+                    Slot = itemData.Slot,
+                    Item = itemData.Item,
+                    Mods = itemData.Mods ?? [],
+                    Materials = itemData.Materials ?? new Dictionary<string, GlamourerMaterial>(),
+                    Priority = itemData.Priority,
+                };
+                _wardrobeService.ApplyCharacterItemSync(modItem);
             }
         }
     }
 
-    private static ClientSlot ConvertSlot(GlamourerSlot slot)
-    {
-        return slot switch
-        {
-            GlamourerSlot.Head => ClientSlot.Head,
-            GlamourerSlot.Body => ClientSlot.Body,
-            GlamourerSlot.Hands => ClientSlot.Hands,
-            GlamourerSlot.Legs => ClientSlot.Legs,
-            GlamourerSlot.Feet => ClientSlot.Feet,
-            GlamourerSlot.Ears => ClientSlot.Ears,
-            GlamourerSlot.Neck => ClientSlot.Neck,
-            GlamourerSlot.Wrists => ClientSlot.Wrists,
-            GlamourerSlot.RFinger => ClientSlot.RFinger,
-            GlamourerSlot.LFinger => ClientSlot.LFinger,
-            _ => ClientSlot.None,
-        };
-    }
-
-    private static ClientSlot ConvertSlotKey(string slotName)
+    private static GlamourerEquipmentSlot ConvertSlotKey(string slotName)
     {
         return slotName switch
         {
-            "Head" => ClientSlot.Head,
-            "Body" => ClientSlot.Body,
-            "Hands" => ClientSlot.Hands,
-            "Legs" => ClientSlot.Legs,
-            "Feet" => ClientSlot.Feet,
-            "Ears" => ClientSlot.Ears,
-            "Neck" => ClientSlot.Neck,
-            "Wrists" => ClientSlot.Wrists,
-            "RFinger" => ClientSlot.RFinger,
-            "LFinger" => ClientSlot.LFinger,
-            _ => ClientSlot.None,
+            "Head" => GlamourerEquipmentSlot.Head,
+            "Body" => GlamourerEquipmentSlot.Body,
+            "Hands" => GlamourerEquipmentSlot.Hands,
+            "Legs" => GlamourerEquipmentSlot.Legs,
+            "Feet" => GlamourerEquipmentSlot.Feet,
+            "Ears" => GlamourerEquipmentSlot.Ears,
+            "Neck" => GlamourerEquipmentSlot.Neck,
+            "Wrists" => GlamourerEquipmentSlot.Wrists,
+            "RFinger" => GlamourerEquipmentSlot.RFinger,
+            "LFinger" => GlamourerEquipmentSlot.LFinger,
+            _ => GlamourerEquipmentSlot.None,
         };
     }
 
@@ -216,7 +205,10 @@ public class WardrobeNetworkService : IDisposable
 
             if (response.Result != ActionResultEc.Success)
             {
-                NotificationHelper.Error("Add Wardrobe Item", $"Failed to add wardrobe item: {response.Result}");
+                NotificationHelper.Error(
+                    "Add Wardrobe Item",
+                    $"Failed to add wardrobe item: {response.Result}"
+                );
             }
 
             return response;
@@ -239,7 +231,10 @@ public class WardrobeNetworkService : IDisposable
 
             if (response.Result != ActionResultEc.Success)
             {
-                NotificationHelper.Error("Remove Wardrobe Item", $"Failed to remove wardrobe item: {response.Result}");
+                NotificationHelper.Error(
+                    "Remove Wardrobe Item",
+                    $"Failed to remove wardrobe item: {response.Result}"
+                );
             }
 
             return response;
@@ -247,7 +242,10 @@ public class WardrobeNetworkService : IDisposable
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "[WardrobeNetworkService] Failed to remove wardrobe item");
-            NotificationHelper.Error("Remove Wardrobe Item", "Failed to remove wardrobe item from server");
+            NotificationHelper.Error(
+                "Remove Wardrobe Item",
+                "Failed to remove wardrobe item from server"
+            );
             return new ActionResult<bool>(ActionResultEc.Unknown, false);
         }
     }
@@ -265,7 +263,10 @@ public class WardrobeNetworkService : IDisposable
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "[WardrobeNetworkService] Failed to get wardrobe item");
-            NotificationHelper.Error("Get Wardrobe Item", "Failed to get wardrobe item from server");
+            NotificationHelper.Error(
+                "Get Wardrobe Item",
+                "Failed to get wardrobe item from server"
+            );
             return new ActionResult<WardrobeDto>(ActionResultEc.Unknown, null);
         }
     }
@@ -283,7 +284,10 @@ public class WardrobeNetworkService : IDisposable
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "[WardrobeNetworkService] Failed to list wardrobe items");
-            NotificationHelper.Error("List Wardrobe Items", "Failed to list wardrobe items from server");
+            NotificationHelper.Error(
+                "List Wardrobe Items",
+                "Failed to list wardrobe items from server"
+            );
             return new ActionResult<List<WardrobeDto>>(ActionResultEc.Unknown, []);
         }
     }
@@ -298,7 +302,10 @@ public class WardrobeNetworkService : IDisposable
 
             if (response.Result != ActionResultEc.Success)
             {
-                NotificationHelper.Error("Set Wardrobe Status", $"Failed to set wardrobe status: {response.Result}");
+                NotificationHelper.Error(
+                    "Set Wardrobe Status",
+                    $"Failed to set wardrobe status: {response.Result}"
+                );
             }
 
             return response;
@@ -306,7 +313,10 @@ public class WardrobeNetworkService : IDisposable
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "[WardrobeNetworkService] Failed to set wardrobe status");
-            NotificationHelper.Error("Set Wardrobe Status", "Failed to set wardrobe status on server");
+            NotificationHelper.Error(
+                "Set Wardrobe Status",
+                "Failed to set wardrobe status on server"
+            );
             return new ActionResult<bool>(ActionResultEc.Unknown, false);
         }
     }
@@ -324,7 +334,10 @@ public class WardrobeNetworkService : IDisposable
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "[WardrobeNetworkService] Failed to get wardrobe status");
-            NotificationHelper.Error("Get Wardrobe Status", "Failed to get wardrobe status from server");
+            NotificationHelper.Error(
+                "Get Wardrobe Status",
+                "Failed to get wardrobe status from server"
+            );
             return new ActionResult<WardrobeStateDto>(ActionResultEc.Unknown, null);
         }
     }

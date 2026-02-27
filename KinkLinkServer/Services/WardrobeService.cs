@@ -35,7 +35,6 @@ public class WardrobeDataService
             profileId,
             type
         );
-
         return rows.Select(row => new WardrobeDto(
                 row.Id,
                 row.Name ?? string.Empty,
@@ -43,15 +42,17 @@ public class WardrobeDataService
                 row.Type ?? string.Empty,
                 (GlamourerEquipmentSlot)(row.Slot ?? 0),
                 row.Data.TryGetProperty("item", out var item)
-                    ? DeserializeToDict<GlamourerItem>(item)
+                    ? DeserializeGlamourerType<GlamourerItem>(item)
                     : null,
-                null,
+                row.Data.TryGetProperty("design", out var design)
+                    ? DeserializeGlamourerType<GlamourerDesign>(design)
+                    : null,
                 row.Data.TryGetProperty("mods", out var mods)
-                    ? DeserializeToDictList(mods)
+                    ? DeserializeGlamourerType<List<GlamourerMod>>(mods)
                     : null,
                 row.Data.TryGetProperty("materials", out var materials)
-                    ? DeserializeToDict<GlamourerMaterial>(materials)
-                    : null,
+                    ? DeserializeGlamourerType<Dictionary<string, GlamourerMaterial>>(materials) ?? new()
+                    : new(),
                 (RelationshipPriority)(row.RelationshipPriority ?? 0)
             ))
             .ToList();
@@ -83,23 +84,28 @@ public class WardrobeDataService
             profileId,
             wardrobeId
         );
-
+        var glamourerDesign = row.Value.Data.TryGetProperty("design", out var design)
+            ? DeserializeGlamourerType<GlamourerDesign>(design)
+            : null;
+        var glamourerItem = row.Value.Data.TryGetProperty("item", out var item)
+            ? DeserializeGlamourerType<GlamourerItem>(item)
+            : null;
+        var glamourerMods = row.Value.Data.TryGetProperty("mods", out var mods)
+            ? DeserializeGlamourerType<List<GlamourerMod>>(mods)
+            : null;
+        var glamourerMaterials = row.Value.Data.TryGetProperty("materials", out var materials)
+            ? DeserializeGlamourerType<Dictionary<string, GlamourerMaterial>>(materials) ?? new()
+            : new();
         return new WardrobeDto(
             row.Value.Id,
             row.Value.Name ?? string.Empty,
             row.Value.Description ?? string.Empty,
             row.Value.Type ?? string.Empty,
             (GlamourerEquipmentSlot)(row.Value.Slot ?? 0),
-            row.Value.Data.TryGetProperty("item", out var item)
-                ? DeserializeToDict<GlamourerItem>(item)
-                : null,
-            null,
-            row.Value.Data.TryGetProperty("mods", out var mods)
-                ? DeserializeToDictList(mods)
-                : null,
-            row.Value.Data.TryGetProperty("materials", out var materials)
-                ? DeserializeToDict<GlamourerMaterial>(materials)
-                : null,
+            glamourerItem,
+            glamourerDesign,
+            glamourerMods,
+            glamourerMaterials,
             (RelationshipPriority)(row.Value.RelationshipPriority ?? 0)
         );
     }
@@ -117,12 +123,20 @@ public class WardrobeDataService
             dto.Name
         );
 
-        var data = new
+        object data;
+        if (dto.Design != null)
         {
-            item = dto.Item,
-            mods = dto.Mods,
-            materials = dto.Materials,
-        };
+            data = new { design = dto.Design };
+        }
+        else
+        {
+            data = new
+            {
+                item = dto.Item,
+                mods = dto.Mods,
+                materials = dto.Materials,
+            };
+        }
 
         var dataJson = JsonSerializer.SerializeToElement(data);
 
@@ -195,24 +209,38 @@ public class WardrobeDataService
             "UpdateWardrobeStateAsync called with profileId: {ProfileId}, equipment count: {EquipmentCount}, characterItems count: {CharacterItemsCount}",
             profileId,
             state.Equipment?.Count ?? 0,
-            state.CharacterItems?.Count ?? 0
+            state.ModSettings?.Count ?? 0
         );
+
+        WardrobeItemData? head = null, body = null, hands = null, legs = null;
+        WardrobeItemData? feet = null, ears = null, neck = null, wrists = null;
+        WardrobeItemData? lFinger = null, rFinger = null;
+        state.Equipment?.TryGetValue("Head", out head);
+        state.Equipment?.TryGetValue("Body", out body);
+        state.Equipment?.TryGetValue("Hands", out hands);
+        state.Equipment?.TryGetValue("Legs", out legs);
+        state.Equipment?.TryGetValue("Feet", out feet);
+        state.Equipment?.TryGetValue("Ears", out ears);
+        state.Equipment?.TryGetValue("Neck", out neck);
+        state.Equipment?.TryGetValue("Wrists", out wrists);
+        state.Equipment?.TryGetValue("LFinger", out lFinger);
+        state.Equipment?.TryGetValue("RFinger", out rFinger);
 
         var result = await _wardrobeSql.UpdateWardrobeStateAsync(
             new(
                 profileId,
                 SerializeToJsonElement(state.BaseLayer),
-                SerializeToJsonElement(state.Equipment?["Head"]),
-                SerializeToJsonElement(state.Equipment?["Body"]),
-                SerializeToJsonElement(state.Equipment?["Hands"]),
-                SerializeToJsonElement(state.Equipment?["Legs"]),
-                SerializeToJsonElement(state.Equipment?["Feet"]),
-                SerializeToJsonElement(state.Equipment?["Ears"]),
-                SerializeToJsonElement(state.Equipment?["Neck"]),
-                SerializeToJsonElement(state.Equipment?["Wrists"]),
-                SerializeToJsonElement(state.Equipment?["LFinger"]),
-                SerializeToJsonElement(state.Equipment?["RFinger"]),
-                SerializeToJsonElement(state.CharacterItems?.Values)
+                SerializeToJsonElement(head),
+                SerializeToJsonElement(body),
+                SerializeToJsonElement(hands),
+                SerializeToJsonElement(legs),
+                SerializeToJsonElement(feet),
+                SerializeToJsonElement(ears),
+                SerializeToJsonElement(neck),
+                SerializeToJsonElement(wrists),
+                SerializeToJsonElement(lFinger),
+                SerializeToJsonElement(rFinger),
+                SerializeToJsonElement(state.ModSettings?.Values)
             )
         );
 
@@ -253,55 +281,109 @@ public class WardrobeDataService
 
         _logger.LogDebug("GetWardrobeStateAsync found state for profileId: {ProfileId}", profileId);
 
-        var equipment = new Dictionary<string, object?>();
-        var characterItems = new Dictionary<string, object?>();
+        var equipment = new Dictionary<string, WardrobeItemData>();
+        var modSettings = new Dictionary<string, WardrobeItemData>();
 
         if (row.Value.Head.HasValue)
-            equipment["Head"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Head.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Head.Value);
+            if (item != null)
+                equipment["Head"] = item;
+        }
         if (row.Value.Body.HasValue)
-            equipment["Body"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Body.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Body.Value);
+            if (item != null)
+                equipment["Body"] = item;
+        }
         if (row.Value.Hand.HasValue)
-            equipment["Hands"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Hand.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Hand.Value);
+            if (item != null)
+                equipment["Hands"] = item;
+        }
         if (row.Value.Legs.HasValue)
-            equipment["Legs"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Legs.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Legs.Value);
+            if (item != null)
+                equipment["Legs"] = item;
+        }
         if (row.Value.Feet.HasValue)
-            equipment["Feet"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Feet.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Feet.Value);
+            if (item != null)
+                equipment["Feet"] = item;
+        }
         if (row.Value.Earring.HasValue)
-            equipment["Ears"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Earring.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Earring.Value);
+            if (item != null)
+                equipment["Ears"] = item;
+        }
         if (row.Value.Neck.HasValue)
-            equipment["Neck"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Neck.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Neck.Value);
+            if (item != null)
+                equipment["Neck"] = item;
+        }
         if (row.Value.Bracelet.HasValue)
-            equipment["Wrists"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Bracelet.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Bracelet.Value);
+            if (item != null)
+                equipment["Wrists"] = item;
+        }
         if (row.Value.Lring.HasValue)
-            equipment["LFinger"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Lring.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Lring.Value);
+            if (item != null)
+                equipment["LFinger"] = item;
+        }
         if (row.Value.Rring.HasValue)
-            equipment["RFinger"] = SerializeToJsonElement(DeserializeNullable<WardrobeItem>(row.Value.Rring.Value));
+        {
+            var item = DeserializeNullable<WardrobeItemData>(row.Value.Rring.Value);
+            if (item != null)
+                equipment["RFinger"] = item;
+        }
 
         if (row.Value.Moditems.HasValue)
         {
-            var modItems = DeserializeList<WardrobeItem>(row.Value.Moditems.Value);
+            var modItems = DeserializeList<WardrobeItemData>(row.Value.Moditems.Value);
             if (modItems != null)
             {
                 foreach (var item in modItems)
                 {
                     if (item != null)
-                        characterItems[item.Id.ToString()] = SerializeToJsonElement(item);
+                    {
+                        if (item.Mods != null)
+                        {
+                            foreach (var mod in item.Mods)
+                            {
+                                modSettings[mod.Name] = item;
+                            }
+                        }
+                    }
                 }
             }
         }
 
+        GlamourerDesign? baseLayer = null;
+        if (row.Value.Glamourerset.HasValue)
+        {
+            baseLayer = DeserializeNullable<GlamourerDesign>(row.Value.Glamourerset.Value);
+        }
+
         return new WardrobeStateDto(
-            row.Value.Glamourerset.HasValue
-                ? ObjectToDict(DeserializeNullable<GlamourerDesign>(row.Value.Glamourerset.Value))
-                : null,
-            equipment,
-            characterItems
+            baseLayer,
+            equipment.Count > 0 ? equipment : null,
+            modSettings.Count > 0 ? modSettings : null
         );
     }
 
-    private static Dictionary<string, object?>? ObjectToDict<T>(T? obj) where T : class
+    private static Dictionary<string, object?>? ObjectToDict<T>(T? obj)
+        where T : class
     {
-        if (obj == null) return null;
+        if (obj == null)
+            return null;
         var json = JsonSerializer.Serialize(obj);
         return JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
     }
@@ -357,8 +439,11 @@ public class WardrobeDataService
         try
         {
             var obj = JsonSerializer.Deserialize<T>(element.GetRawText());
-            if (obj == null) return null;
-            return JsonSerializer.Deserialize<Dictionary<string, object?>>(JsonSerializer.Serialize(obj));
+            if (obj == null)
+                return null;
+            return JsonSerializer.Deserialize<Dictionary<string, object?>>(
+                JsonSerializer.Serialize(obj)
+            );
         }
         catch
         {
@@ -376,6 +461,22 @@ public class WardrobeDataService
         catch
         {
             return null;
+        }
+    }
+
+    private static T? DeserializeGlamourerType<T>(JsonElement element)
+    {
+        try
+        {
+            var json = element.GetRawText();
+            return JsonSerializer.Deserialize<T>(
+                json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+        }
+        catch (Exception)
+        {
+            return default(T);
         }
     }
 }

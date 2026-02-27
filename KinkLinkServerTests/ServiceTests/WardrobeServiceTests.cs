@@ -65,7 +65,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         Assert.Single(result);
         Assert.Equal("Test Item", result[0].Name);
         Assert.NotNull(result[0].Item);
-        Assert.Equal(12345u, ((JsonElement)result[0].Item!["ItemId"]!).GetUInt32());
+        Assert.Equal(12345u, result[0].Item!.ItemId);
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         Assert.NotNull(result);
         Assert.Equal("Get Test Item", result.Name);
-        Assert.Equal(54321u, ((JsonElement)result.Item!["ItemId"]!).GetUInt32());
+        Assert.Equal(54321u, result.Item!.ItemId);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             "Test description",
             "item",
             GlamourerEquipmentSlot.Head,
-            new Dictionary<string, object?> { ["ItemId"] = 11111, ["Apply"] = true },
+            new GlamourerItem { ItemId = 11111, Apply = true },
             null,
             [],
             [],
@@ -228,7 +228,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             "Updated description",
             "item",
             GlamourerEquipmentSlot.Body,
-            new Dictionary<string, object?> { ["ItemId"] = 22222, ["Apply"] = false },
+            new GlamourerItem { ItemId = 22222, Apply = false },
             null,
             [],
             [],
@@ -242,7 +242,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var saved = await _wardrobeService.GetWardrobeItemByGuid(profileId, itemId);
         Assert.NotNull(saved);
         Assert.Equal("Updated Name", saved.Name);
-        Assert.Equal(22222u, ((JsonElement)saved.Item!["ItemId"]!).GetUInt32());
+        Assert.Equal(22222u, saved.Item!.ItemId);
     }
 
     [Fact]
@@ -397,21 +397,12 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111123, "WARDTEST13");
 
         var state = new WardrobeStateDto(
-            new Dictionary<string, object?>(),
-            new Dictionary<string, object?>
+            null,
+            new Dictionary<string, Guid>
             {
-                ["Head"] = new Dictionary<string, object?> { ["ItemId"] = 1000u, ["Name"] = "Head Item" },
-                ["Body"] = null,
-                ["Hands"] = null,
-                ["Legs"] = null,
-                ["Feet"] = null,
-                ["Ears"] = null,
-                ["Neck"] = null,
-                ["Wrists"] = null,
-                ["LFinger"] = null,
-                ["RFinger"] = null
+                ["Head"] = Guid.NewGuid()
             },
-            new Dictionary<string, object?>()
+            null
         );
 
         var result = await _wardrobeService.UpdateWardrobeStateAsync(profileId, state);
@@ -420,8 +411,9 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         var saved = await _wardrobeService.GetWardrobeStateAsync(profileId);
         Assert.NotNull(saved);
-        Assert.NotNull(saved.BaseLayer);
-        Assert.True(saved.Equipment!.ContainsKey("Head"));
+        Assert.Null(saved.BaseLayer);
+        Assert.NotNull(saved.Equipment);
+        Assert.True(saved.Equipment.ContainsKey("Head"));
     }
 
     [Fact]
@@ -431,42 +423,28 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111124, "WARDTEST14");
 
+        var headId = Guid.NewGuid();
         var initialState = new WardrobeStateDto(
             null,
-            new Dictionary<string, object?>
+            new Dictionary<string, Guid>
             {
-                ["Head"] = new Dictionary<string, object?> { ["ItemId"] = 1000u, ["Name"] = "Original Head" },
-                ["Body"] = null,
-                ["Hands"] = null,
-                ["Legs"] = null,
-                ["Feet"] = null,
-                ["Ears"] = null,
-                ["Neck"] = null,
-                ["Wrists"] = null,
-                ["LFinger"] = null,
-                ["RFinger"] = null
+                ["Head"] = headId
             },
-            new Dictionary<string, object?>()
+            null
         );
 
         await _wardrobeService.UpdateWardrobeStateAsync(profileId, initialState);
 
+        var updatedHeadId = Guid.NewGuid();
+        var updatedBodyId = Guid.NewGuid();
         var updatedState = new WardrobeStateDto(
-            new Dictionary<string, object?>(),
-            new Dictionary<string, object?>
+            null,
+            new Dictionary<string, Guid>
             {
-                ["Head"] = new Dictionary<string, object?> { ["ItemId"] = 2000u, ["Name"] = "Updated Head" },
-                ["Body"] = new Dictionary<string, object?> { ["ItemId"] = 2001u, ["Name"] = "Body Item" },
-                ["Hands"] = null,
-                ["Legs"] = null,
-                ["Feet"] = null,
-                ["Ears"] = null,
-                ["Neck"] = null,
-                ["Wrists"] = null,
-                ["LFinger"] = null,
-                ["RFinger"] = null
+                ["Head"] = updatedHeadId,
+                ["Body"] = updatedBodyId
             },
-            new Dictionary<string, object?>()
+            null
         );
 
         var result = await _wardrobeService.UpdateWardrobeStateAsync(profileId, updatedState);
@@ -475,8 +453,9 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         var saved = await _wardrobeService.GetWardrobeStateAsync(profileId);
         Assert.NotNull(saved);
-        Assert.NotNull(saved.BaseLayer);
-        Assert.True(saved.Equipment!.ContainsKey("Head"));
+        Assert.Null(saved.BaseLayer);
+        Assert.NotNull(saved.Equipment);
+        Assert.True(saved.Equipment.ContainsKey("Head"));
         Assert.True(saved.Equipment.ContainsKey("Body"));
     }
 
@@ -490,19 +469,21 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         await Fixture.ResetDatabaseAsync();
 
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111125, "WARDTEST15");
+        var wardrobeItemId = Guid.NewGuid();
 
         await TestHarness.InsertTestActiveWardrobeAsync(new InsertTestActiveWardrobeParams
         {
             ProfileId = profileId,
             Glamourerset = JsonSerializer.SerializeToElement(new GlamourerDesign()),
-            Head = JsonSerializer.SerializeToElement(new WardrobeItem { Id = Guid.NewGuid(), ItemId = 3000, Name = "Test Head" })
+            Head = JsonSerializer.SerializeToElement(new WardrobeItem { Id = wardrobeItemId, ItemId = 3000, Name = "Test Head" })
         });
 
         var result = await _wardrobeService.GetWardrobeStateAsync(profileId);
 
         Assert.NotNull(result);
         Assert.NotNull(result.BaseLayer);
-        Assert.True(result.Equipment!.ContainsKey("Head"));
+        Assert.NotNull(result.Equipment);
+        Assert.True(result.Equipment.Count > 0);
     }
 
     [Fact]

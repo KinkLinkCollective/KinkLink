@@ -6,7 +6,7 @@ using Glamourer.Api.IpcSubscribers;
 using KinkLinkClient.Dependencies.CustomizePlus.Services;
 using KinkLinkClient.Dependencies.Glamourer.Services;
 using KinkLinkClient.Dependencies.Penumbra.Services;
-using KinkLinkClient.Domain.Dependencies.Glamourer;
+using KinkLinkCommon.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Events;
 using KinkLinkClient.Services;
 using KinkLinkClient.Utils;

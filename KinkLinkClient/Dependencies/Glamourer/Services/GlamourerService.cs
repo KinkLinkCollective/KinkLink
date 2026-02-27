@@ -11,7 +11,7 @@ using Glamourer.Api.Helpers;
 using Glamourer.Api.IpcSubscribers;
 using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Domain;
-using KinkLinkClient.Domain.Dependencies.Glamourer;
+using KinkLinkCommon.Dependencies.Glamourer;
 using KinkLinkClient.Domain.Events;
 using KinkLinkClient.Domain.Interfaces;
 using KinkLinkCommon.Domain.Enums;
@@ -344,7 +344,7 @@ public class GlamourerService : IExternalPlugin, IDisposable
 
     private void setSlot(
         ushort index,
-        KinkLinkClient.Domain.Dependencies.Glamourer.Components.GlamourerItem item,
+        KinkLinkCommon.Dependencies.Glamourer.Components.GlamourerItem item,
         ApiEquipSlot slot
     )
     {

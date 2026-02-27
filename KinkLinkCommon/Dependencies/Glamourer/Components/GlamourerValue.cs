@@ -1,8 +1,14 @@
-namespace KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using MessagePack;
 
+namespace KinkLinkCommon.Dependencies.Glamourer.Components;
+
+[MessagePackObject]
 public class GlamourerValue
 {
+    [Key(0)]
     public bool Apply;
+
+    [Key(1)]
     public uint Value;
 
     public GlamourerValue Clone() => (GlamourerValue)MemberwiseClone();

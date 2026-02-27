@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Dependencies.Penumbra.Services;
-using KinkLinkClient.Domain.Dependencies.Glamourer;
-using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using KinkLinkCommon.Dependencies.Glamourer;
+using KinkLinkCommon.Dependencies.Glamourer.Components;
 using KinkLinkClient.Services;
 using KinkLinkCommon.Domain.Enums;
+
+using ClientWardrobeItem = KinkLinkClient.Services.WardrobeItem;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
@@ -50,7 +52,7 @@ public class WardrobeViewUiController
 
     public string ModFilter { get; set; } = string.Empty;
 
-    public WardrobeItem? EditingPiece { get; set; }
+    public ClientWardrobeItem? EditingPiece { get; set; }
     public GlamourerDesign? EditingSet { get; set; }
 
     public string EditedName { get; set; } = string.Empty;
@@ -81,10 +83,10 @@ public class WardrobeViewUiController
 
     public RelationshipPriority EditedPriority { get; set; } = RelationshipPriority.Casual;
 
-    private List<WardrobeItem>? _filteredItems;
+    private List<ClientWardrobeItem>? _filteredItems;
     private List<GlamourerDesign>? _filteredSets;
 
-    public List<WardrobeItem>? FilteredItems
+    public List<ClientWardrobeItem>? FilteredItems
     {
         get
         {
@@ -269,18 +271,18 @@ public class WardrobeViewUiController
         EditedPriority = RelationshipPriority.Casual;
     }
 
-    public WardrobeItem? GetSelectedPiece() =>
+    public ClientWardrobeItem? GetSelectedPiece() =>
         SelectedPieceId.HasValue ? _wardrobeService.GetPieceById(SelectedPieceId.Value) : null;
 
     public GlamourerDesign? GetSelectedSet() =>
         SelectedSetId.HasValue ? _wardrobeService.GetSetById(SelectedSetId.Value) : null;
 
-    public void OpenEditor(WardrobeItem? piece = null)
+    public void OpenEditor(ClientWardrobeItem? piece = null)
     {
         var isNew = piece == null;
         EditingPiece =
             piece
-            ?? new WardrobeItem
+            ?? new ClientWardrobeItem
             {
                 Id = Guid.Empty,
                 Name = "New Piece",
@@ -377,7 +379,7 @@ public class WardrobeViewUiController
         await _wardrobeService.RemoveActiveSetAsync();
     }
 
-    public async Task ApplyPieceAsync(WardrobeItem piece)
+    public async Task ApplyPieceAsync(ClientWardrobeItem piece)
     {
         await _wardrobeService.ApplyPieceAsync(piece);
     }
@@ -424,8 +426,14 @@ public class WardrobeViewUiController
 
         foreach (var glamMod in EditingPiece.Mods)
         {
-            var (mod, settings) = glamMod.ToTuple();
-            SelectedModSettings[mod.DirectoryName] = settings;
+            var settings = new ModSettings(
+                glamMod.Settings,
+                glamMod.Priority,
+                glamMod.Enabled,
+                glamMod.ForceInherit,
+                glamMod.Remove
+            );
+            SelectedModSettings[glamMod.DirectoryName] = settings;
         }
     }
 

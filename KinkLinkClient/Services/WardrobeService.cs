@@ -8,9 +8,9 @@ using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Dependencies.Glamourer.Services;
 using KinkLinkClient.Dependencies.Penumbra.Services;
 using KinkLinkClient.Domain.Configurations;
-using KinkLinkClient.Domain.Dependencies.Glamourer;
-using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
 using KinkLinkClient.Utils;
+using KinkLinkCommon.Dependencies.Glamourer;
+using KinkLinkCommon.Dependencies.Glamourer.Components;
 using KinkLinkCommon.Domain.Enums;
 using KinkLinkCommon.Domain.Wardrobe;
 using Newtonsoft.Json.Linq;
@@ -117,6 +117,8 @@ public class ActiveWardrobe
         if (_characterItems.ContainsKey(id))
             _characterItems.Remove(id);
     }
+
+    public IReadOnlyDictionary<Guid, WardrobeItem> GetCharacterItems() => _characterItems;
 
     public WardrobeItem? GetIndividual(GlamourerEquipmentSlot slot)
     {
@@ -235,14 +237,16 @@ public class WardrobeService : IDisposable
     public IReadOnlyList<GlamourerDesign> ImportedSets => [.. _wardrobeSets.Values];
     public IReadOnlyList<WardrobeItem> ModItems => [.. _modItems.Values];
 
-    public WardrobeService(GlamourerService glamourerService, PenumbraService penumbraService, WardrobeNetworkService wardrobeNetworkService)
+    public WardrobeService(
+        GlamourerService glamourerService,
+        PenumbraService penumbraService,
+        WardrobeNetworkService wardrobeNetworkService
+    )
     {
         _penumbraService = penumbraService;
         _glamourerService = glamourerService;
         _wardrobeNetworkService = wardrobeNetworkService;
         ActiveSet = new();
-
-        LoadFromConfiguration();
 
         Plugin.Log.Information(
             "WardrobeService initialized: {ItemCount} items, {SetCount} sets, {CharacterItemCount} character items",
@@ -264,31 +268,6 @@ public class WardrobeService : IDisposable
         _ = RefreshGlamourerDesignsAsync();
     }
 
-    public void LoadFromConfiguration()
-    {
-        if (Plugin.CharacterConfiguration is { } config)
-        {
-            _wardrobeItems = config.WardrobeItems ?? [];
-            _wardrobeSets = config.WardrobeSets ?? [];
-            _modItems = config.ModItems ?? [];
-        }
-        else
-        {
-            _wardrobeItems = [];
-            _wardrobeSets = [];
-            _modItems = [];
-        }
-
-        RebuildIdDictionaries();
-
-        Plugin.Log.Debug(
-            "Loaded wardrobe configuration: {ItemCount} items, {SetCount} sets, {CharacterItemCount} character items",
-            _wardrobeItems.Count,
-            _wardrobeSets.Count,
-            _modItems.Count
-        );
-    }
-
     private void RebuildIdDictionaries()
     {
         _wardrobeItemsById = _wardrobeItems.Values.ToDictionary(p => p.Id);
@@ -298,13 +277,35 @@ public class WardrobeService : IDisposable
 
     private async Task SyncPieceToServerAsync(WardrobeItem item, string type)
     {
-        var dto = WardrobeItemToDto(item, type);
+        var dto = new WardrobeDto(
+            item.Id,
+            item.Name,
+            item.Description,
+            type,
+            item.Slot,
+            item.Item,
+            null,
+            item.Mods,
+            item.Materials,
+            item.Priority
+        );
         await _wardrobeNetworkService.AddWardrobeItemAsync(dto);
     }
 
     private async Task SyncSetToServerAsync(GlamourerDesign set)
     {
-        var dto = GlamourerDesignToDto(set);
+        var dto = new WardrobeDto(
+            set.Identifier,
+            set.Name,
+            set.Description,
+            "set",
+            GlamourerEquipmentSlot.None,
+            null,
+            set,
+            [],
+            [],
+            set.Priority
+        );
         await _wardrobeNetworkService.AddWardrobeItemAsync(dto);
     }
 
@@ -317,7 +318,6 @@ public class WardrobeService : IDisposable
             piece.Name,
             piece.Id
         );
-        _ = SaveAsync();
         _ = SyncPieceToServerAsync(piece, "item");
     }
 
@@ -330,7 +330,6 @@ public class WardrobeService : IDisposable
             piece.Name,
             piece.Id
         );
-        _ = SaveAsync();
         _ = SyncPieceToServerAsync(piece, "item");
     }
 
@@ -345,7 +344,6 @@ public class WardrobeService : IDisposable
                 piece.Name,
                 id
             );
-            _ = SaveAsync();
             _ = _wardrobeNetworkService.RemoveWardrobeItemAsync(id);
         }
     }
@@ -384,7 +382,6 @@ public class WardrobeService : IDisposable
             set.Name,
             set.Identifier
         );
-        _ = SaveAsync();
         _ = SyncSetToServerAsync(set);
     }
 
@@ -397,7 +394,6 @@ public class WardrobeService : IDisposable
             set.Name,
             set.Identifier
         );
-        _ = SaveAsync();
         _ = SyncSetToServerAsync(set);
     }
 
@@ -408,7 +404,6 @@ public class WardrobeService : IDisposable
             _wardrobeSets.Remove(set.Name);
             _wardrobeSetsById.Remove(id);
             Plugin.Log.Information("Deleted wardrobe set: {SetName} (ID: {SetId})", set.Name, id);
-            _ = SaveAsync();
             _ = _wardrobeNetworkService.RemoveWardrobeItemAsync(id);
         }
     }
@@ -423,17 +418,6 @@ public class WardrobeService : IDisposable
         return _wardrobeSets.TryGetValue(name, out var set) ? set : null;
     }
 
-    private async Task SaveAsync()
-    {
-        if (Plugin.CharacterConfiguration is { } config)
-        {
-            config.WardrobeSets = _wardrobeSets;
-            config.WardrobeItems = _wardrobeItems;
-            config.ModItems = _modItems;
-            await config.Save();
-        }
-    }
-
     public void AddModItem(WardrobeItem item)
     {
         _modItems[item.Name] = item;
@@ -443,7 +427,6 @@ public class WardrobeService : IDisposable
             item.Name,
             item.Id
         );
-        _ = SaveAsync();
         _ = SyncPieceToServerAsync(item, "moditem");
     }
 
@@ -456,7 +439,6 @@ public class WardrobeService : IDisposable
             item.Name,
             item.Id
         );
-        _ = SaveAsync();
         _ = SyncPieceToServerAsync(item, "moditem");
     }
 
@@ -471,7 +453,6 @@ public class WardrobeService : IDisposable
                 item.Name,
                 id
             );
-            _ = SaveAsync();
             _ = _wardrobeNetworkService.RemoveWardrobeItemAsync(id);
         }
     }
@@ -495,56 +476,91 @@ public class WardrobeService : IDisposable
         if (set != null)
         {
             ActiveSet.SetBaseLayer(set);
-            Plugin.Log.Information("[WardrobeService] Applied set from sync: {SetName} (ID: {SetId})", set.Name, setId);
+            Plugin.Log.Information(
+                "[WardrobeService] Applied set from sync: {SetName} (ID: {SetId})",
+                set.Name,
+                setId
+            );
         }
     }
 
     public void ApplyPieceSync(GlamourerEquipmentSlot slot, WardrobeItem piece)
     {
         ActiveSet.SetIndividual(slot, piece);
-        Plugin.Log.Information("[WardrobeService] Applied piece from sync: {PieceName} (ID: {PieceId}) to slot {Slot}", piece.Name, piece.Id, slot);
+        Plugin.Log.Information(
+            "[WardrobeService] Applied piece from sync: {PieceName} (ID: {PieceId}) to slot {Slot}",
+            piece.Name,
+            piece.Id,
+            slot
+        );
     }
 
     public void ApplyCharacterItemSync(WardrobeItem item)
     {
         ActiveSet.AddModItem(item);
-        Plugin.Log.Information("[WardrobeService] Applied character item from sync: {ItemName} (ID: {ItemId})", item.Name, item.Id);
+        Plugin.Log.Information(
+            "[WardrobeService] Applied character item from sync: {ItemName} (ID: {ItemId})",
+            item.Name,
+            item.Id
+        );
     }
 
     private async Task SyncActiveSetToServerAsync()
     {
         var baseLayer = ActiveSet.GetBaseLayer();
-        Dictionary<string, object?>? baseLayerDict = null;
-        var equipment = new Dictionary<string, object?>();
-        var characterItems = new Dictionary<string, object?>();
+        var equipment = new Dictionary<string, WardrobeItemData>();
+        var modSettings = new Dictionary<string, WardrobeItemData>();
 
-        if (baseLayer != null)
+        var slotNames = new[]
         {
-            baseLayerDict = new Dictionary<string, object?>
-            {
-                ["Identifier"] = baseLayer.Identifier,
-                ["Name"] = baseLayer.Name
-            };
-        }
-
-        var slotNames = new[] { "Head", "Body", "Hands", "Legs", "Feet", "Ears", "Neck", "Wrists", "RFinger", "LFinger" };
+            "Head",
+            "Body",
+            "Hands",
+            "Legs",
+            "Feet",
+            "Ears",
+            "Neck",
+            "Wrists",
+            "RFinger",
+            "LFinger",
+        };
         foreach (var slotName in slotNames)
         {
             var slot = GetSlotFromName(slotName);
             var item = ActiveSet.GetIndividual(slot);
             if (item != null && item.Item != null && item.Item.ItemId != 0)
             {
-                equipment[slotName] = new Dictionary<string, object?> { ["Id"] = item.Id };
+                equipment[slotName] = new WardrobeItemData(
+                    item.Id,
+                    item.Name,
+                    item.Description,
+                    item.Slot,
+                    item.Item,
+                    item.Mods,
+                    item.Materials,
+                    item.Priority
+                );
             }
         }
 
-        var mods = ActiveSet.GetMods();
-        foreach (var mod in mods)
+        foreach (var item in ActiveSet.GetCharacterItems())
         {
-            characterItems[mod.Name] = mod.Name;
+            if (item.Value.Mods.Count > 0)
+            {
+                modSettings[item.Value.Mods[0].Name] = new WardrobeItemData(
+                    item.Value.Id,
+                    item.Value.Name,
+                    item.Value.Description,
+                    item.Value.Slot,
+                    item.Value.Item,
+                    item.Value.Mods,
+                    item.Value.Materials,
+                    item.Value.Priority
+                );
+            }
         }
 
-        var state = new WardrobeStateDto(baseLayerDict, equipment, characterItems);
+        var state = new WardrobeStateDto(baseLayer, equipment, modSettings);
 
         await _wardrobeNetworkService.SetWardrobeStatusAsync(state);
     }
@@ -652,9 +668,16 @@ public class WardrobeService : IDisposable
 
     private async Task ApplyModsAsync(bool enabled)
     {
-        foreach (var modsettings in ActiveSet.GetMods())
+        foreach (var glamourerMod in ActiveSet.GetMods())
         {
-            (Mod mod, ModSettings settings) = modsettings.ToTuple();
+            var mod = new Mod(glamourerMod.Name, glamourerMod.DirectoryName);
+            var settings = new ModSettings(
+                glamourerMod.Settings,
+                glamourerMod.Priority,
+                glamourerMod.Enabled,
+                glamourerMod.ForceInherit,
+                glamourerMod.Remove
+            );
             await _penumbraService.SetTemporaryModState(mod, settings, enabled);
         }
     }
@@ -753,7 +776,6 @@ public class WardrobeService : IDisposable
         Plugin.Log.Information("Removing piece from slot: {Slot}", slot);
 
         ActiveSet.ClearIndividual(slot);
-        //.await _glamourerService.ApplyDesignAsync(ActiveSet.GetCurrentState());
         await _glamourerService.RevertToAutomation();
 
         await SyncActiveSetToServerAsync();
@@ -855,38 +877,6 @@ public class WardrobeService : IDisposable
         if (activeset.LFinger.Apply && activeset.LFinger.IsEqualTo(newState.LFinger) is false)
             return true;
         return false;
-    }
-
-    private static WardrobeDto WardrobeItemToDto(WardrobeItem item, string type)
-    {
-        return new WardrobeDto(
-            item.Id,
-            item.Name,
-            item.Description,
-            type,
-            KinkLinkCommon.Dependencies.Glamourer.GlamourerEquipmentSlot.Head,
-            null,
-            null,
-            [],
-            [],
-            item.Priority
-        );
-    }
-
-    private static WardrobeDto GlamourerDesignToDto(GlamourerDesign design)
-    {
-        return new WardrobeDto(
-            design.Identifier,
-            design.Name,
-            design.Description,
-            "set",
-            KinkLinkCommon.Dependencies.Glamourer.GlamourerEquipmentSlot.None,
-            null,
-            null,
-            [],
-            [],
-            design.Priority
-        );
     }
 
     public void Dispose()

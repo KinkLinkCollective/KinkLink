@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using KinkLinkClient.Domain.Dependencies.Glamourer;
-using KinkLinkClient.Domain.Dependencies.Glamourer.Components;
+using KinkLinkCommon.Dependencies.Glamourer;
+using KinkLinkCommon.Dependencies.Glamourer.Components;
 using KinkLinkClient.Domain.Interfaces;
 using KinkLinkClient.Services;
 using KinkLinkClient.Utils;
 using KinkLinkCommon.Domain.Enums;
+
+using ClientWardrobeItem = KinkLinkClient.Services.WardrobeItem;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
 
@@ -246,7 +248,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         );
     }
 
-    private void DrawItemListEntry(WardrobeItem item, bool isSelected, bool isModSet)
+    private void DrawItemListEntry(ClientWardrobeItem item, bool isSelected, bool isModSet)
     {
         var padding = ImGui.GetStyle().WindowPadding;
         var rowHeight = 30f;
@@ -305,7 +307,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         ImGui.SetCursorPosY(cursorStart);
         ImGui.SetCursorPosX(padding.X);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - rowHeight * 2 + rowHeight);
-        
+
         if (ImGui.InvisibleButton($"##ItemEntry_{item.Id}", new Vector2(textAreaWidth, rowHeight * 2)))
         {
             controller.SelectedPieceId = item.Id;
@@ -320,7 +322,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         ImGui.SetCursorPosY(cursorStart + rowHeight * 2);
     }
 
-    private async Task TogglePieceEquipAsync(WardrobeItem item, bool isEquipped)
+    private async Task TogglePieceEquipAsync(ClientWardrobeItem item, bool isEquipped)
     {
         try
         {
