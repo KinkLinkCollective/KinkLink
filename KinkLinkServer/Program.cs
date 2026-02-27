@@ -121,6 +121,7 @@ public class Program
             builder.Services.AddSingleton<KinkLinkProfileConfigService>();
             builder.Services.AddSingleton<KinkLinkProfilesService>();
             builder.Services.AddSingleton<PermissionsService>();
+            builder.Services.AddSingleton<WardrobeDataService>();
 
             // Business services
             builder.Services.AddSingleton<IPresenceService, PresenceService>();

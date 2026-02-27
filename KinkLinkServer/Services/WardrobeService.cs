@@ -157,6 +157,36 @@ public class WardrobeDataService
         return result != null;
     }
 
+    public async Task<bool> DeleteWardrobeItemAsync(int profileId, Guid wardrobeId)
+    {
+        _logger.LogInformation(
+            "DeleteWardrobeItemAsync called with profileId: {ProfileId}, wardrobeId: {WardrobeId}",
+            profileId,
+            wardrobeId
+        );
+
+        var result = await _wardrobeSql.DeleteWardrobeAsync(new(profileId, wardrobeId));
+
+        if (result != null)
+        {
+            _logger.LogInformation(
+                "DeleteWardrobeItemAsync successfully deleted wardrobe item {WardrobeId} for profileId: {ProfileId}",
+                wardrobeId,
+                profileId
+            );
+        }
+        else
+        {
+            _logger.LogWarning(
+                "DeleteWardrobeItemAsync failed to delete wardrobe item {WardrobeId} for profileId: {ProfileId}",
+                wardrobeId,
+                profileId
+            );
+        }
+
+        return result != null;
+    }
+
     public async Task<bool> UpdateWardrobeStateAsync(int profileId, WardrobeStateDto state)
     {
         _logger.LogInformation(
