@@ -1,3 +1,9 @@
+-- name: ListWardrobeByProfileId :many
+SELECT id, profile_id, name, type, description, slot, relationship_priority, data, created_at, updated_at
+FROM wardrobe
+WHERE profile_id = $1
+ORDER BY relationship_priority DESC, name;
+
 -- name: GetAllWardrobeByType :many
 SELECT id, profile_id, name, type, description, slot, relationship_priority, data, created_at, updated_at
 FROM wardrobe

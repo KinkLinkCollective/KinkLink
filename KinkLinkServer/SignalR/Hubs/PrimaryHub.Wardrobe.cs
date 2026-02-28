@@ -64,7 +64,7 @@ public partial class PrimaryHub
     }
 
     [HubMethodName(HubMethod.ListWardrobeItems)]
-    public async Task<ActionResult<List<WardrobeDto>>> ListWardrobeItems(string type)
+    public async Task<ActionResult<List<WardrobeDto>>> ListWardrobeItems()
     {
         var friendCode = FriendCode;
         var profileId = await profilesService.GetIdFromUidAsync(friendCode);
@@ -73,7 +73,7 @@ public partial class PrimaryHub
             return new ActionResult<List<WardrobeDto>>(ActionResultEc.Unknown, []);
         }
 
-        var items = await wardrobeDataService.GetAllWardrobeByTypeAsync(id, type);
+        var items = await wardrobeDataService.GetAllWardrobeItemsAsync(id);
 
         return new ActionResult<List<WardrobeDto>>(ActionResultEc.Success, items);
     }

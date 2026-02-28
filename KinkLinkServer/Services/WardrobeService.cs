@@ -19,6 +19,41 @@ public class WardrobeDataService
         _wardrobeSql = new WardrobeSql(config.DatabaseConnectionString);
     }
 
+    public async Task<List<WardrobeDto>> GetAllWardrobeItemsAsync(int profileId)
+    {
+        _logger.LogDebug("GetAllWardrobeByTypeAsync called with profileId: {ProfileId}", profileId);
+
+        var rows = await _wardrobeSql.ListWardrobeByProfileIdAsync(new(profileId));
+
+        _logger.LogDebug(
+            "GetAllWardrobeByTypeAsync returned {Count} rows for profileId: {ProfileId}, type: {Type}",
+            rows.Count,
+            profileId
+        );
+        return rows.Select(row => new WardrobeDto(
+                row.Id,
+                row.Name ?? string.Empty,
+                row.Description ?? string.Empty,
+                row.Type ?? string.Empty,
+                (GlamourerEquipmentSlot)(row.Slot ?? 0),
+                row.Data.TryGetProperty("item", out var item)
+                    ? DeserializeGlamourerType<GlamourerItem>(item)
+                    : null,
+                row.Data.TryGetProperty("design", out var design)
+                    ? DeserializeGlamourerType<GlamourerDesign>(design)
+                    : null,
+                row.Data.TryGetProperty("mods", out var mods)
+                    ? DeserializeGlamourerType<List<GlamourerMod>>(mods)
+                    : null,
+                row.Data.TryGetProperty("materials", out var materials)
+                    ? DeserializeGlamourerType<Dictionary<string, GlamourerMaterial>>(materials)
+                        ?? new()
+                    : new(),
+                (RelationshipPriority)(row.RelationshipPriority ?? 0)
+            ))
+            .ToList();
+    }
+
     public async Task<List<WardrobeDto>> GetAllWardrobeByTypeAsync(int profileId, string type)
     {
         _logger.LogDebug(
@@ -51,7 +86,8 @@ public class WardrobeDataService
                     ? DeserializeGlamourerType<List<GlamourerMod>>(mods)
                     : null,
                 row.Data.TryGetProperty("materials", out var materials)
-                    ? DeserializeGlamourerType<Dictionary<string, GlamourerMaterial>>(materials) ?? new()
+                    ? DeserializeGlamourerType<Dictionary<string, GlamourerMaterial>>(materials)
+                        ?? new()
                     : new(),
                 (RelationshipPriority)(row.RelationshipPriority ?? 0)
             ))
@@ -212,9 +248,16 @@ public class WardrobeDataService
             state.ModSettings?.Count ?? 0
         );
 
-        WardrobeItemData? head = null, body = null, hands = null, legs = null;
-        WardrobeItemData? feet = null, ears = null, neck = null, wrists = null;
-        WardrobeItemData? lFinger = null, rFinger = null;
+        WardrobeItemData? head = null,
+            body = null,
+            hands = null,
+            legs = null;
+        WardrobeItemData? feet = null,
+            ears = null,
+            neck = null,
+            wrists = null;
+        WardrobeItemData? lFinger = null,
+            rFinger = null;
         state.Equipment?.TryGetValue("Head", out head);
         state.Equipment?.TryGetValue("Body", out body);
         state.Equipment?.TryGetValue("Hands", out hands);

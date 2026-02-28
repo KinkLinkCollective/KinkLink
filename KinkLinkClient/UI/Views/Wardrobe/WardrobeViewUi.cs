@@ -5,13 +5,12 @@ using System.Threading.Tasks;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using KinkLinkCommon.Dependencies.Glamourer;
-using KinkLinkCommon.Dependencies.Glamourer.Components;
 using KinkLinkClient.Domain.Interfaces;
 using KinkLinkClient.Services;
 using KinkLinkClient.Utils;
+using KinkLinkCommon.Dependencies.Glamourer;
+using KinkLinkCommon.Dependencies.Glamourer.Components;
 using KinkLinkCommon.Domain.Enums;
-
 using ClientWardrobeItem = KinkLinkClient.Services.WardrobeItem;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
@@ -60,7 +59,8 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
 
             ImGui.NextColumn();
 
-            var showRightPanel = controller.CurrentView == SubView.Editor
+            var showRightPanel =
+                controller.CurrentView == SubView.Editor
                 || controller.CurrentView == SubView.Import
                 || controller.SelectedPieceId.HasValue
                 || controller.SelectedSetId.HasValue
@@ -79,7 +79,10 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
                     true,
                     () =>
                     {
-                        ImGui.TextColored(ImGuiColors.DalamudGrey, "Hover over or select an item to view details");
+                        ImGui.TextColored(
+                            ImGuiColors.DalamudGrey,
+                            "Hover over or select an item to view details"
+                        );
                     }
                 );
             }
@@ -177,7 +180,8 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
                 var labelWidth = 60f;
                 var searchWidth = (panelWidth - padding.X * 2 - labelWidth - 50) * 0.6f;
                 var filterWidth = searchWidth - padding.X;
-                var comboWidth = panelWidth - padding.X * 2 - labelWidth - searchWidth - padding.X * 2;
+                var comboWidth =
+                    panelWidth - padding.X * 2 - labelWidth - searchWidth - padding.X * 2;
 
                 ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 5);
 
@@ -261,7 +265,8 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 2));
 
         var cursorStart = ImGui.GetCursorPosY();
-        var textAreaWidth = ListPanelWidth - padding.X * 3 - equipButtonWidth - deleteButtonWidth - 60;
+        var textAreaWidth =
+            ListPanelWidth - padding.X * 3 - equipButtonWidth - deleteButtonWidth - 60;
 
         ImGui.SetCursorPosX(padding.X);
         ImGui.SetCursorPosY(cursorStart);
@@ -275,7 +280,9 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         var slotText = isModSet ? "Mod Set" : item.Slot.ToString();
         ImGui.SetCursorPosY(cursorStart);
         ImGui.SameLine();
-        ImGui.SetCursorPosX(ListPanelWidth - padding.X * 3 - equipButtonWidth - deleteButtonWidth - 60);
+        ImGui.SetCursorPosX(
+            ListPanelWidth - padding.X * 3 - equipButtonWidth - deleteButtonWidth - 60
+        );
         ImGui.TextColored(descColor, slotText);
 
         ImGui.SetCursorPosY(cursorStart);
@@ -293,7 +300,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
 
         var keyShift = ImGui.GetIO().KeyShift;
         ImGui.PushStyleVar(ImGuiStyleVar.Alpha, keyShift ? 1.0f : 0.5f);
-        if (ImGui.Button("Del", new Vector2(deleteButtonWidth, buttonSize)))
+        if (ImGui.Button($"Del##Del_{item.Id}", new Vector2(deleteButtonWidth, buttonSize)))
         {
             if (keyShift)
             {
@@ -308,7 +315,12 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         ImGui.SetCursorPosX(padding.X);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - rowHeight * 2 + rowHeight);
 
-        if (ImGui.InvisibleButton($"##ItemEntry_{item.Id}", new Vector2(textAreaWidth, rowHeight * 2)))
+        if (
+            ImGui.InvisibleButton(
+                $"##ItemEntry_{item.Id}",
+                new Vector2(textAreaWidth, rowHeight * 2)
+            )
+        )
         {
             controller.SelectedPieceId = item.Id;
             controller.OpenEditor(item);
@@ -381,7 +393,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
 
         var keyShift = ImGui.GetIO().KeyShift;
         ImGui.PushStyleVar(ImGuiStyleVar.Alpha, keyShift ? 1.0f : 0.5f);
-        if (ImGui.Button("Del", new Vector2(deleteButtonWidth, buttonSize)))
+        if (ImGui.Button($"Del_{set.Identifier}", new Vector2(deleteButtonWidth, buttonSize)))
         {
             if (keyShift)
             {
@@ -396,7 +408,12 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         ImGui.SetCursorPosX(padding.X);
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - rowHeight * 2 + rowHeight);
 
-        if (ImGui.InvisibleButton($"##SetEntry_{set.Identifier}", new Vector2(textAreaWidth, rowHeight * 2)))
+        if (
+            ImGui.InvisibleButton(
+                $"##SetEntry_{set.Identifier}",
+                new Vector2(textAreaWidth, rowHeight * 2)
+            )
+        )
         {
             controller.SelectedSetId = set.Identifier;
             controller.OpenSetEditor(set);
@@ -509,7 +526,12 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
                         var isEquipped = controller.IsPieceEquipped(item.Id);
                         var buttonWidth = contentWidth;
 
-                        if (ImGui.Button(isEquipped ? "Remove" : "Equip", new Vector2(buttonWidth, 35)))
+                        if (
+                            ImGui.Button(
+                                isEquipped ? "Remove" : "Equip",
+                                new Vector2(buttonWidth, 35)
+                            )
+                        )
                         {
                             _ = TogglePieceEquipAsync(item, isEquipped);
                         }
@@ -519,7 +541,9 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         }
         else if (hoveredSetId.HasValue)
         {
-            var set = controller.FilteredSets?.FirstOrDefault(s => s.Identifier == hoveredSetId.Value);
+            var set = controller.FilteredSets?.FirstOrDefault(s =>
+                s.Identifier == hoveredSetId.Value
+            );
             if (set != null)
             {
                 SharedUserInterfaces.ContentBox(
@@ -552,7 +576,12 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
                         var isEquipped = controller.IsSetEquipped(set.Identifier);
                         var buttonWidth = contentWidth;
 
-                        if (ImGui.Button(isEquipped ? "Remove" : "Equip", new Vector2(buttonWidth, 35)))
+                        if (
+                            ImGui.Button(
+                                isEquipped ? "Remove" : "Equip",
+                                new Vector2(buttonWidth, 35)
+                            )
+                        )
                         {
                             _ = ToggleSetEquipAsync(set, isEquipped);
                         }

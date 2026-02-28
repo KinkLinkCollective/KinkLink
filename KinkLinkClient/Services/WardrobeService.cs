@@ -309,6 +309,64 @@ public class WardrobeService : IDisposable
         await _wardrobeNetworkService.AddWardrobeItemAsync(dto);
     }
 
+    public void LoadFromWardrobeDto(List<WardrobeDto> dtos)
+    {
+        // If there are values, clear them.
+        _wardrobeItems.Clear();
+        _wardrobeSets.Clear();
+        _modItems.Clear();
+
+        foreach (var dto in dtos)
+        {
+            switch (dto.Type)
+            {
+                case "item":
+                    _wardrobeItems[dto.Name] = new WardrobeItem
+                    {
+                        Id = dto.Id,
+                        Name = dto.Name,
+                        Description = dto.Description,
+                        Slot = dto.Slot,
+                        Item = dto.Item,
+                        Mods = dto.Mods ?? [],
+                        Materials = dto.Materials ?? [],
+                        Priority = dto.Priority,
+                    };
+                    break;
+
+                case "set":
+                    if (dto.Design != null)
+                    {
+                        _wardrobeSets[dto.Name] = dto.Design;
+                    }
+                    break;
+
+                case "moditem":
+                    _modItems[dto.Name] = new WardrobeItem
+                    {
+                        Id = dto.Id,
+                        Name = dto.Name,
+                        Description = dto.Description,
+                        Slot = dto.Slot,
+                        Item = dto.Item,
+                        Mods = dto.Mods ?? [],
+                        Materials = dto.Materials ?? [],
+                        Priority = dto.Priority,
+                    };
+                    break;
+            }
+        }
+
+        RebuildIdDictionaries();
+
+        Plugin.Log.Information(
+            "[WardrobeService] Synced {SetCount} sets, {ItemCount} items, {ModSettings} modsettings",
+            _wardrobeSets,
+            _wardrobeItems,
+            _modItems
+        );
+    }
+
     public void AddPiece(WardrobeItem piece)
     {
         _wardrobeItems[piece.Name] = piece;

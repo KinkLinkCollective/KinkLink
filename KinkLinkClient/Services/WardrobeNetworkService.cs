@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using KinkLinkClient.Utils;
 using KinkLinkCommon.Dependencies.Glamourer;
 using KinkLinkCommon.Dependencies.Glamourer.Components;
-using KinkLinkClient.Utils;
 using KinkLinkCommon.Domain.Enums;
 using KinkLinkCommon.Domain.Network;
 using KinkLinkCommon.Domain.Wardrobe;
@@ -36,22 +36,10 @@ public class WardrobeNetworkService : IDisposable
 
         try
         {
-            var types = new[] { "item", "set", "moditem" };
-            foreach (var type in types)
+            var result = await ListWardrobeItemsAsync();
+            if (result.Result == ActionResultEc.Success && result.Value != null)
             {
-                var result = await ListWardrobeItemsAsync(type);
-                if (result.Result == ActionResultEc.Success && result.Value != null)
-                {
-                    foreach (var dto in result.Value)
-                    {
-                        ApplyWardrobeDto(dto);
-                    }
-                    Plugin.Log.Information(
-                        "[WardrobeNetworkService] Synced {Count} {Type} items from server",
-                        result.Value.Count,
-                        type
-                    );
-                }
+                _wardrobeService.LoadFromWardrobeDto(result.Value);
             }
 
             var statusResult = await GetWardrobeStatusAsync();
@@ -69,28 +57,6 @@ public class WardrobeNetworkService : IDisposable
         {
             Plugin.Log.Error(ex, "[WardrobeNetworkService] Failed to sync from server");
             NotificationHelper.Error("Wardrobe Sync Failed", "Failed to sync wardrobe from server");
-        }
-    }
-
-    private void ApplyWardrobeDto(WardrobeDto dto)
-    {
-        if (_wardrobeService == null)
-            return;
-
-        switch (dto.Type)
-        {
-            case "item":
-                var item = DtoToWardrobeItem(dto);
-                _wardrobeService.AddPiece(item);
-                break;
-            case "set":
-                var set = DtoToGlamourerDesign(dto);
-                _wardrobeService.AddSet(set);
-                break;
-            case "moditem":
-                var modItem = DtoToWardrobeItem(dto);
-                _wardrobeService.AddModItem(modItem);
-                break;
         }
     }
 
@@ -148,7 +114,8 @@ public class WardrobeNetworkService : IDisposable
                         Slot = itemData.Slot,
                         Item = itemData.Item,
                         Mods = itemData.Mods ?? [],
-                        Materials = itemData.Materials ?? new Dictionary<string, GlamourerMaterial>(),
+                        Materials =
+                            itemData.Materials ?? new Dictionary<string, GlamourerMaterial>(),
                         Priority = itemData.Priority,
                     };
                     _wardrobeService.ApplyPieceSync(slot, piece);
@@ -271,12 +238,12 @@ public class WardrobeNetworkService : IDisposable
         }
     }
 
-    public async Task<ActionResult<List<WardrobeDto>>> ListWardrobeItemsAsync(string type)
+    public async Task<ActionResult<List<WardrobeDto>>> ListWardrobeItemsAsync()
     {
         try
         {
             var response = await _networkService
-                .InvokeAsync<ActionResult<List<WardrobeDto>>>(HubMethod.ListWardrobeItems, type)
+                .InvokeAsync<ActionResult<List<WardrobeDto>>>(HubMethod.ListWardrobeItems)
                 .ConfigureAwait(false);
 
             return response;

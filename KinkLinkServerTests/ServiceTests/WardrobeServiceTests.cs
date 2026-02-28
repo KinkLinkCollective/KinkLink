@@ -398,9 +398,9 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         var state = new WardrobeStateDto(
             null,
-            new Dictionary<string, Guid>
+            new Dictionary<string, WardrobeItemData>
             {
-                ["Head"] = Guid.NewGuid()
+                ["Head"] = new WardrobeItemData(Guid.NewGuid(), "Test", "Desc", GlamourerEquipmentSlot.Head, null, null, null, RelationshipPriority.Casual)
             },
             null
         );
@@ -426,9 +426,9 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var headId = Guid.NewGuid();
         var initialState = new WardrobeStateDto(
             null,
-            new Dictionary<string, Guid>
+            new Dictionary<string, WardrobeItemData>
             {
-                ["Head"] = headId
+                ["Head"] = new WardrobeItemData(headId, "Test", "Desc", GlamourerEquipmentSlot.Head, null, null, null, RelationshipPriority.Casual)
             },
             null
         );
@@ -439,10 +439,10 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var updatedBodyId = Guid.NewGuid();
         var updatedState = new WardrobeStateDto(
             null,
-            new Dictionary<string, Guid>
+            new Dictionary<string, WardrobeItemData>
             {
-                ["Head"] = updatedHeadId,
-                ["Body"] = updatedBodyId
+                ["Head"] = new WardrobeItemData(updatedHeadId, "Test", "Desc", GlamourerEquipmentSlot.Head, null, null, null, RelationshipPriority.Casual),
+                ["Body"] = new WardrobeItemData(updatedBodyId, "Test", "Desc", GlamourerEquipmentSlot.Body, null, null, null, RelationshipPriority.Casual)
             },
             null
         );

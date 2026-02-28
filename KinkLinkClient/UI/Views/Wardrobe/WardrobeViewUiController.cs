@@ -532,5 +532,6 @@ public class WardrobeViewUiController
     {
         SelectedGlamourerDesignId = Guid.Empty;
         GlamourerDesigns = await _wardrobeService.RefreshGlamourerDesignsAsync();
+        FilterDesigns();
     }
 }

@@ -308,7 +308,7 @@ public partial class WardrobeViewUi
                                 {
                                     foreach (var mod in filteredMods)
                                     {
-                                        if (ImGui.Selectable(mod.Item1.Name))
+                                        if (ImGui.Selectable($"{mod.Item1.Name}##{mod.Item1.DirectoryName}"))
                                         {
                                             controller.AddMod(mod.Item1.DirectoryName);
                                             ImGui.CloseCurrentPopup();
