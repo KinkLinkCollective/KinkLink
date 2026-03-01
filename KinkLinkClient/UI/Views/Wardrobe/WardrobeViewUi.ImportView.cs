@@ -143,7 +143,9 @@ public partial class WardrobeViewUi
                 }
                 else
                 {
-                    if (ImGui.Button("Import Design", new Vector2(contentWidth, ImportButtonHeight)))
+                    if (
+                        ImGui.Button("Import Design", new Vector2(contentWidth, ImportButtonHeight))
+                    )
                     {
                         ImportSelectedDesign();
                     }
@@ -174,6 +176,7 @@ public partial class WardrobeViewUi
             NotificationHelper.Error("Import", "Failed to import design.");
             return;
         }
+        Plugin.Log.Info($"{glamourerDesign.ToString()}");
 
         glamourerDesign.Name = name;
         glamourerDesign.Description = description;

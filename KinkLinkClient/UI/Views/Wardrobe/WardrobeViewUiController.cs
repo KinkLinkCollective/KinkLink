@@ -4,11 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using KinkLinkClient.Dependencies.Glamourer.Domain;
 using KinkLinkClient.Dependencies.Penumbra.Services;
+using KinkLinkClient.Services;
 using KinkLinkCommon.Dependencies.Glamourer;
 using KinkLinkCommon.Dependencies.Glamourer.Components;
-using KinkLinkClient.Services;
 using KinkLinkCommon.Domain.Enums;
-
 using ClientWardrobeItem = KinkLinkClient.Services.WardrobeItem;
 
 namespace KinkLinkClient.UI.Views.Wardrobe;
@@ -53,7 +52,7 @@ public class WardrobeViewUiController
     public string ModFilter { get; set; } = string.Empty;
 
     public ClientWardrobeItem? EditingPiece { get; set; }
-    public GlamourerDesign? EditingSet { get; set; }
+    public WardrobeSet? EditingSet { get; set; }
 
     public string EditedName { get; set; } = string.Empty;
     public string EditedDescription { get; set; } = string.Empty;
@@ -93,10 +92,12 @@ public class WardrobeViewUiController
             var items = _wardrobeService.WardrobePieces.ToList();
             if (!string.IsNullOrEmpty(SearchFilter))
             {
-                items = items.Where(i =>
-                    i.Name.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase) ||
-                    i.Description.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase)
-                ).ToList();
+                items = items
+                    .Where(i =>
+                        i.Name.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase)
+                        || i.Description.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase)
+                    )
+                    .ToList();
             }
 
             if (PairAccessFilter != PairAccessFilter.All)
@@ -115,7 +116,7 @@ public class WardrobeViewUiController
         }
     }
 
-    public List<GlamourerDesign>? FilteredSets
+    public List<WardrobeSet>? FilteredSets
     {
         get
         {
@@ -123,9 +124,10 @@ public class WardrobeViewUiController
             if (!string.IsNullOrEmpty(SearchFilter))
             {
                 sets = sets.Where(s =>
-                    s.Name.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase) ||
-                    s.Description.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase)
-                ).ToList();
+                        s.Name.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase)
+                        || s.Description.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase)
+                    )
+                    .ToList();
             }
 
             if (PairAccessFilter != PairAccessFilter.All)
@@ -213,9 +215,9 @@ public class WardrobeViewUiController
                     new GlamourerMod(
                         mod.Item1.Name,
                         dirName,
-                        settings.Settings,
-                        settings.Priority,
                         settings.Enabled,
+                        settings.Priority,
+                        settings.Settings,
                         settings.ForceInherit,
                         settings.Remove
                     )
@@ -251,8 +253,8 @@ public class WardrobeViewUiController
         if (EditingSet == null)
             return;
 
-        EditingSet.Name = EditedName;
-        EditingSet.Description = EditedDescription;
+        EditingSet.Design.Name = EditedName;
+        EditingSet.Design.Description = EditedDescription;
         EditingSet.Priority = EditedPriority;
     }
 
@@ -274,7 +276,7 @@ public class WardrobeViewUiController
     public ClientWardrobeItem? GetSelectedPiece() =>
         SelectedPieceId.HasValue ? _wardrobeService.GetPieceById(SelectedPieceId.Value) : null;
 
-    public GlamourerDesign? GetSelectedSet() =>
+    public WardrobeSet? GetSelectedSet() =>
         SelectedSetId.HasValue ? _wardrobeService.GetSetById(SelectedSetId.Value) : null;
 
     public void OpenEditor(ClientWardrobeItem? piece = null)
@@ -308,7 +310,7 @@ public class WardrobeViewUiController
         CurrentView = SubView.Editor;
     }
 
-    public void OpenSetEditor(GlamourerDesign? set = null)
+    public void OpenSetEditor(WardrobeSet? set = null)
     {
         EditingSet = set;
         EditingPiece = null;
@@ -338,7 +340,7 @@ public class WardrobeViewUiController
         else if (EditingSet != null)
         {
             SaveSetData();
-            _wardrobeService.UpdateSet(EditingSet);
+            _wardrobeService.UpdateSet(EditingSet.Design);
         }
 
         CloseEditor();
@@ -433,7 +435,7 @@ public class WardrobeViewUiController
                 glamMod.ForceInherit,
                 glamMod.Remove
             );
-            SelectedModSettings[glamMod.DirectoryName] = settings;
+            SelectedModSettings[glamMod.Directory] = settings;
         }
     }
 

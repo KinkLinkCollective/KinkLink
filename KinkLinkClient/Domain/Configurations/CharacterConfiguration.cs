@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using KinkLinkCommon.Dependencies.Glamourer;
 using KinkLinkClient.Services;
+using KinkLinkCommon.Dependencies.Glamourer;
 using KinkLinkCommon.Domain;
-
 using ClientWardrobeItem = KinkLinkClient.Services.WardrobeItem;
 
 namespace KinkLinkClient.Domain.Configurations;
@@ -54,15 +53,6 @@ public class CharacterConfiguration
         .Network
         .Title
         .Kinkster;
-
-    // Individual pieces in the wardrobe organized by name
-    public Dictionary<string, ClientWardrobeItem> WardrobeItems = new();
-
-    // Individual Full sets imported from glamourer
-    public Dictionary<string, GlamourerDesign> WardrobeSets = new();
-
-    // Character items - collections of mod settings
-    public Dictionary<string, ClientWardrobeItem> ModItems = new();
 
     /// <summary>
     ///     Save the configuration

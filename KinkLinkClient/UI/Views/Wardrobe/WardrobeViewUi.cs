@@ -240,7 +240,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
                         {
                             foreach (var set in sets)
                             {
-                                var isSelected = controller.SelectedSetId == set.Identifier;
+                                var isSelected = controller.SelectedSetId == set.Id;
                                 DrawSetListEntry(set, isSelected);
                             }
                         }
@@ -354,7 +354,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         }
     }
 
-    private void DrawSetListEntry(GlamourerDesign set, bool isSelected)
+    private void DrawSetListEntry(WardrobeSet set, bool isSelected)
     {
         var padding = ImGui.GetStyle().WindowPadding;
         var rowHeight = 30f;
@@ -362,7 +362,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         var equipButtonWidth = 50f;
         var deleteButtonWidth = 40f;
 
-        var isEquipped = controller.IsSetEquipped(set.Identifier);
+        var isEquipped = controller.IsSetEquipped(set.Id);
 
         ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 2));
 
@@ -393,11 +393,11 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
 
         var keyShift = ImGui.GetIO().KeyShift;
         ImGui.PushStyleVar(ImGuiStyleVar.Alpha, keyShift ? 1.0f : 0.5f);
-        if (ImGui.Button($"Del_{set.Identifier}", new Vector2(deleteButtonWidth, buttonSize)))
+        if (ImGui.Button($"Del_{set.Id}", new Vector2(deleteButtonWidth, buttonSize)))
         {
             if (keyShift)
             {
-                controller.DeleteSet(set.Identifier);
+                controller.DeleteSet(set.Id);
             }
         }
         ImGui.PopStyleVar();
@@ -410,24 +410,24 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
 
         if (
             ImGui.InvisibleButton(
-                $"##SetEntry_{set.Identifier}",
+                $"##SetEntry_{set.Id}",
                 new Vector2(textAreaWidth, rowHeight * 2)
             )
         )
         {
-            controller.SelectedSetId = set.Identifier;
+            controller.SelectedSetId = set.Id;
             controller.OpenSetEditor(set);
         }
 
         if (ImGui.IsItemHovered(ImGuiHoveredFlags.None))
         {
-            controller.HoveredSetId = set.Identifier;
+            controller.HoveredSetId = set.Id;
         }
 
         ImGui.SetCursorPosY(cursorStart + rowHeight * 2);
     }
 
-    private async Task ToggleSetEquipAsync(GlamourerDesign set, bool isEquipped)
+    private async Task ToggleSetEquipAsync(WardrobeSet set, bool isEquipped)
     {
         try
         {
@@ -542,7 +542,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
         else if (hoveredSetId.HasValue)
         {
             var set = controller.FilteredSets?.FirstOrDefault(s =>
-                s.Identifier == hoveredSetId.Value
+                s.Id == hoveredSetId.Value
             );
             if (set != null)
             {
@@ -573,7 +573,7 @@ public partial class WardrobeViewUi(WardrobeViewUiController controller) : IDraw
                     false,
                     () =>
                     {
-                        var isEquipped = controller.IsSetEquipped(set.Identifier);
+                        var isEquipped = controller.IsSetEquipped(set.Id);
                         var buttonWidth = contentWidth;
 
                         if (

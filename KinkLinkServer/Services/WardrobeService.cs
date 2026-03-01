@@ -152,13 +152,6 @@ public class WardrobeDataService
         WardrobeDto dto
     )
     {
-        _logger.LogInformation(
-            "CreateOrUpdateWardrobeItemsByNameAsync called with profileId: {ProfileId}, uuid: {Uuid}, name: {Name}",
-            profileId,
-            uuid,
-            dto.Name
-        );
-
         object data;
         if (dto.Design != null)
         {
@@ -176,6 +169,13 @@ public class WardrobeDataService
 
         var dataJson = JsonSerializer.SerializeToElement(data);
 
+        _logger.LogInformation(
+            "CreateOrUpdateWardrobeItemsByNameAsync called with profileId: {ProfileId}, uuid: {Uuid}, name: {Name}, data: {DataJson}",
+            profileId,
+            uuid,
+            dto.Name,
+            dataJson
+        );
         var result = await _wardrobeSql.CreateOrUpdateWardrobeAsync(
             new(
                 uuid,

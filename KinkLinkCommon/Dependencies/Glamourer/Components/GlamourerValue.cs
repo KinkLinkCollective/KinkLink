@@ -15,8 +15,10 @@ public class GlamourerValue
 
     public bool IsEqualTo(GlamourerValue other)
     {
-        if (Apply != other.Apply) return false;
-        if (Value != other.Value) return false;
+        if (Apply != other.Apply)
+            return false;
+        if (Value != other.Value)
+            return false;
         return true;
     }
 }

@@ -66,9 +66,6 @@ public class GlamourerDesign
     [Key(18)]
     public List<GlamourerMod> Mods = [];
 
-    [Key(19)]
-    public RelationshipPriority Priority { get; set; } = RelationshipPriority.Casual;
-
     public GlamourerDesign Clone()
     {
         var tags = new string[Tags.Length];
@@ -90,5 +87,10 @@ public class GlamourerDesign
         copy.Parameters = Parameters.Clone();
 
         return copy;
+    }
+
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
     }
 }

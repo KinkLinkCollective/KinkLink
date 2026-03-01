@@ -53,15 +53,24 @@ public record WardrobeItem
     public RelationshipPriority Priority { get; set; } = RelationshipPriority.Casual;
 }
 
+public record WardrobeSet
+{
+    public Guid Id => Design.Identifier;
+    public string Name => Design.Name;
+    public string Description => Design.Description;
+    public required GlamourerDesign Design { get; set; }
+    public RelationshipPriority Priority { get; set; } = RelationshipPriority.Casual;
+}
+
 public class ActiveWardrobe
 {
-    private GlamourerDesign? _baseLayer;
+    private WardrobeSet? _baseLayer;
     private readonly Dictionary<GlamourerEquipmentSlot, WardrobeItem?> _equipment = new();
     private readonly Dictionary<Guid, WardrobeItem> _characterItems = new();
     private GlamourerShow? _hat;
     private GlamourerIsToggled? _visor;
 
-    public GlamourerDesign? BaseLayer
+    public WardrobeSet? BaseLayer
     {
         get => _baseLayer;
         private set => _baseLayer = value;
@@ -87,9 +96,9 @@ public class ActiveWardrobe
             || Visor != null;
     }
 
-    public void SetBaseLayer(GlamourerDesign design)
+    public void SetBaseLayer(GlamourerDesign design, RelationshipPriority priority)
     {
-        BaseLayer = design;
+        BaseLayer = new WardrobeSet { Design = design, Priority = priority };
     }
 
     public void ClearBaseLayer()
@@ -125,7 +134,7 @@ public class ActiveWardrobe
         return _equipment.TryGetValue(slot, out var item) ? item : null;
     }
 
-    public GlamourerDesign? GetBaseLayer() => BaseLayer;
+    public GlamourerDesign? GetBaseLayer() => BaseLayer?.Design ?? null;
 
     public GlamourerDesign GetCurrentState()
     {
@@ -134,7 +143,7 @@ public class ActiveWardrobe
             Plugin.Log.Error("There is nothing currently set. This should not have been called");
             return new();
         }
-        var final = BaseLayer?.Clone() ?? new();
+        var final = BaseLayer?.Design.Clone() ?? new();
 
         foreach (var (slot, item) in _equipment)
         {
@@ -159,7 +168,7 @@ public class ActiveWardrobe
         var modlist = new List<GlamourerMod>();
         if (BaseLayer is { } baselayer)
         {
-            modlist.AddRange(baselayer.Mods);
+            modlist.AddRange(baselayer.Design.Mods);
         }
         foreach (var kvp in _equipment)
         {
@@ -224,17 +233,17 @@ public class WardrobeService : IDisposable
     private readonly WardrobeNetworkService _wardrobeNetworkService;
 
     private Dictionary<string, WardrobeItem> _wardrobeItems = [];
-    private Dictionary<string, GlamourerDesign> _wardrobeSets = [];
+    private Dictionary<string, WardrobeSet> _wardrobeSets = [];
     private Dictionary<string, WardrobeItem> _modItems = [];
 
     private Dictionary<Guid, WardrobeItem> _wardrobeItemsById = [];
-    private Dictionary<Guid, GlamourerDesign> _wardrobeSetsById = [];
+    private Dictionary<Guid, WardrobeSet> _wardrobeSetsById = [];
     private Dictionary<Guid, WardrobeItem> _modItemsById = [];
 
     public ActiveWardrobe ActiveSet { get; private set; }
 
     public IReadOnlyList<WardrobeItem> WardrobePieces => [.. _wardrobeItems.Values];
-    public IReadOnlyList<GlamourerDesign> ImportedSets => [.. _wardrobeSets.Values];
+    public IReadOnlyList<WardrobeSet> ImportedSets => [.. _wardrobeSets.Values];
     public IReadOnlyList<WardrobeItem> ModItems => [.. _modItems.Values];
 
     public WardrobeService(
@@ -271,7 +280,7 @@ public class WardrobeService : IDisposable
     private void RebuildIdDictionaries()
     {
         _wardrobeItemsById = _wardrobeItems.Values.ToDictionary(p => p.Id);
-        _wardrobeSetsById = _wardrobeSets.Values.ToDictionary(s => s.Identifier);
+        _wardrobeSetsById = _wardrobeSets.Values.ToDictionary(s => s.Id);
         _modItemsById = _modItems.Values.ToDictionary(m => m.Id);
     }
 
@@ -292,16 +301,19 @@ public class WardrobeService : IDisposable
         await _wardrobeNetworkService.AddWardrobeItemAsync(dto);
     }
 
-    private async Task SyncSetToServerAsync(GlamourerDesign set)
+    private async Task SyncSetToServerAsync(WardrobeSet set)
     {
+        GlamourerDesign design = set.Design.Clone();
+        Plugin.Log.Information($"SyncSetToServerAsync {set}");
+        Plugin.Log.Information($"SyncSetToServerAsync {design}");
         var dto = new WardrobeDto(
-            set.Identifier,
+            set.Id,
             set.Name,
             set.Description,
             "set",
             GlamourerEquipmentSlot.None,
             null,
-            set,
+            design,
             [],
             [],
             set.Priority
@@ -337,7 +349,11 @@ public class WardrobeService : IDisposable
                 case "set":
                     if (dto.Design != null)
                     {
-                        _wardrobeSets[dto.Name] = dto.Design;
+                        _wardrobeSets[dto.Name] = new WardrobeSet
+                        {
+                            Design = dto.Design,
+                            Priority = dto.Priority,
+                        };
                     }
                     break;
 
@@ -433,26 +449,29 @@ public class WardrobeService : IDisposable
 
     public void AddSet(GlamourerDesign set)
     {
-        _wardrobeSets[set.Name] = set;
-        _wardrobeSetsById[set.Identifier] = set;
+        var wardrobeSet = new WardrobeSet { Design = set };
+        _wardrobeSets[set.Name] = wardrobeSet;
+        _wardrobeSetsById[set.Identifier] = wardrobeSet;
         Plugin.Log.Information(
-            "Added wardrobe set: {SetName} (ID: {SetId})",
+            "Added wardrobe set: {SetName} (ID: {SetId}, Set: {Set})",
             set.Name,
-            set.Identifier
+            set.Identifier,
+            set.ToString()
         );
-        _ = SyncSetToServerAsync(set);
+        _ = SyncSetToServerAsync(wardrobeSet);
     }
 
     public void UpdateSet(GlamourerDesign set)
     {
-        _wardrobeSets[set.Name] = set;
-        _wardrobeSetsById[set.Identifier] = set;
+        var wardrobeSet = new WardrobeSet { Design = set };
+        _wardrobeSets[set.Name] = wardrobeSet;
+        _wardrobeSetsById[set.Identifier] = wardrobeSet;
         Plugin.Log.Information(
             "Updated wardrobe set: {SetName} (ID: {SetId})",
             set.Name,
             set.Identifier
         );
-        _ = SyncSetToServerAsync(set);
+        _ = SyncSetToServerAsync(wardrobeSet);
     }
 
     public void DeleteSet(Guid id)
@@ -466,12 +485,12 @@ public class WardrobeService : IDisposable
         }
     }
 
-    public GlamourerDesign? GetSetById(Guid id)
+    public WardrobeSet? GetSetById(Guid id)
     {
         return _wardrobeSetsById.TryGetValue(id, out var set) ? set : null;
     }
 
-    public GlamourerDesign? GetSetByName(string name)
+    public WardrobeSet? GetSetByName(string name)
     {
         return _wardrobeSets.TryGetValue(name, out var set) ? set : null;
     }
@@ -533,7 +552,7 @@ public class WardrobeService : IDisposable
         var set = GetSetById(setId);
         if (set != null)
         {
-            ActiveSet.SetBaseLayer(set);
+            ActiveSet.SetBaseLayer(set.Design, set.Priority);
             Plugin.Log.Information(
                 "[WardrobeService] Applied set from sync: {SetName} (ID: {SetId})",
                 set.Name,
@@ -707,7 +726,7 @@ public class WardrobeService : IDisposable
             Plugin.Log.Error("Design JSON is not a valid JObject");
             return null;
         }
-
+        Plugin.Log.Info($"Retrieved jObject: {jObject.ToString()}");
         var glamourerDesign = GlamourerDesignHelper.FromJObject(jObject);
         if (glamourerDesign == null)
         {
@@ -716,9 +735,10 @@ public class WardrobeService : IDisposable
         }
 
         Plugin.Log.Debug(
-            "Retrieved design {DesignName} (ID: {DesignId})",
+            "Retrieved design {DesignName} (ID: {DesignId} Design {GlamourerDesign})",
             glamourerDesign.Name,
-            designId
+            designId,
+            glamourerDesign
         );
 
         return glamourerDesign;
@@ -728,7 +748,7 @@ public class WardrobeService : IDisposable
     {
         foreach (var glamourerMod in ActiveSet.GetMods())
         {
-            var mod = new Mod(glamourerMod.Name, glamourerMod.DirectoryName);
+            var mod = new Mod(glamourerMod.Name, glamourerMod.Directory);
             var settings = new ModSettings(
                 glamourerMod.Settings,
                 glamourerMod.Priority,
@@ -757,10 +777,10 @@ public class WardrobeService : IDisposable
         Plugin.Log.Information(
             "Applying wardrobe set: {SetName} (ID: {SetId})",
             name,
-            set.Identifier
+            set.Design.Identifier
         );
 
-        ActiveSet.SetBaseLayer(set);
+        ActiveSet.SetBaseLayer(set.Design, set.Priority);
 
         await ApplyModsAsync(true);
 

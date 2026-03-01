@@ -72,13 +72,16 @@ public class WardrobeNetworkService : IDisposable
         };
     }
 
-    private static GlamourerDesign DtoToGlamourerDesign(WardrobeDto dto)
+    private static WardrobeSet DtoToWardrobeSet(WardrobeDto dto)
     {
-        return new GlamourerDesign
+        return new WardrobeSet
         {
-            Identifier = dto.Id,
-            Name = dto.Name,
-            Description = dto.Description,
+            Design = new GlamourerDesign
+            {
+                Identifier = dto.Id,
+                Name = dto.Name,
+                Description = dto.Description,
+            },
             Priority = dto.Priority,
         };
     }
@@ -166,6 +169,8 @@ public class WardrobeNetworkService : IDisposable
     {
         try
         {
+            if (request.Design != null)
+                Plugin.Log.Info($"Design {request.Design.ToString()}");
             var response = await _networkService
                 .InvokeAsync<ActionResult<WardrobeDto>>(HubMethod.AddWardrobeItem, request)
                 .ConfigureAwait(false);

@@ -53,7 +53,7 @@ public static class GlamourerDesignHelper
             // Copy
             var copy = design.DeepClone();
 
-            // Remove Mods & Links
+            // Remove Links
             copy["Links"]?.Parent?.Remove();
 
             // Create a new domain object
