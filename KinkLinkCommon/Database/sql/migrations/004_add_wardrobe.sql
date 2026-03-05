@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS wardrobe (
     description VARCHAR(240),
     slot INTEGER, -- Ignored if 'set' or 'modsettings' maps to GlamourerEquipmentSlot
     relationship_priority INTEGER DEFAULT 0,
-    data JSONB NOT NULL, -- This is the data as serialized. 'item' and 'moditem' are deserialized as `WardrobeItem` while `set' is deserialized as `WardrobeSet`
+    data TEXT NOT NULL, -- Stored as TEXT to support both JSON strings and base64 encoded strings. 'item' and 'moditem' use JSON, 'set' uses base64 encoded JSON for GlamourerDesign
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
 
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS wardrobe (
 CREATE TABLE IF NOT EXISTS activewardrobe (
     id bigserial PRIMARY KEY,
     profile_id INTEGER UNIQUE NOT NULL REFERENCES Profiles(id) ON DELETE CASCADE,
-    glamourerset JSONB,
+    glamourerset TEXT, -- Stored as an base64 string
     head JSONB,
     body JSONB,
     hand JSONB,

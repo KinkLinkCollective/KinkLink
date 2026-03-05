@@ -12,15 +12,9 @@ public record WardrobeDto(
     [property: Key(2)] string Description,
     [property: Key(3)] string Type,
     [property: Key(4)] GlamourerEquipmentSlot Slot,
-    // Item serialized to an base64 string
-    [property: Key(5)] GlamourerItem? Item,
-    // Item serialized to an base64 string
-    [property: Key(6)] GlamourerDesign? Design,
-    // Item serialized to an base64 string
-    [property: Key(7)] List<GlamourerMod>? Mods,
-    // Materials serialized to a base64 string
-    [property: Key(8)] Dictionary<string, GlamourerMaterial> Materials,
-    [property: Key(9)] RelationshipPriority Priority
+    // GlamourerDesign serialized as a base64 string (sent over wire)
+    [property: Key(5)] string DataBase64,
+    [property: Key(6)] RelationshipPriority Priority
 );
 
 [MessagePackObject]
@@ -37,8 +31,8 @@ public record WardrobeItemData(
 
 [MessagePackObject]
 public record WardrobeStateDto(
-    // Serialized as a base64 string
-    [property: Key(0)] GlamourerDesign? BaseLayer,
+    // GlamourerDesign serialized as a base64 string (sent over wire)
+    [property: Key(0)] string? BaseLayerBase64,
     // Slot name to WardrobeItemData mapping
     [property: Key(1)] Dictionary<string, WardrobeItemData>? Equipment,
     // Mod name to WardrobeItemData mapping

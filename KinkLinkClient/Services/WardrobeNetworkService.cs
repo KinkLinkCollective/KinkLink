@@ -91,13 +91,17 @@ public class WardrobeNetworkService : IDisposable
         if (_wardrobeService == null)
             return;
 
-        if (state.BaseLayer != null)
+        if (state.BaseLayerBase64 != null)
         {
-            var baseLayerId = state.BaseLayer.Identifier;
-            var set = _wardrobeService.GetSetById(baseLayerId);
-            if (set != null)
+            var baseLayerDesign = GlamourerDesignHelper.FromBase64(state.BaseLayerBase64);
+            if (baseLayerDesign != null)
             {
-                _wardrobeService.ApplySetByIdSync(baseLayerId);
+                var baseLayerId = baseLayerDesign.Identifier;
+                var set = _wardrobeService.GetSetById(baseLayerId);
+                if (set != null)
+                {
+                    _wardrobeService.ApplySetByIdSync(baseLayerId);
+                }
             }
         }
 
@@ -169,8 +173,8 @@ public class WardrobeNetworkService : IDisposable
     {
         try
         {
-            if (request.Design != null)
-                Plugin.Log.Info($"Design {request.Design.ToString()}");
+            if (request.DataBase64 != null)
+                Plugin.Log.Info($"Design Base64 length: {request.DataBase64.Length}");
             var response = await _networkService
                 .InvokeAsync<ActionResult<WardrobeDto>>(HubMethod.AddWardrobeItem, request)
                 .ConfigureAwait(false);

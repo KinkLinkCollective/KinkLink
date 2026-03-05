@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using KinkLinkCommon.Database;
 using KinkLinkCommon.Dependencies.Glamourer;
@@ -12,6 +13,10 @@ public class WardrobeDataService
 {
     private readonly ILogger<WardrobeDataService> _logger;
     private readonly WardrobeSql _wardrobeSql;
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
 
     public WardrobeDataService(Configuration config, ILogger<WardrobeDataService> logger)
     {
@@ -21,12 +26,12 @@ public class WardrobeDataService
 
     public async Task<List<WardrobeDto>> GetAllWardrobeItemsAsync(int profileId)
     {
-        _logger.LogDebug("GetAllWardrobeByTypeAsync called with profileId: {ProfileId}", profileId);
+        _logger.LogDebug("GetAllWardrobeItemsAsync called with profileId: {ProfileId}", profileId);
 
         var rows = await _wardrobeSql.ListWardrobeByProfileIdAsync(new(profileId));
 
         _logger.LogDebug(
-            "GetAllWardrobeByTypeAsync returned {Count} rows for profileId: {ProfileId}, type: {Type}",
+            "GetAllWardrobeItemsAsync returned {Count} rows for profileId: {ProfileId}, type: {Type}",
             rows.Count,
             profileId
         );
@@ -34,21 +39,9 @@ public class WardrobeDataService
                 row.Id,
                 row.Name ?? string.Empty,
                 row.Description ?? string.Empty,
-                row.Type ?? string.Empty,
+                row.Type,
                 (GlamourerEquipmentSlot)(row.Slot ?? 0),
-                row.Data.TryGetProperty("item", out var item)
-                    ? DeserializeGlamourerType<GlamourerItem>(item)
-                    : null,
-                row.Data.TryGetProperty("design", out var design)
-                    ? DeserializeGlamourerType<GlamourerDesign>(design)
-                    : null,
-                row.Data.TryGetProperty("mods", out var mods)
-                    ? DeserializeGlamourerType<List<GlamourerMod>>(mods)
-                    : null,
-                row.Data.TryGetProperty("materials", out var materials)
-                    ? DeserializeGlamourerType<Dictionary<string, GlamourerMaterial>>(materials)
-                        ?? new()
-                    : new(),
+                row.Data,
                 (RelationshipPriority)(row.RelationshipPriority ?? 0)
             ))
             .ToList();
@@ -74,21 +67,9 @@ public class WardrobeDataService
                 row.Id,
                 row.Name ?? string.Empty,
                 row.Description ?? string.Empty,
-                row.Type ?? string.Empty,
+                row.Type,
                 (GlamourerEquipmentSlot)(row.Slot ?? 0),
-                row.Data.TryGetProperty("item", out var item)
-                    ? DeserializeGlamourerType<GlamourerItem>(item)
-                    : null,
-                row.Data.TryGetProperty("design", out var design)
-                    ? DeserializeGlamourerType<GlamourerDesign>(design)
-                    : null,
-                row.Data.TryGetProperty("mods", out var mods)
-                    ? DeserializeGlamourerType<List<GlamourerMod>>(mods)
-                    : null,
-                row.Data.TryGetProperty("materials", out var materials)
-                    ? DeserializeGlamourerType<Dictionary<string, GlamourerMaterial>>(materials)
-                        ?? new()
-                    : new(),
+                row.Data,
                 (RelationshipPriority)(row.RelationshipPriority ?? 0)
             ))
             .ToList();
@@ -120,28 +101,14 @@ public class WardrobeDataService
             profileId,
             wardrobeId
         );
-        var glamourerDesign = row.Value.Data.TryGetProperty("design", out var design)
-            ? DeserializeGlamourerType<GlamourerDesign>(design)
-            : null;
-        var glamourerItem = row.Value.Data.TryGetProperty("item", out var item)
-            ? DeserializeGlamourerType<GlamourerItem>(item)
-            : null;
-        var glamourerMods = row.Value.Data.TryGetProperty("mods", out var mods)
-            ? DeserializeGlamourerType<List<GlamourerMod>>(mods)
-            : null;
-        var glamourerMaterials = row.Value.Data.TryGetProperty("materials", out var materials)
-            ? DeserializeGlamourerType<Dictionary<string, GlamourerMaterial>>(materials) ?? new()
-            : new();
+
         return new WardrobeDto(
             row.Value.Id,
             row.Value.Name ?? string.Empty,
             row.Value.Description ?? string.Empty,
-            row.Value.Type ?? string.Empty,
+            row.Value.Type,
             (GlamourerEquipmentSlot)(row.Value.Slot ?? 0),
-            glamourerItem,
-            glamourerDesign,
-            glamourerMods,
-            glamourerMaterials,
+            row.Value.Data,
             (RelationshipPriority)(row.Value.RelationshipPriority ?? 0)
         );
     }
@@ -152,29 +119,12 @@ public class WardrobeDataService
         WardrobeDto dto
     )
     {
-        object data;
-        if (dto.Design != null)
-        {
-            data = new { design = dto.Design };
-        }
-        else
-        {
-            data = new
-            {
-                item = dto.Item,
-                mods = dto.Mods,
-                materials = dto.Materials,
-            };
-        }
-
-        var dataJson = JsonSerializer.SerializeToElement(data);
-
         _logger.LogInformation(
-            "CreateOrUpdateWardrobeItemsByNameAsync called with profileId: {ProfileId}, uuid: {Uuid}, name: {Name}, data: {DataJson}",
+            "CreateOrUpdateWardrobeItemsByNameAsync called with profileId: {ProfileId}, uuid: {Uuid}, name: {Name}, type: {Type}",
             profileId,
             uuid,
             dto.Name,
-            dataJson
+            dto.Type
         );
         var result = await _wardrobeSql.CreateOrUpdateWardrobeAsync(
             new(
@@ -185,7 +135,7 @@ public class WardrobeDataService
                 dto.Description,
                 (int)dto.Slot,
                 (int)dto.Priority,
-                dataJson
+                dto.DataBase64
             )
         );
 
@@ -272,7 +222,7 @@ public class WardrobeDataService
         var result = await _wardrobeSql.UpdateWardrobeStateAsync(
             new(
                 profileId,
-                SerializeToJsonElement(state.BaseLayer),
+                state.BaseLayerBase64,
                 SerializeToJsonElement(head),
                 SerializeToJsonElement(body),
                 SerializeToJsonElement(hands),
@@ -409,26 +359,11 @@ public class WardrobeDataService
             }
         }
 
-        GlamourerDesign? baseLayer = null;
-        if (row.Value.Glamourerset.HasValue)
-        {
-            baseLayer = DeserializeNullable<GlamourerDesign>(row.Value.Glamourerset.Value);
-        }
-
         return new WardrobeStateDto(
-            baseLayer,
+            row.Value.Glamourerset,
             equipment.Count > 0 ? equipment : null,
             modSettings.Count > 0 ? modSettings : null
         );
-    }
-
-    private static Dictionary<string, object?>? ObjectToDict<T>(T? obj)
-        where T : class
-    {
-        if (obj == null)
-            return null;
-        var json = JsonSerializer.Serialize(obj);
-        return JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
     }
 
     private static JsonElement? SerializeToJsonElement<T>(T? value)
@@ -460,66 +395,6 @@ public class WardrobeDataService
         catch
         {
             return [];
-        }
-    }
-
-    private static Dictionary<TKey, TValue> DeserializeDict<TKey, TValue>(JsonElement element)
-        where TKey : notnull
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<Dictionary<TKey, TValue>>(element.GetRawText()) ?? [];
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
-    private static Dictionary<string, object?>? DeserializeToDict<T>(JsonElement element)
-        where T : class
-    {
-        try
-        {
-            var obj = JsonSerializer.Deserialize<T>(element.GetRawText());
-            if (obj == null)
-                return null;
-            return JsonSerializer.Deserialize<Dictionary<string, object?>>(
-                JsonSerializer.Serialize(obj)
-            );
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static List<object?>? DeserializeToDictList(JsonElement element)
-    {
-        try
-        {
-            var list = JsonSerializer.Deserialize<List<object>>(element.GetRawText());
-            return list?.Cast<object?>().ToList();
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static T? DeserializeGlamourerType<T>(JsonElement element)
-    {
-        try
-        {
-            var json = element.GetRawText();
-            return JsonSerializer.Deserialize<T>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
-        }
-        catch (Exception)
-        {
-            return default(T);
         }
     }
 }

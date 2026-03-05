@@ -292,10 +292,7 @@ public class WardrobeService : IDisposable
             item.Description,
             type,
             item.Slot,
-            item.Item,
-            null,
-            item.Mods,
-            item.Materials,
+            GlamourerDesignHelper.ItemToBase64(item),
             item.Priority
         );
         await _wardrobeNetworkService.AddWardrobeItemAsync(dto);
@@ -312,10 +309,7 @@ public class WardrobeService : IDisposable
             set.Description,
             "set",
             GlamourerEquipmentSlot.None,
-            null,
-            design,
-            [],
-            [],
+            GlamourerDesignHelper.ToBase64(design),
             set.Priority
         );
         await _wardrobeNetworkService.AddWardrobeItemAsync(dto);
@@ -330,45 +324,34 @@ public class WardrobeService : IDisposable
 
         foreach (var dto in dtos)
         {
+            if (dto.DataBase64 == null)
+            {
+                Plugin.Log.Warning($"[WardrobeService] received DTO {dto.Name} with empty data");
+                continue;
+            }
             switch (dto.Type)
             {
                 case "item":
-                    _wardrobeItems[dto.Name] = new WardrobeItem
-                    {
-                        Id = dto.Id,
-                        Name = dto.Name,
-                        Description = dto.Description,
-                        Slot = dto.Slot,
-                        Item = dto.Item,
-                        Mods = dto.Mods ?? [],
-                        Materials = dto.Materials ?? [],
-                        Priority = dto.Priority,
-                    };
+
+                    WardrobeItem item = GlamourerDesignHelper.FromItemBase64(dto.DataBase64);
+                    if (item != null)
+                        _wardrobeItems[dto.Name] = item;
                     break;
 
                 case "set":
-                    if (dto.Design != null)
+                    _wardrobeSets[dto.Name] = new WardrobeSet
                     {
-                        _wardrobeSets[dto.Name] = new WardrobeSet
-                        {
-                            Design = dto.Design,
-                            Priority = dto.Priority,
-                        };
-                    }
+                        Design = GlamourerDesignHelper.FromBase64(dto.DataBase64)!,
+                        Priority = dto.Priority,
+                    };
                     break;
 
                 case "moditem":
-                    _modItems[dto.Name] = new WardrobeItem
+                    WardrobeItem mods = GlamourerDesignHelper.FromItemBase64(dto.DataBase64);
+                    if (mods != null)
                     {
-                        Id = dto.Id,
-                        Name = dto.Name,
-                        Description = dto.Description,
-                        Slot = dto.Slot,
-                        Item = dto.Item,
-                        Mods = dto.Mods ?? [],
-                        Materials = dto.Materials ?? [],
-                        Priority = dto.Priority,
-                    };
+                        _modItems[dto.Name] = mods;
+                    }
                     break;
             }
         }
@@ -584,7 +567,9 @@ public class WardrobeService : IDisposable
 
     private async Task SyncActiveSetToServerAsync()
     {
-        var baseLayer = ActiveSet.GetBaseLayer();
+        var baseLayerDesign = ActiveSet.GetBaseLayer();
+        var baseLayerBase64 =
+            baseLayerDesign != null ? GlamourerDesignHelper.ToBase64(baseLayerDesign) : null;
         var equipment = new Dictionary<string, WardrobeItemData>();
         var modSettings = new Dictionary<string, WardrobeItemData>();
 
@@ -637,7 +622,7 @@ public class WardrobeService : IDisposable
             }
         }
 
-        var state = new WardrobeStateDto(baseLayer, equipment, modSettings);
+        var state = new WardrobeStateDto(baseLayerBase64, equipment, modSettings);
 
         await _wardrobeNetworkService.SetWardrobeStatusAsync(state);
     }
