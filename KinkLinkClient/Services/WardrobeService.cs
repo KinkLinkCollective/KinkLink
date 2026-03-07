@@ -729,7 +729,7 @@ public class WardrobeService : IDisposable
         return glamourerDesign;
     }
 
-    private async Task ApplyModsAsync(bool enabled)
+    public async Task ApplyModsAsync(bool enabled)
     {
         foreach (var glamourerMod in ActiveSet.GetMods())
         {
@@ -948,5 +948,24 @@ public class WardrobeService : IDisposable
         // If the wardrobe is disposed all temporary mods should be unlocked
         _penumbraService.ClearAllTemporaryMods();
         GC.SuppressFinalize(this);
+    }
+
+    public async void ClearActive()
+    {
+        ActiveSet.ClearBaseLayer();
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.None);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.Head);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.Body);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.Hands);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.Legs);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.Feet);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.Ears);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.Neck);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.Wrists);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.RFinger);
+        ActiveSet.ClearIndividual(GlamourerEquipmentSlot.LFinger);
+        ActiveSet.ClearBaseLayer();
+        await _glamourerService.RevertToAutomation();
+        _penumbraService.ClearAllTemporaryMods();
     }
 }

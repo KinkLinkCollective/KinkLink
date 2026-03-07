@@ -98,7 +98,7 @@ public class ConnectionManager : IDisposable
 
         // Reset the view if required
         _viewService.ResetView();
-
+        _wardrobeNetworkService.ResetWardrobe();
         // Return
         return Task.CompletedTask;
     }

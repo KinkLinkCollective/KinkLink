@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using KinkLinkCommon.Dependencies.Glamourer;
 using KinkLinkCommon.Dependencies.Glamourer.Components;
@@ -31,14 +32,26 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         _wardrobeService = new WardrobeDataService(config, logger);
     }
 
-    private static JsonElement CreateItemData(GlamourerItem item) =>
-        JsonSerializer.SerializeToElement(new { item, mods = new List<GlamourerMod>(), materials = new Dictionary<string, GlamourerMaterial>() });
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    private static JsonElement CreateSetData(GlamourerDesign design) =>
-        JsonSerializer.SerializeToElement(new { item = (object?)null, mods = new List<GlamourerMod>(), materials = new Dictionary<string, GlamourerMaterial>(), design });
+    private static string CreateItemData(GlamourerItem item)
+    {
+        var data = new { item, mods = new List<GlamourerMod>(), materials = new Dictionary<string, GlamourerMaterial>() };
+        return JsonSerializer.Serialize(data);
+    }
 
-    private static JsonElement CreateModItemData(List<GlamourerMod> mods) =>
-        JsonSerializer.SerializeToElement(new { item = (object?)null, mods, materials = new Dictionary<string, GlamourerMaterial>() });
+    private static string CreateSetData(GlamourerDesign design)
+    {
+        var designBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(design, JsonOptions)));
+        var data = new { design = designBase64, item = (object?)null, mods = new List<GlamourerMod>(), materials = new Dictionary<string, GlamourerMaterial>() };
+        return JsonSerializer.Serialize(data);
+    }
+
+    private static string CreateModItemData(List<GlamourerMod> mods)
+    {
+        var data = new { item = (object?)null, mods, materials = new Dictionary<string, GlamourerMaterial>() };
+        return JsonSerializer.Serialize(data);
+    }
 
     #region GetAllWardrobeByTypeAsync Tests
 
@@ -411,7 +424,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         var saved = await _wardrobeService.GetWardrobeStateAsync(profileId);
         Assert.NotNull(saved);
-        Assert.Null(saved.BaseLayer);
+        Assert.Null(saved.BaseLayerBase64);
         Assert.NotNull(saved.Equipment);
         Assert.True(saved.Equipment.ContainsKey("Head"));
     }
@@ -453,7 +466,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         var saved = await _wardrobeService.GetWardrobeStateAsync(profileId);
         Assert.NotNull(saved);
-        Assert.Null(saved.BaseLayer);
+        Assert.Null(saved.BaseLayerBase64);
         Assert.NotNull(saved.Equipment);
         Assert.True(saved.Equipment.ContainsKey("Head"));
         Assert.True(saved.Equipment.ContainsKey("Body"));
@@ -471,17 +484,20 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var (profileId, _, _) = await CreateTestUserWithProfileAsync(111111111111111125, "WARDTEST15");
         var wardrobeItemId = Guid.NewGuid();
 
+        var designJson = JsonSerializer.Serialize(new GlamourerDesign(), JsonOptions);
+        var designBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(designJson));
+
         await TestHarness.InsertTestActiveWardrobeAsync(new InsertTestActiveWardrobeParams
         {
             ProfileId = profileId,
-            Glamourerset = JsonSerializer.SerializeToElement(new GlamourerDesign()),
+            Glamourerset = designBase64,
             Head = JsonSerializer.SerializeToElement(new WardrobeItem { Id = wardrobeItemId, ItemId = 3000, Name = "Test Head" })
         });
 
         var result = await _wardrobeService.GetWardrobeStateAsync(profileId);
 
         Assert.NotNull(result);
-        Assert.NotNull(result.BaseLayer);
+        Assert.NotNull(result.BaseLayerBase64);
         Assert.NotNull(result.Equipment);
         Assert.True(result.Equipment.Count > 0);
     }

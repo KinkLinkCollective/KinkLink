@@ -405,7 +405,7 @@ public class TestHarnessSql
         cmd.Parameters.AddWithValue("description", @params.Description ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("slot", @params.Slot ?? (object)DBNull.Value);
         cmd.Parameters.AddWithValue("priority", @params.Priority);
-        cmd.Parameters.AddWithValue("data", @params.Data ?? JsonSerializer.SerializeToElement(new { item = (object?)null, mods = new List<object>(), materials = new Dictionary<string, object>() }));
+        cmd.Parameters.AddWithValue("data", @params.Data ?? @"{{""item"":null,""mods"":[],""materials"":{{}}}}");
 
         var result = await cmd.ExecuteScalarAsync();
         return result as Guid?;
@@ -483,13 +483,13 @@ public class InsertTestWardrobeParams
     public string? Description { get; set; }
     public int? Slot { get; set; }
     public int Priority { get; set; }
-    public JsonElement? Data { get; set; }
+    public string? Data { get; set; }
 }
 
 public class InsertTestActiveWardrobeParams
 {
     public int ProfileId { get; set; }
-    public JsonElement? Glamourerset { get; set; }
+    public string? Glamourerset { get; set; }
     public JsonElement? Head { get; set; }
     public JsonElement? Body { get; set; }
     public JsonElement? Hand { get; set; }

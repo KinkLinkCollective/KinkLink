@@ -149,6 +149,7 @@ public class WardrobeNetworkService : IDisposable
                 _wardrobeService.ApplyCharacterItemSync(modItem);
             }
         }
+        _wardrobeService.ApplyModsAsync(true);
     }
 
     private static GlamourerEquipmentSlot ConvertSlotKey(string slotName)
@@ -316,6 +317,11 @@ public class WardrobeNetworkService : IDisposable
             );
             return new ActionResult<WardrobeStateDto>(ActionResultEc.Unknown, null);
         }
+    }
+
+    public async void ResetWardrobe()
+    {
+        _wardrobeService.ClearActive();
     }
 
     public void Dispose()
