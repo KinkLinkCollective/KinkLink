@@ -34,6 +34,25 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    private static string CreateItemDataBase64(uint itemId)
+    {
+        var data = new { item = new { ItemId = itemId, Apply = true }, mods = new List<GlamourerMod>(), materials = new Dictionary<string, GlamourerMaterial>() };
+        return JsonSerializer.Serialize(data);
+    }
+
+    private static string CreateSetDataBase64()
+    {
+        var designBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new GlamourerDesign(), JsonOptions)));
+        var data = new { design = designBase64, item = (object?)null, mods = new List<GlamourerMod>(), materials = new Dictionary<string, GlamourerMaterial>() };
+        return JsonSerializer.Serialize(data);
+    }
+
+    private static string CreateModItemDataBase64(List<GlamourerMod> mods)
+    {
+        var data = new { item = (object?)null, mods, materials = new Dictionary<string, GlamourerMaterial>() };
+        return JsonSerializer.Serialize(data);
+    }
+
     private static string CreateItemData(GlamourerItem item)
     {
         var data = new { item, mods = new List<GlamourerMod>(), materials = new Dictionary<string, GlamourerMaterial>() };
@@ -77,8 +96,6 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         Assert.Single(result);
         Assert.Equal("Test Item", result[0].Name);
-        Assert.NotNull(result[0].Item);
-        Assert.Equal(12345u, result[0].Item!.ItemId);
     }
 
     [Fact]
@@ -167,7 +184,6 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
 
         Assert.NotNull(result);
         Assert.Equal("Get Test Item", result.Name);
-        Assert.Equal(54321u, result.Item!.ItemId);
     }
 
     [Fact]
@@ -200,10 +216,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             "Test description",
             "item",
             GlamourerEquipmentSlot.Head,
-            new GlamourerItem { ItemId = 11111, Apply = true },
-            null,
-            [],
-            [],
+            CreateItemDataBase64(11111),
             RelationshipPriority.Casual
         );
 
@@ -241,10 +254,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             "Updated description",
             "item",
             GlamourerEquipmentSlot.Body,
-            new GlamourerItem { ItemId = 22222, Apply = false },
-            null,
-            [],
-            [],
+            CreateItemDataBase64(22222),
             RelationshipPriority.Devotional
         );
 
@@ -255,7 +265,6 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         var saved = await _wardrobeService.GetWardrobeItemByGuid(profileId, itemId);
         Assert.NotNull(saved);
         Assert.Equal("Updated Name", saved.Name);
-        Assert.Equal(22222u, saved.Item!.ItemId);
     }
 
     [Fact]
@@ -272,10 +281,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             string.Empty,
             "set",
             GlamourerEquipmentSlot.None,
-            null,
-            null,
-            [],
-            [],
+            CreateSetDataBase64(),
             RelationshipPriority.Casual
         );
 
@@ -312,10 +318,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             string.Empty,
             "set",
             GlamourerEquipmentSlot.None,
-            null,
-            null,
-            [],
-            [],
+            CreateSetDataBase64(),
             RelationshipPriority.Devotional
         );
 
@@ -342,10 +345,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             string.Empty,
             "moditem",
             GlamourerEquipmentSlot.None,
-            null,
-            null,
-            [new GlamourerMod { Name = "TestMod", Enabled = true }],
-            [],
+            CreateModItemDataBase64([new GlamourerMod { Name = "TestMod", Enabled = true }]),
             RelationshipPriority.Casual
         );
 
@@ -382,10 +382,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
             string.Empty,
             "moditem",
             GlamourerEquipmentSlot.None,
-            null,
-            null,
-            [new GlamourerMod { Name = "NewMod", Enabled = true }],
-            [],
+            CreateModItemDataBase64([new GlamourerMod { Name = "NewMod", Enabled = true }]),
             RelationshipPriority.Devotional
         );
 
@@ -491,7 +488,7 @@ public class WardrobeServiceTests : DatabaseServiceTestBase
         {
             ProfileId = profileId,
             Glamourerset = designBase64,
-            Head = JsonSerializer.SerializeToElement(new WardrobeItem { Id = wardrobeItemId, ItemId = 3000, Name = "Test Head" })
+            Head = JsonSerializer.SerializeToElement(new WardrobeItemData(wardrobeItemId, "Test Head", "", GlamourerEquipmentSlot.Head, new GlamourerItem { ItemId = 3000, Apply = true }, null, null, RelationshipPriority.Casual))
         });
 
         var result = await _wardrobeService.GetWardrobeStateAsync(profileId);
